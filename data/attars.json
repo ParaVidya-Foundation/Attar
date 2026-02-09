@@ -1,0 +1,427 @@
+[
+  {
+    "id": "attar_rajani_gulab",
+    "slug": "rajani-gulab",
+    "name": "Rajani Gulab",
+    "origin": "Kannauj, Uttar Pradesh, India",
+    "notes": {
+      "opening": ["Dewy rose petal", "Saffron thread", "Pink pepper hush"],
+      "heart": ["Damask rose", "Honeyed pollen", "Soft jasmine shadow"],
+      "base": ["Sandalwood", "Amber resin", "Clean musk"]
+    },
+    "zodiac": ["Taurus", "Libra"],
+    "planet": "Venus",
+    "description": [
+      "A rose attar composed in the old north-Indian manner—petal-forward, quiet, and precise. It opens with a cool rose sheen and a whisper of saffron, like the first light on temple stone.",
+      "As it warms, the heart becomes fuller and more devotional: Damask richness tempered by honeyed pollen rather than sugar. The effect is intimate and skin-close—an aura, not a cloud.",
+      "The base settles into sandalwood and resin for longevity, with a clean musk finish that reads modern without losing heritage rhythm. Wear at dusk, for prayer, or for conversations that don’t need volume."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 899 },
+      { "ml": 6, "price": 1599 },
+      { "ml": 12, "price": 2899 }
+    ],
+    "price": 899,
+    "longevity": "8–10 hours",
+    "spiritual_benefits": ["Heart-soothing calm", "Graceful presence", "Evening ritual companion"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=1600&q=80",
+        "alt": "A minimal rose still life in warm cream light",
+        "unsplash_query": "rose petals still life cream minimal"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1520975958221-0f3e00caa2ea?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Antique brass vessel with soft golden highlights",
+        "unsplash_query": "antique brass vessel gold highlights"
+      }
+    ],
+    "badges": ["Heritage Floral", "Bestseller", "Alcohol-free"],
+    "stock": 38
+  },
+  {
+    "id": "attar_samraj_oud",
+    "slug": "samraj-oud",
+    "name": "Samraj Oud",
+    "origin": "Assam, India",
+    "notes": {
+      "opening": ["Smoked resins", "Black pepper", "Dry cedar spark"],
+      "heart": ["Oud wood", "Patchouli leaf", "Leathered amber"],
+      "base": ["Labdanum", "Dark amber", "Mineral woods"]
+    },
+    "zodiac": ["Scorpio", "Capricorn"],
+    "planet": "Saturn",
+    "description": [
+      "A disciplined oud that favors structure over theatrics. The opening is resinous and dry, with pepper and cedar for definition rather than heat.",
+      "The heart is oud rendered architectural: wood grain, shadow, and a measured patchouli spine. It reads royal, but never ornate—like indigo cloth with a single gold stitch.",
+      "The base is labdanum and dark amber for endurance, designed to sit close and last. Ideal for winter evenings, formal wear, and anyone who prefers quiet authority."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 1199 },
+      { "ml": 6, "price": 2099 },
+      { "ml": 12, "price": 3799 }
+    ],
+    "price": 1199,
+    "longevity": "10–12 hours",
+    "spiritual_benefits": ["Grounding focus", "Protective steadiness", "Study and discipline support"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1526406915894-7bcd65f60845?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Dark wood texture with warm highlights",
+        "unsplash_query": "dark wood texture warm light"
+      }
+    ],
+    "badges": ["Oud", "Winter Ritual"],
+    "stock": 21
+  },
+  {
+    "id": "attar_mandir_mogra",
+    "slug": "mandir-mogra",
+    "name": "Mandir Mogra",
+    "origin": "Tamil Nadu, India",
+    "notes": {
+      "opening": ["Green jasmine bud", "Cool dew", "Soft citrus peel"],
+      "heart": ["Mogra garland", "White petals", "Airy neroli tint"],
+      "base": ["Sandalwood", "Clean musk", "Powdered rice note"]
+    },
+    "zodiac": ["Cancer", "Pisces"],
+    "planet": "Moon",
+    "description": [
+      "Morning jasmine, rendered calm. The opening is bud-green and dewy, like garlands unwrapped before the first bell.",
+      "In the heart, mogra becomes full petal and breathable—white floral without sharp indoles. It feels devotional, not perfumey.",
+      "Sandalwood and a soft powdery rice nuance anchor the base for longevity while staying light. A gentle attar for meditation and daily wear."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 799 },
+      { "ml": 6, "price": 1399 },
+      { "ml": 12, "price": 2599 }
+    ],
+    "price": 799,
+    "longevity": "7–9 hours",
+    "spiritual_benefits": ["Mind-quieting clarity", "Nourishing softness", "Devotional uplift"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1600&q=80",
+        "alt": "White jasmine flowers against a soft cream background",
+        "unsplash_query": "jasmine flowers cream minimal"
+      }
+    ],
+    "badges": ["Temple Floral", "Daily Wear"],
+    "stock": 44
+  },
+  {
+    "id": "attar_chandan_shastra",
+    "slug": "chandan-shastra",
+    "name": "Chandan Shastra",
+    "origin": "Mysuru, Karnataka, India",
+    "notes": {
+      "opening": ["Creamy sandal", "Cardamom breath"],
+      "heart": ["Milkwood warmth", "Soft spice", "Quiet resin"],
+      "base": ["Golden woods", "Amber", "Skin musk"]
+    },
+    "zodiac": ["Virgo", "Capricorn"],
+    "planet": "Jupiter",
+    "description": [
+      "Sandalwood as scholarship: creamy, steady, and clean. The opening is smooth milkwood with a restrained cardamom lift.",
+      "The heart builds warmth without heaviness—soft spice and gentle resin that feel like lamplight on paper.",
+      "A golden wood base stays close and comforting, designed for long study sessions, prayer, and evenings at home."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 999 },
+      { "ml": 6, "price": 1799 },
+      { "ml": 12, "price": 3299 }
+    ],
+    "price": 999,
+    "longevity": "9–11 hours",
+    "spiritual_benefits": ["Grounded wisdom", "Study focus", "Calm confidence"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Soft light on minimal wood and paper textures",
+        "unsplash_query": "wood paper minimal warm light"
+      }
+    ],
+    "badges": ["Sandalwood", "Heritage Classic"],
+    "stock": 30
+  },
+  {
+    "id": "attar_vetiver_sutra",
+    "slug": "vetiver-sutra",
+    "name": "Vetiver Sutra",
+    "origin": "Uttar Pradesh, India",
+    "notes": {
+      "opening": ["Cool earth", "Grapefruit peel", "Green breeze"],
+      "heart": ["Khush root", "Herbal clarity", "Iris-like dryness"],
+      "base": ["Dry woods", "Mineral musk", "Amber hush"]
+    },
+    "zodiac": ["Aquarius", "Virgo"],
+    "planet": "Mercury",
+    "description": [
+      "A cooling vetiver (khush) designed for heat and clarity. The opening is earthy-clean with a faint citrus peel to sharpen the silhouette.",
+      "The heart is rooty and herbal, dry rather than sweet—modern minimalism with traditional material integrity.",
+      "Dry woods and mineral musk keep it composed for long wear. Wear for summer days, work, and calm conversations."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 749 },
+      { "ml": 6, "price": 1299 },
+      { "ml": 12, "price": 2399 }
+    ],
+    "price": 749,
+    "longevity": "8–10 hours",
+    "spiritual_benefits": ["Cooling steadiness", "Mental clarity", "Grounding in change"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Clean green field texture in soft light",
+        "unsplash_query": "vetiver grass minimal texture"
+      }
+    ],
+    "badges": ["Summer Ritual", "Fresh Earth"],
+    "stock": 52
+  },
+  {
+    "id": "attar_temple_dhoop",
+    "slug": "temple-dhoop",
+    "name": "Temple Dhoop",
+    "origin": "Rajasthan, India",
+    "notes": {
+      "opening": ["Frankincense smoke", "Clove bud", "Dry citrus rind"],
+      "heart": ["Resin incense", "Myrrh tone", "Saffron warmth"],
+      "base": ["Benzoin", "Sandalwood", "Amber resin"]
+    },
+    "zodiac": ["Scorpio", "Pisces"],
+    "planet": "Ketu",
+    "description": [
+      "Incense in a minimalist register—smoke, resin, and devotion without heaviness. The opening is frankincense smoke with a clove shadow.",
+      "The heart is temple resin: myrrh-like depth and saffron warmth, balanced to remain breathable.",
+      "Benzoin and sandalwood create a slow, comforting base that reads sacred and calm. A natural companion for prayer, evening rituals, and winter air."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 899 },
+      { "ml": 6, "price": 1599 },
+      { "ml": 12, "price": 2899 }
+    ],
+    "price": 899,
+    "longevity": "9–12 hours",
+    "spiritual_benefits": ["Meditative depth", "Protective calm", "Ritual continuity"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1519682577862-22b62b24e493?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Warm incense smoke rising in low light",
+        "unsplash_query": "incense smoke warm minimal"
+      }
+    ],
+    "badges": ["Sacred", "Resins"],
+    "stock": 26
+  },
+  {
+    "id": "attar_noor_kesar",
+    "slug": "noor-kesar",
+    "name": "Noor Kesar",
+    "origin": "Kashmir, India",
+    "notes": {
+      "opening": ["Saffron", "Warm milk", "Almond skin"],
+      "heart": ["Golden amber", "Soft rose tint", "Powdered spice"],
+      "base": ["Sandalwood", "Vanilla bean", "Amber resin"]
+    },
+    "zodiac": ["Leo", "Taurus"],
+    "planet": "Sun",
+    "description": [
+      "Saffron light with a creamy halo. The opening is kesar and warm milk—not gourmand, but luminous and soft.",
+      "The heart glows with amber and a faint rose tint, creating a royal warmth that reads refined rather than sweet.",
+      "A sandalwood base carries the glow for hours with a vanilla nuance kept deliberately quiet. Best for festive evenings and winter gatherings."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 949 },
+      { "ml": 6, "price": 1699 },
+      { "ml": 12, "price": 3099 }
+    ],
+    "price": 949,
+    "longevity": "9–11 hours",
+    "spiritual_benefits": ["Confidence and radiance", "Warmth in cold seasons", "Ceremonial uplift"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Saffron threads on a neutral cream surface",
+        "unsplash_query": "saffron threads minimal cream"
+      }
+    ],
+    "badges": ["Royal Warmth"],
+    "stock": 18
+  },
+  {
+    "id": "attar_mehfil_amber",
+    "slug": "mehfil-amber",
+    "name": "Mehfil Amber",
+    "origin": "Kannauj, Uttar Pradesh, India",
+    "notes": {
+      "opening": ["Bergamot peel", "Soft spice"],
+      "heart": ["Amber accord", "Rosewood", "Resin glow"],
+      "base": ["Benzoin", "Labdanum", "Clean musk"]
+    },
+    "zodiac": ["Libra", "Sagittarius"],
+    "planet": "Venus",
+    "description": [
+      "An amber designed for gatherings: warm, polished, and quietly magnetic. The opening gives a clean citrus edge to keep the glow modern.",
+      "The heart is resin-amber with rosewood smoothness—soft gold on cream, never loud.",
+      "Benzoin and labdanum deepen the base for long wear, finished with a clean musk for a tailored trail."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 849 },
+      { "ml": 6, "price": 1499 },
+      { "ml": 12, "price": 2799 }
+    ],
+    "price": 849,
+    "longevity": "8–10 hours",
+    "spiritual_benefits": ["Social ease", "Composed charm", "Warm presence"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Warm golden bokeh in soft focus",
+        "unsplash_query": "gold bokeh warm minimal"
+      }
+    ],
+    "badges": ["Amber", "Evening Wear"],
+    "stock": 33
+  },
+  {
+    "id": "attar_nargis_noor",
+    "slug": "nargis-noor",
+    "name": "Nargis Noor",
+    "origin": "Himachal Pradesh, India",
+    "notes": {
+      "opening": ["Green narcissus stem", "Crisp air"],
+      "heart": ["Narcissus bloom", "Soft honey", "Iris dryness"],
+      "base": ["Musk", "Sandalwood", "Amber hush"]
+    },
+    "zodiac": ["Gemini", "Aquarius"],
+    "planet": "Mercury",
+    "description": [
+      "Narcissus (nargis) as a clean floral: stem-green and bright at first, like cool air through a corridor.",
+      "The heart is floral with a hint of honey and iris-like dryness—elegant, not powdery.",
+      "Musk and sandalwood create a smooth base that stays close for long wear, ideal for daytime refinement."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 899 },
+      { "ml": 6, "price": 1599 },
+      { "ml": 12, "price": 2899 }
+    ],
+    "price": 899,
+    "longevity": "7–9 hours",
+    "spiritual_benefits": ["Fresh start energy", "Clarity in communication", "Lighthearted elegance"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1508606572321-901ea443707f?auto=format&fit=crop&w=1600&q=80",
+        "alt": "White flowers in minimal cream light",
+        "unsplash_query": "white flower minimal cream"
+      }
+    ],
+    "badges": ["Fresh Floral"],
+    "stock": 29
+  },
+  {
+    "id": "attar_kesar_chandan",
+    "slug": "kesar-chandan",
+    "name": "Kesar Chandan",
+    "origin": "Karnataka, India",
+    "notes": {
+      "opening": ["Saffron milk", "Cardamom"],
+      "heart": ["Sandalwood", "Amber glow"],
+      "base": ["Creamy woods", "Resin", "Musk"]
+    },
+    "zodiac": ["Leo", "Virgo"],
+    "planet": "Jupiter",
+    "description": [
+      "A classic pairing—saffron and sandal—composed with modern restraint. The opening reads warm and polished rather than sweet.",
+      "The heart is creamy sandalwood under a soft amber light, like gold leaf used sparingly.",
+      "The base is calm and enduring, made to settle into skin and fabric edges. A refined signature for work and ceremonies alike."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 949 },
+      { "ml": 6, "price": 1699 },
+      { "ml": 12, "price": 3099 }
+    ],
+    "price": 949,
+    "longevity": "9–12 hours",
+    "spiritual_benefits": ["Auspicious warmth", "Steady confidence", "Ceremonial clarity"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Warm neutral minimal interior with soft light",
+        "unsplash_query": "warm neutral minimal interior light"
+      }
+    ],
+    "badges": ["Classic", "Gift-worthy"],
+    "stock": 24
+  },
+  {
+    "id": "attar_green_shahi",
+    "slug": "green-shahi",
+    "name": "Green Shahi",
+    "origin": "Kerala, India",
+    "notes": {
+      "opening": ["Bitter orange", "Mint leaf", "Green cardamom"],
+      "heart": ["Green tea", "Herbal woods", "Clean floral air"],
+      "base": ["Dry woods", "Musk", "Amber hush"]
+    },
+    "zodiac": ["Gemini", "Libra"],
+    "planet": "Mercury",
+    "description": [
+      "A modern green attar with heritage materials. The opening is citrus and mint—cool and bright without sharpness.",
+      "The heart is tea-like and herbal with clean floral air, designed for warm climates and daily repetition.",
+      "Dry woods and musk keep the base quiet and long-lasting. A minimal signature for office, travel, and summer evenings."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 699 },
+      { "ml": 6, "price": 1199 },
+      { "ml": 12, "price": 2199 }
+    ],
+    "price": 699,
+    "longevity": "6–8 hours",
+    "spiritual_benefits": ["Cooling clarity", "Fresh mental reset", "Lightness and ease"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Fresh green leaves in soft daylight",
+        "unsplash_query": "fresh green leaves minimal daylight"
+      }
+    ],
+    "badges": ["Fresh", "Summer Ritual"],
+    "stock": 61
+  },
+  {
+    "id": "attar_resin_rahasya",
+    "slug": "resin-rahasya",
+    "name": "Resin Rahasya",
+    "origin": "Gujarat, India",
+    "notes": {
+      "opening": ["Elemi", "Citrus rind", "Dry smoke"],
+      "heart": ["Frankincense", "Myrrh", "Saffron"],
+      "base": ["Benzoin", "Amber", "Woods"]
+    },
+    "zodiac": ["Scorpio", "Sagittarius"],
+    "planet": "Rahu",
+    "description": [
+      "A resin-focused attar for nights when you want depth without density. It opens with elemi and citrus rind, a bright edge against smoke.",
+      "The heart is frankincense and myrrh with saffron warmth, built like incense that never overwhelms the room.",
+      "Benzoin and amber form a long base that stays calm, slightly mineral, and meditative. Ideal for winter, travel, and quiet resilience."
+    ],
+    "sizes": [
+      { "ml": 3, "price": 999 },
+      { "ml": 6, "price": 1799 },
+      { "ml": 12, "price": 3299 }
+    ],
+    "price": 999,
+    "longevity": "10–12 hours",
+    "spiritual_benefits": ["Protective steadiness", "Meditative depth", "Focus through distraction"],
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1473186578172-c141e6798cf4?auto=format&fit=crop&w=1600&q=80",
+        "alt": "Soft smoke in warm low light",
+        "unsplash_query": "smoke warm low light minimal"
+      }
+    ],
+    "badges": ["Resins", "Night Ritual"],
+    "stock": 17
+  }
+]

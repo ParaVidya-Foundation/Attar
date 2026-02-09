@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - corepack enable
+        - pnpm --version || npm --version
+        - pnpm install --frozen-lockfile || npm ci
+    build:
+      commands:
+        - pnpm run lint || npm run lint
+        - pnpm run type-check || npm run type-check
+        - pnpm run test || npm run test
+        - pnpm run build || npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - "**/*"
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*

@@ -1,0 +1,14 @@
+{
+  "connector": {
+    "name": "lighthouse"
+  },
+  "extends": ["development"],
+  "hints": {
+    "lighthouse/compat-api": "off",
+    "lighthouse/byte-efficiency/uses-long-cache-ttl": "warning",
+    "lighthouse/performance": "warning",
+    "lighthouse/seo": "warning",
+    "lighthouse/accessibility": "warning"
+  }
+}
+
