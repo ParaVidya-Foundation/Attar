@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { Container } from "@/components/ui/Container";
-import { CartPage } from "@/components/cart/CartPage";
+import CartPage from "@/components/cart/CartPage";
 
 export const metadata: Metadata = pageMetadata({
   title: "Cart",

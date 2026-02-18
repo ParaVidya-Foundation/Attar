@@ -43,7 +43,7 @@ export function Footer() {
         <div className="grid gap-14 md:grid-cols-12">
           {/* Brand Section */}
           <div className="md:col-span-5">
-            <p className="font-serif text-2xl tracking-[0.08em] text-ink">Sugandha Manjiri</p>
+            <p className="font-serif text-2xl tracking-[0.08em] text-ink">Kamal Vallabh</p>
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-charcoal/80">
               Heritage Indian attars crafted through timeless distillation. Minimal. Pure. Designed for calm
@@ -113,7 +113,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-ash/30 pt-6 text-xs text-charcoal/70 sm:flex-row">
-          <p>© {new Date().getFullYear()} Sugandha Manjiri. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Kamal Vallabh. All rights reserved.</p>
 
           <div className="flex items-center gap-6">
             <LinkItem href="/privacy" label="Privacy" />

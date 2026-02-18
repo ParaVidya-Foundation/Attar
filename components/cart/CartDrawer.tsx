@@ -1,10 +1,10 @@
 "use client";
 
+import React, { useEffect, useRef, JSX } from "react";
 import Image from "next/image";
-import { useEffect, useRef } from "react";
-import { useCart } from "./CartProvider";
 import { FocusTrap } from "@/components/ui/FocusTrap";
 import { Button } from "@/components/ui/Button";
+import { useCart } from "./CartProvider";
 
 function formatINR(v: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -14,36 +14,56 @@ function formatINR(v: number) {
   }).format(v);
 }
 
-export function CartDrawer() {
-  const { open, setOpen, lines, total, remove, setQty, clear } = useCart();
+export function CartDrawer(): JSX.Element | null {
+  // Defensive: useCart might be undefined during tests or if provider missing.
+  const cart = (typeof useCart === "function" ? useCart() : null) ?? {
+    open: false,
+    setOpen: (_: boolean) => {},
+    lines: [],
+    total: 0,
+    remove: (_id: string, _ml?: number) => {},
+    setQty: (_id: string, _ml: number | undefined, _qty: number) => {},
+    clear: () => {},
+  };
+
+  const { open, setOpen, lines, total, remove, setQty, clear } = cart;
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  // Manage Escape and body scroll lock
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
+
     if (open) {
       document.addEventListener("keydown", onKey);
+      // lock scroll while open
+      const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      return () => {
+        document.removeEventListener("keydown", onKey);
+        document.body.style.overflow = prevOverflow;
+      };
     }
+
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
   }, [open, setOpen]);
 
+  // if closed, render nothing
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[90] animate-fade-in" aria-hidden={!open}>
+    <div className="fixed inset-0 z-[90] flex items-stretch" role="presentation" aria-hidden={!open}>
+      {/* Overlay */}
       <button
-        type="button"
         aria-label="Close cart overlay"
-        className="absolute inset-0 bg-ink/35"
         onClick={() => setOpen(false)}
+        className="absolute inset-0 bg-black/35 backdrop-blur-sm transition-opacity duration-300 hover:bg-black/40"
+        style={{ WebkitTapHighlightColor: "transparent" }}
       />
 
       <FocusTrap
@@ -56,72 +76,113 @@ export function CartDrawer() {
           ref={panelRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Cart drawer"
-          className="absolute right-0 top-0 h-full w-full max-w-md border-l border-ash/50 bg-cream shadow-card animate-slide-in-right"
+          aria-label="Shopping cart"
+          className="relative ml-auto w-full max-w-md h-screen
+                     top-[var(--site-header-height,0px)]
+                     border-l border-white/12
+                     bg-white/70 backdrop-blur-lg
+                     shadow-2xl
+                     overflow-hidden
+                     transform translate-x-0
+                     "
         >
-          <div className="flex items-center justify-between border-b border-ash/50 px-6 py-5">
-            <p className="font-serif text-xl text-ink">Your cart</p>
-            <button
-              ref={closeBtnRef}
-              type="button"
-              className="rounded-full border border-ash/60 bg-white/50 px-4 py-2 text-sm font-semibold text-ink hover:bg-cream/70"
-              onClick={() => setOpen(false)}
-            >
-              Close
-            </button>
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/12">
+            <div>
+              <p className="text-xs font-semibold tracking-[0.26em] text-gray-500">CART</p>
+              <div className="mt-1 font-serif text-lg text-gray-900">Your cart</div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                ref={closeBtnRef}
+                onClick={() => setOpen(false)}
+                aria-label="Close cart"
+                className="rounded-full border border-white/10 bg-white/60 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-white/70 transition"
+              >
+                Close
+              </button>
+            </div>
           </div>
 
+          {/* Content */}
           <div className="flex h-[calc(100%-72px)] flex-col">
-            <div className="flex-1 overflow-auto px-6 py-5">
+            <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
               {lines.length === 0 ? (
-                <p className="text-sm leading-7 text-charcoal/85">
-                  Your cart is empty. Add an attar to begin a quiet ritual.
-                </p>
+                <div className="text-sm text-gray-700">
+                  Your cart is empty. Add an item to begin a quiet ritual.
+                </div>
               ) : (
-                <ul className="grid gap-4">
+                <ul className="grid gap-3">
                   {lines.map((l) => (
-                    <li key={`${l.id}:${l.ml}`} className="rounded-3xl border border-ash/50 bg-white/55 p-4">
-                      <div className="flex gap-4">
-                        <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-white">
-                          {l.imageUrl ? (
-                            <Image
-                              src={l.imageUrl}
-                              alt={l.name}
-                              fill
-                              className="object-cover"
-                              sizes="64px"
-                              loading="lazy"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-serif text-base text-ink">{l.name}</p>
-                          <p className="mt-1 text-xs font-semibold tracking-[0.18em] text-charcoal/70">
-                            {l.ml}ml • {formatINR(l.price)}
+                    <li
+                      key={`${l.id}:${l.ml}`}
+                      className="flex gap-3 rounded-2xl border border-white/12 bg-white/55 p-3"
+                    >
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-50">
+                        {l.imageUrl ? (
+                          <Image src={l.imageUrl} alt={l.name} fill className="object-cover" sizes="64px" />
+                        ) : (
+                          <div className="h-full w-full bg-gray-100" />
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate font-serif text-base text-gray-900">{l.name}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {formatINR((l.price ?? 0) * (l.qty ?? 1))}
                           </p>
-                          <div className="mt-3 flex items-center gap-2">
-                            <label className="sr-only" htmlFor={`qty-${l.id}-${l.ml}`}>
-                              Quantity
-                            </label>
+                        </div>
+
+                        <p className="mt-1 text-xs font-semibold tracking-[0.18em] text-gray-500">
+                          {l.ml} ml • {formatINR(l.price)}
+                        </p>
+
+                        <div className="mt-3 flex items-center gap-3">
+                          <label htmlFor={`qty-${l.id}-${l.ml}`} className="sr-only">
+                            Quantity
+                          </label>
+
+                          <div className="inline-flex items-center rounded-full border border-white/12 bg-white/60">
+                            <button
+                              type="button"
+                              aria-label={`Decrease quantity for ${l.name}`}
+                              onClick={() => setQty(l.id, l.ml, Math.max(1, (l.qty ?? 1) - 1))}
+                              className="px-3 py-2 text-sm hover:bg-white/70 transition"
+                            >
+                              −
+                            </button>
+
                             <input
                               id={`qty-${l.id}-${l.ml}`}
                               inputMode="numeric"
                               pattern="[0-9]*"
-                              className="h-10 w-20 rounded-full border border-ash/60 bg-cream/60 px-4 text-sm text-ink"
-                              value={String(l.qty)}
+                              value={String(l.qty ?? 1)}
                               onChange={(e) => {
-                                const n = Number(e.target.value.replace(/\D/g, "")) || 1;
+                                const n = Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1);
                                 setQty(l.id, l.ml, n);
                               }}
+                              className="h-9 w-16 bg-transparent text-center text-sm appearance-none px-2"
                             />
+
                             <button
                               type="button"
-                              className="text-sm font-semibold text-ink underline decoration-gold/60 underline-offset-4"
-                              onClick={() => remove(l.id, l.ml)}
+                              aria-label={`Increase quantity for ${l.name}`}
+                              onClick={() => setQty(l.id, l.ml, (l.qty ?? 1) + 1)}
+                              className="px-3 py-2 text-sm hover:bg-white/70 transition"
                             >
-                              Remove
+                              +
                             </button>
                           </div>
+
+                          <button
+                            type="button"
+                            onClick={() => remove(l.id, l.ml)}
+                            className="text-sm text-gray-700 underline decoration-gray-200 underline-offset-4"
+                          >
+                            Remove
+                          </button>
                         </div>
                       </div>
                     </li>
@@ -130,26 +191,70 @@ export function CartDrawer() {
               )}
             </div>
 
-            <div className="border-t border-ash/50 px-6 py-5">
+            {/* Footer */}
+            <div className="border-t border-white/12 px-6 py-5">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-charcoal/80">Subtotal</p>
-                <p className="font-serif text-xl text-ink">{formatINR(total)}</p>
+                <p className="text-sm text-gray-600">Subtotal</p>
+                <p className="font-serif text-lg text-gray-900">{formatINR(total)}</p>
               </div>
+
               <div className="mt-4 grid gap-3">
-                <Button type="button" onClick={() => setOpen(false)} disabled={lines.length === 0}>
-                  Continue shopping
+                <Button
+                  type="button"
+                  onClick={() => alert("Checkout placeholder — implement backend checkout")}
+                  disabled={lines.length === 0}
+                >
+                  Checkout
                 </Button>
+
                 <Button type="button" variant="secondary" onClick={clear} disabled={lines.length === 0}>
                   Clear cart
                 </Button>
-                <p className="text-xs leading-6 text-charcoal/75">
-                  Demo build: checkout is UI-only. Integrate a backend checkout to take payments securely.
+
+                <p className="mt-2 text-xs text-gray-600">
+                  Demo only: for production create a secure backend checkout session (Stripe/Razorpay).
                 </p>
               </div>
             </div>
           </div>
         </aside>
       </FocusTrap>
+
+      {/* small CSS animations, respects reduced motion */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        @media (prefers-reduced-motion: reduce) {
+          .animate-fade-in,
+          .animate-slide-in {
+            animation: none !important;
+          }
+        }
+
+        /* keyframes used if you want to tag elements with these classes */
+        @keyframes slideInRight {
+          from {
+            transform: translateX(18px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `,
+        }}
+      />
     </div>
   );
 }
+
+export default CartDrawer;

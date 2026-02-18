@@ -53,26 +53,25 @@ const blogs: Blog[] = [
 
 export default function BlogSection() {
   const [index, setIndex] = useState(0);
-  const intervalRef = useRef<number | null>(null);
-
-  const visibleCount = () => {
-    if (typeof window === "undefined") return 3;
-    if (window.innerWidth < 640) return 1;
-    if (window.innerWidth < 1024) return 2;
-    return 3;
-  };
-
   const [perView, setPerView] = useState(3);
+  const intervalRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Responsive items per view
+  /* Responsive items per view (mobile-first) */
   useEffect(() => {
-    const update = () => setPerView(visibleCount());
+    const update = () => {
+      const w = window.innerWidth;
+      if (w < 640) setPerView(1);
+      else if (w < 1024) setPerView(2);
+      else setPerView(3);
+    };
+
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Auto slide every 7 seconds
+  /* Auto slide */
   useEffect(() => {
     intervalRef.current = window.setInterval(() => {
       setIndex((prev) => (prev + 1) % blogs.length);
@@ -83,30 +82,51 @@ export default function BlogSection() {
     };
   }, []);
 
-  // Visible slice logic
-  const visibleBlogs = [];
-  for (let i = 0; i < perView; i++) {
-    visibleBlogs.push(blogs[(index + i) % blogs.length]);
-  }
+  /* Pause on hover (desktop UX) */
+  const pause = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+
+  const resume = () => {
+    intervalRef.current = window.setInterval(() => {
+      setIndex((prev) => (prev + 1) % blogs.length);
+    }, 7000);
+  };
+
+  /* Card width based on perView */
+  const widthPercent = 100 / perView;
 
   return (
-    <section className="w-full bg-white py-20 border-t-[2px] border-[#1e2023]">
+    <section className="w-full bg-white py-16 sm:py-20 border-t-[2px] border-[#1e2023]">
       {/* Header */}
       <header className="mx-auto max-w-3xl px-6 text-center">
         <h2 className="font-serif text-3xl tracking-wide text-[#1e2023] sm:text-4xl">OUR JOURNAL</h2>
         <div className="mx-auto mt-3 h-[2px] w-12 bg-black/60" />
       </header>
 
-      {/* Slider Container */}
-      <div className="mx-auto mt-14 max-w-6xl px-6 overflow-hidden">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleBlogs.map((blog, i) => (
+      {/* Slider */}
+      <div
+        ref={containerRef}
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        className="mx-auto mt-12 max-w-6xl px-6 overflow-hidden"
+      >
+        <div
+          className="flex transition-transform duration-700 ease-out"
+          style={{
+            transform: `translateX(-${index * widthPercent}%)`,
+          }}
+        >
+          {blogs.concat(blogs).map((blog, i) => (
             <article
-              key={blog.id}
-              className="group opacity-0 animate-fadeUp"
-              style={{ animationDelay: `${i * 120}ms` }}
+              key={`${blog.id}-${i}`}
+              className="flex-shrink-0 px-4 animate-fadeUp"
+              style={{
+                width: `${widthPercent}%`,
+                animationDelay: `${(i % perView) * 120}ms`,
+              }}
             >
-              <Link href={blog.href} className="block">
+              <Link href={blog.href} className="block group">
                 {/* Image */}
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
                   <Image
@@ -119,15 +139,15 @@ export default function BlogSection() {
                 </div>
 
                 {/* Meta */}
-                <p className="mt-5 text-[11px] uppercase tracking-widest text-gray-500">{blog.date}</p>
+                <p className="mt-4 text-[11px] uppercase tracking-widest text-gray-500">{blog.date}</p>
 
                 {/* Title */}
-                <h3 className="mt-2 font-serif text-lg text-[#1e2023] transition group-hover:opacity-80">
+                <h3 className="mt-2 font-serif text-lg text-[#1e2023] group-hover:opacity-80 transition">
                   {blog.title}
                 </h3>
 
                 {/* Excerpt */}
-                <p className="mt-2 text-sm leading-6 text-gray-600">{blog.excerpt}</p>
+                <p className="mt-2 text-sm leading-6 text-gray-600 line-clamp-3">{blog.excerpt}</p>
 
                 {/* CTA */}
                 <span className="mt-4 inline-block text-xs tracking-wider border-b border-black pb-[2px]">
@@ -139,16 +159,14 @@ export default function BlogSection() {
         </div>
       </div>
 
-      {/* Ultra-light animation */}
+      {/* Light animation */}
       <style jsx>{`
         .animate-fadeUp {
+          opacity: 0;
+          transform: translateY(14px);
           animation: fadeUp 0.6s ease forwards;
         }
         @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(14px);
-          }
           to {
             opacity: 1;
             transform: translateY(0);

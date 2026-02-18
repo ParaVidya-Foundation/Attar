@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/components.json",
-  "name": "sugandha-manjiri",
+  "name": "kamal-vallabh",
   "style": "custom",
   "tailwind": {
     "config": "tailwind.config.ts",

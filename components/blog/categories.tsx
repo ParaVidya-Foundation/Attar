@@ -19,28 +19,54 @@ const categories = [
 export default function Categories() {
   return (
     <section
-      className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm"
       aria-label="Blog categories"
+      className="
+        w-full
+        bg-white
+        border border-black/10
+      "
     >
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Categories</h2>
+      {/* Header */}
+      <header className="px-6 py-5 border-b border-black/10">
+        <h2 className="text-lg font-medium tracking-tight text-[#1e2023]">Categories</h2>
+      </header>
+
+      {/* List */}
       <nav>
-        <ul className="space-y-3">
-          {categories.map((category, index) => (
-            <motion.li
-              key={category}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: index * 0.05 }}
-            >
-              <Link
-                href={`/research/blogs?category=${encodeURIComponent(category.toLowerCase().replace(/\s+/g, "-"))}`}
-                className="block text-gray-700 hover:text-sky-600 hover:translate-x-2 transition-all duration-200 py-2"
-                aria-label={`View posts in ${category} category`}
+        <ul className="divide-y divide-black/5">
+          {categories.map((category, index) => {
+            const slug = category.toLowerCase().replace(/\s+/g, "-");
+
+            return (
+              <motion.li
+                key={category}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: index * 0.04,
+                  ease: "easeOut",
+                }}
               >
-                {category}
-              </Link>
-            </motion.li>
-          ))}
+                <Link
+                  href={`/research/blogs?category=${slug}`}
+                  aria-label={`View posts in ${category}`}
+                  className="
+                    block
+                    px-6 py-4
+                    text-sm
+                    tracking-tight
+                    text-[#1e2023]
+                    transition-all duration-200
+                    hover:bg-black/[0.02]
+                    hover:pl-7
+                  "
+                >
+                  {category}
+                </Link>
+              </motion.li>
+            );
+          })}
         </ul>
       </nav>
     </section>

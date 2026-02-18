@@ -123,9 +123,14 @@ export default function ZodiacShowcase() {
 
   const scroll = (direction: "left" | "right") => {
     if (!containerRef.current) return;
+
     const width = containerRef.current.clientWidth;
+
+    // Smaller scroll distance on mobile for better control
+    const distance = window.innerWidth < 640 ? width * 0.7 : width * 0.8;
+
     containerRef.current.scrollBy({
-      left: direction === "left" ? -width * 0.8 : width * 0.8,
+      left: direction === "left" ? -distance : distance,
       behavior: "smooth",
     });
   };
@@ -140,11 +145,26 @@ export default function ZodiacShowcase() {
 
       {/* Carousel */}
       <div className="relative mt-12 sm:mt-14">
-        {/* Arrows (desktop only) */}
+        {/* Edge fade (mobile UX hint) */}
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-white to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-white to-transparent" />
+
+        {/* Arrows — visible on all screens */}
         <button
           onClick={() => scroll("left")}
           aria-label="Scroll products left"
-          className="absolute left-4 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#1e2023]/20 bg-white transition-colors duration-300 hover:bg-black hover:text-white md:flex"
+          className="
+            absolute left-2 sm:left-4 top-1/2 z-20
+            -translate-y-1/2
+            flex items-center justify-center
+            h-8 w-8 sm:h-10 sm:w-10
+            rounded-full
+            border border-[#1e2023]/20
+            bg-white/90 backdrop-blur
+            text-sm sm:text-base
+            transition-colors duration-300
+            hover:bg-black hover:text-white
+          "
         >
           ‹
         </button>
@@ -152,7 +172,18 @@ export default function ZodiacShowcase() {
         <button
           onClick={() => scroll("right")}
           aria-label="Scroll products right"
-          className="absolute right-4 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#1e2023]/20 bg-white transition-colors duration-300 hover:bg-black hover:text-white md:flex"
+          className="
+            absolute right-2 sm:right-4 top-1/2 z-20
+            -translate-y-1/2
+            flex items-center justify-center
+            h-8 w-8 sm:h-10 sm:w-10
+            rounded-full
+            border border-[#1e2023]/20
+            bg-white/90 backdrop-blur
+            text-sm sm:text-base
+            transition-colors duration-300
+            hover:bg-black hover:text-white
+          "
         >
           ›
         </button>
@@ -183,7 +214,7 @@ export default function ZodiacShowcase() {
                 <div className="relative mx-auto aspect-[3/4] w-[160px] sm:w-[180px] lg:w-[200px] overflow-hidden">
                   <Image
                     src={product.image}
-                    alt={`${product.name} luxury perfume bottle minimal white background`}
+                    alt={`${product.name} perfume`}
                     fill
                     sizes="(max-width:640px) 160px, (max-width:1024px) 180px, 200px"
                     className="object-contain transition-transform duration-500 ease-out group-hover:scale-105"

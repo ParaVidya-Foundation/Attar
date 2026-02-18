@@ -233,7 +233,7 @@ export function AccountMain() {
           </div>
 
           <p className="text-sm leading-6 text-charcoal/85">
-            You have agreed for Sugandha Manjiri to use your data in line with the{" "}
+            You have agreed for Kamal Vallabh to use your data in line with the{" "}
             <Link
               href="/policies"
               className="text-ink underline decoration-gold/60 underline-offset-4 hover:decoration-ink"

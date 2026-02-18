@@ -18,7 +18,7 @@ export interface BlogCardProps {
   href?: string;
 }
 
-export const BlogCard: React.FC<BlogCardProps> = ({
+export default function BlogCard({
   id,
   title,
   image,
@@ -28,67 +28,43 @@ export const BlogCard: React.FC<BlogCardProps> = ({
   author,
   category,
   href,
-}) => {
+}: BlogCardProps) {
   const formattedDate = typeof date === "string" ? date : format(new Date(date), "d MMM yyyy");
-  const blogUrl = href || `/research/blogs/${id || "BlogPage"}`;
+
+  const blogUrl = href || `/blog/BlogPage`;
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
-      whileHover={{ y: -8 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="group relative flex flex-col h-full rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-b from-white/90 to-gray-50 backdrop-blur-sm shadow-md hover:shadow-2xl hover:border-sky-200 transition-all duration-500"
+      className="group flex flex-col h-full border-t border-black/10 pt-6"
       itemScope
       itemType="https://schema.org/BlogPosting"
     >
-      {/* Image Container */}
-      <div className="relative w-full aspect-square overflow-hidden">
-        <Link
-          href={blogUrl}
-          className="block w-full h-full focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 rounded-t-2xl"
-          aria-label={`Read more about ${title}`}
-        >
-          <motion.div
-            className="w-full h-full overflow-hidden"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Image
-              src={image || "/placeholder.png"}
-              alt={imageAlt || title}
-              fill
-              quality={90}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover rounded-t-2xl"
-              loading="lazy"
-              priority={false}
-              placeholder="blur"
-              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNWY1ZjUiLz48L3N2Zz4="
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                if (target.src !== "/placeholder.png") {
-                  target.src = "/placeholder.png";
-                }
-              }}
-            />
-          </motion.div>
-        </Link>
+      {/* Image */}
+      <Link
+        href={blogUrl}
+        aria-label={title}
+        className="relative w-full aspect-[4/3] overflow-hidden bg-black/5"
+      >
+        <Image
+          src={image || "/placeholder.png"}
+          alt={imageAlt || title}
+          fill
+          sizes="(max-width:768px) 100vw, (max-width:1200px) 50vw, 33vw"
+          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          priority={false}
+        />
+      </Link>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-70 group-hover:opacity-80 transition-opacity duration-300" />
-
-        {/* Floating Badges */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-          {category && (
-            <span className="px-3 py-1 bg-white/90 text-gray-700 text-xs font-medium rounded-full backdrop-blur-sm shadow-sm">
-              {category}
-            </span>
-          )}
-        </div>
-
-        <div className="absolute top-3 right-3 px-3 py-1.5 bg-sky-600/90 text-white text-xs font-medium rounded-full shadow-md backdrop-blur-sm">
+      {/* Content */}
+      <div className="mt-5 flex flex-col flex-grow">
+        {/* Meta */}
+        <div className="text-xs tracking-wide text-black/50 uppercase">
+          {category && <span>{category}</span>}
+          {category && <span className="mx-2">•</span>}
           <time
             dateTime={typeof date === "string" ? date : format(new Date(date), "yyyy-MM-dd")}
             itemProp="datePublished"
@@ -96,19 +72,27 @@ export const BlogCard: React.FC<BlogCardProps> = ({
             {formattedDate}
           </time>
         </div>
-      </div>
 
-      {/* Card Body */}
-      <div className="flex flex-col flex-grow p-5 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-sky-600 transition-colors duration-300">
-          <Link href={blogUrl} itemProp="headline">
-            {title}
-          </Link>
+        {/* Title */}
+        <h2
+          className="
+            mt-2
+            text-[20px]
+            leading-snug
+            font-serif
+            text-[#1e2023]
+            group-hover:text-black
+            transition-colors
+          "
+          itemProp="headline"
+        >
+          <Link href={blogUrl}>{title}</Link>
         </h2>
 
+        {/* Author */}
         {author && (
           <p
-            className="text-sm text-gray-600 mb-3 italic"
+            className="mt-2 text-sm text-black/60"
             itemProp="author"
             itemScope
             itemType="https://schema.org/Person"
@@ -117,44 +101,32 @@ export const BlogCard: React.FC<BlogCardProps> = ({
           </p>
         )}
 
+        {/* Excerpt */}
         {excerpt && (
-          <p className="text-sm text-gray-600 leading-relaxed mb-5 line-clamp-3" itemProp="description">
+          <p className="mt-3 text-[15px] leading-relaxed text-black/60 line-clamp-3" itemProp="description">
             {excerpt}
           </p>
         )}
 
-        <div className="mt-auto flex items-center justify-between">
+        {/* Editorial CTA */}
+        <div className="mt-5">
           <Link
             href={blogUrl}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-            aria-label={`Read more: ${title}`}
+            className="
+              inline-flex items-center
+              text-sm
+              tracking-wide
+              text-[#1e2023]
+              border-b border-black/20
+              pb-1
+              hover:border-black
+              transition-colors
+            "
           >
-            Read More
-            <motion.span initial={{ x: 0 }} whileHover={{ x: 5 }} transition={{ duration: 0.3 }}>
-              →
-            </motion.span>
+            Read article →
           </Link>
-
-          <div className="text-xs text-gray-500">{formattedDate}</div>
         </div>
       </div>
-
-      {/* Animated Border Glow */}
-      <motion.div
-        className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-sky-400/60 transition duration-500 pointer-events-none"
-        animate={{
-          boxShadow: [
-            "0 0 0px rgba(56,189,248,0)",
-            "0 0 25px rgba(56,189,248,0.25)",
-            "0 0 0px rgba(56,189,248,0)",
-          ],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
 
       {/* Structured Data */}
       <script
@@ -163,7 +135,6 @@ export const BlogCard: React.FC<BlogCardProps> = ({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BlogPosting",
-            "@id": blogUrl,
             headline: title,
             image: image,
             datePublished: typeof date === "string" ? date : format(new Date(date), "yyyy-MM-dd"),
@@ -175,6 +146,4 @@ export const BlogCard: React.FC<BlogCardProps> = ({
       />
     </motion.article>
   );
-};
-
-export default BlogCard;
+}

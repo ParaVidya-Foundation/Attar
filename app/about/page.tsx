@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/Container";
 export const metadata: Metadata = pageMetadata({
   title: "About",
   description:
-    "About Sugandha Manjiri: a minimal luxury attar house inspired by heritage craft and modern restraint.",
+    "About Kamal Vallabh: a minimal luxury attar house inspired by heritage craft and modern restraint.",
   path: "/about",
   type: "website",
 });
@@ -14,10 +14,10 @@ export default function AboutPage() {
   return (
     <Container className="py-12 sm:py-16">
       <p className="text-xs font-semibold tracking-[0.26em] text-charcoal/70">ABOUT</p>
-      <h1 className="mt-4 font-serif text-4xl tracking-tight text-ink sm:text-5xl">Sugandha Manjiri</h1>
+      <h1 className="mt-4 font-serif text-4xl tracking-tight text-ink sm:text-5xl">Kamal Vallabh</h1>
       <div className="mt-6 grid gap-4 text-sm leading-7 text-charcoal/85 sm:text-base">
         <p>
-          Sugandha Manjiri is a frontend-only, production-ready template for a luxury attar brand. It is
+          Kamal Vallabh is a frontend-only, production-ready template for a luxury attar brand. It is
           intentionally minimal: cream lightness, indigo ink depth, and antique-gold accents.
         </p>
         <p>

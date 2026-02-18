@@ -37,16 +37,11 @@ export default function ShopTrio() {
       <div className="absolute inset-0 bg-black/0 transition-colors duration-500 group-hover:bg-black/10" />
 
       {/* CTA */}
-      <div className="pointer-events-none absolute bottom-6 left-6">
-        <Link
-          href={href}
-          className={`pointer-events-auto inline-block border border-[#1e2023] px-6 py-2 text-sm font-medium transition-all duration-300 ${
-            dark
-              ? "bg-black text-white hover:bg-black/90 hover:text-white"
-              : "bg-white text-black hover:bg-black hover:text-white"
-          }`}
-        >
-          Shop Now
+      <div className="absolute bottom-6 left-6">
+        <Link href={href} prefetch>
+          <button className="mt-6 border-[2px] border-[#1e2023] px-6 py-2 text-sm tracking-[0.18em] text-[#1e2023] transition-all duration-300 hover:bg-black hover:text-white">
+            Shop Now
+          </button>
         </Link>
       </div>
     </div>

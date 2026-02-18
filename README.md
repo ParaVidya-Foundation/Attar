@@ -1,4 +1,4 @@
-# Sugandha Manjiri — Luxury Attar Frontend (Next.js App Router)
+# Kamal Vallabh — Luxury Attar Frontend (Next.js App Router)
 
 Production-ready, frontend-only Next.js template for a luxury attar brand.
 
@@ -73,6 +73,6 @@ Open `http://localhost:3000` and you’ll be redirected to `/home`.
 ### Docker
 
 ```bash
-docker build -t sugandha-manjiri .
-docker run -p 3000:3000 sugandha-manjiri
+docker build -t kamal-vallabh .
+docker run -p 3000:3000 kamal-vallabh
 ```

@@ -8,7 +8,7 @@ import ZodiacCollection from "@/components/product/ZodiacCollection";
 const product = {
   id: "lily-attar",
   title: "Lily Eau de Toilette",
-  brand: "Sugandha Manjiri",
+  brand: "Kamal Vallabh",
 
   price: "₹2,499",
   priceValue: 2499,

@@ -2,7 +2,7 @@
 
 import React from "react";
 import BlogLayout, { type BlogArticle } from "@/components/blog/bloglayout";
-import RelatedPosts from "@/components/blog/relatedpost";
+import BlogSection from "@/components/Home/BlogSection";
 import RecentPosts from "@/components/blog/recentpost";
 import Categories from "@/components/blog/categories";
 import type { BlogCardProps } from "@/components/blog/BlogCard";
@@ -105,18 +105,8 @@ export default function BlogPage() {
       {/* -------------------------------------- */}
       {/* RELATED POSTS */}
       {/* -------------------------------------- */}
-      <section className="border-t border-gray-200 bg-gray-50/50">
-        <div className="max-w-7xl mx-auto px-6 py-20">
-          <RelatedPosts posts={relatedPosts} />
-        </div>
-      </section>
 
-      {/* -------------------------------------- */}
-      {/* FOOTER */}
-      {/* -------------------------------------- */}
-      <footer className="border-t border-gray-200 mt-24 py-12 text-center text-sm text-gray-500">
-        <p>© 2025 Kalyan Research. All rights reserved.</p>
-      </footer>
+      <BlogSection />
     </main>
   );
 }

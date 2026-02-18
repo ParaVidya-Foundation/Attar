@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BlogCard, BlogCardProps } from "./BlogCard";
+import BlogCard, { BlogCardProps } from "./BlogCard";
 
 export interface BlogGridProps {
   blogs: BlogCardProps[];

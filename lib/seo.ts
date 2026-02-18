@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import type { Attar, BlogPost } from "./types";
 
 export const BRAND = {
-  name: "Sugandha Manjiri",
+  name: "Kamal Vallabh",
   description:
-    "Sugandha Manjiri is a heritage Indian luxury attar house—minimal, airy, cream-toned design with royal depth. Explore alcohol-free perfume oils crafted for calm, skin-close elegance.",
-  url: "https://sugandhamanjiri.example",
+    "Kamal Vallabh is a heritage Indian luxury attar house—minimal, airy, cream-toned design with royal depth. Explore alcohol-free perfume oils crafted for calm, skin-close elegance.",
+  url: "https://kamalvallabh.example",
   locale: "en_IN",
   ogImage: "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=1200&q=80",
 } as const;
