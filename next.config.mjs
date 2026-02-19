@@ -29,9 +29,9 @@ const nextConfig = {
       // Next.js inlines some styles; allow it but keep a strict baseline.
       "style-src 'self' 'unsafe-inline'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com",
+      "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://*.supabase.co",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      "connect-src 'self' https://*.supabase.co https://api.razorpay.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
