@@ -1,9 +1,12 @@
 /**
  * Seed products from data/attars.json into Supabase
  * Uses SUPABASE_SERVICE_ROLE_KEY (admin client)
- * Run: pnpm tsx supabase/seed/seed_products.ts [--dry-run]
+ * Run: pnpm run seed:products [-- --dry-run]
  */
+import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
+
+config({ path: ".env.local" });
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Attar } from "../../lib/types";

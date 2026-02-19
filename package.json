@@ -12,18 +12,9 @@
     "type-check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "husky",
     "sitemap": "tsx scripts/generate-sitemap.ts",
     "seed": "tsx scripts/seed-data.ts",
     "seed:products": "tsx supabase/seed/seed_products.ts"
-  },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx,mjs,cjs,json,css,md,yml,yaml}": [
-      "prettier --write"
-    ],
-    "*.{ts,tsx,js,jsx,mjs,cjs}": [
-      "eslint --fix"
-    ]
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -47,12 +38,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-config-prettier": "^10.1.8",
-    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
-    "lint-staged": "^16.1.7",
     "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",

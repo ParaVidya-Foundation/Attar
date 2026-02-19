@@ -14,8 +14,12 @@
 /coverage
 
 # next.js
-/.next/
-/out/
+.next/
+**/.next/
+out/
+
+# Nested build output (path artifacts)
+Downloads/
 
 # production
 /build
@@ -32,6 +36,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# keys file contains secrets — never commit
+keys.md
 
 # vercel
 .vercel

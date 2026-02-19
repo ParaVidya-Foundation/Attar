@@ -1,0 +1,14 @@
+# Build output
+.next
+out
+build
+
+# Dependencies
+node_modules
+
+# Generated / cache
+*.tsbuildinfo
+.turbo
+
+# Supabase (Deno)
+supabase/functions

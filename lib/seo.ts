@@ -11,9 +11,12 @@ export const BRAND = {
 } as const;
 
 export function absoluteUrl(p: string): string {
-  const base = BRAND.url.replace(/\/+$/, "");
+  const base =
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SITE_URL) ||
+    BRAND.url;
+  const normalized = base.replace(/\/+$/, "");
   const path = p.startsWith("/") ? p : `/${p}`;
-  return `${base}${path}`;
+  return `${normalized}${path}`;
 }
 
 export function pageMetadata(args: {

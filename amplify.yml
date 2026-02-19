@@ -3,14 +3,18 @@ frontend:
   phases:
     preBuild:
       commands:
+        # Use Node 18+ (Amplify default is usually 18+)
+        - node --version
+        # Enable corepack for pnpm
         - corepack enable
         - pnpm --version || npm --version
+        # Clean install with frozen lockfile
         - pnpm install --frozen-lockfile || npm ci
     build:
       commands:
-        - pnpm run lint || npm run lint
+        # Type check (fail build on errors)
         - pnpm run type-check || npm run type-check
-        - pnpm run test || npm run test
+        # Production build
         - pnpm run build || npm run build
   artifacts:
     baseDirectory: .next

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { Button } from "@/components/ui/Button";
+import Link from "next/link";
+import { Container } from "@/components/ui/Container";
 
 function ErrorIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -16,25 +17,46 @@ function ErrorIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
+    // Log to error tracking service in production
+    if (process.env.NODE_ENV === "production") {
+      // TODO: Send to error tracking (e.g., Sentry, LogRocket)
+      // Example: captureException(error);
+    } else {
       console.error("[Error Boundary]:", error);
     }
   }, [error]);
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
-      <div className="text-center">
-        <ErrorIcon className="mx-auto h-16 w-16 text-destructive" />
-        <h2 className="mt-4 font-serif text-3xl font-semibold text-foreground">Something Went Wrong</h2>
-        <p className="mt-4 text-lg text-muted-foreground">
-          The cosmic energies are misaligned. Please try again.
+      <Container className="text-center">
+        <ErrorIcon className="mx-auto h-16 w-16 text-ink/60" />
+        <h1 className="mt-6 font-serif text-3xl font-semibold text-ink">Something Went Wrong</h1>
+        <p className="mt-4 text-lg text-charcoal/70">
+          We encountered an unexpected error. Please try again or return home.
         </p>
-        <Button onClick={reset} className="mt-8">
-          Try Again
-        </Button>
-      </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <button
+            onClick={reset}
+            className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream transition-colors hover:bg-ink/90"
+          >
+            Try Again
+          </button>
+          <Link
+            href="/home"
+            className="rounded-full border border-ash/60 bg-white/50 px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-white"
+          >
+            Go Home
+          </Link>
+        </div>
+      </Container>
     </main>
   );
 }
