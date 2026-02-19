@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { AccountMain } from "@/components/account/accountmain";
-import AccountSidebar from "@/components/account/accountsidebar";
+import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = pageMetadata({
   title: "Account",
@@ -10,13 +10,25 @@ export const metadata: Metadata = pageMetadata({
   type: "website",
 });
 
-export default function AccountPage() {
+export default async function AccountPage() {
+  const { user, supabase } = await requireUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
   return (
-    <section className="min-h-[70vh] bg-white">
-      <div className="mx-auto flex max-w-6xl flex-col lg:flex-row">
-        <AccountSidebar />
-        <AccountMain />
-      </div>
-    </section>
+    <AccountMain
+      profile={{
+        title: profile?.title ?? "",
+        firstName: profile?.first_name ?? "",
+        lastName: profile?.last_name ?? "",
+        phone: profile?.phone ?? "",
+        birthday: profile?.birthday ?? "",
+        email: user.email ?? "",
+      }}
+    />
   );
 }

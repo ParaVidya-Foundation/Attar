@@ -1,15 +1,31 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useLocalCart } from "@/hooks/useLocalCart";
+import type { CartItem } from "@/types/cart";
 
 type CartUiState = {
   open: boolean;
   setOpen: (v: boolean) => void;
 };
 
-type CartContextValue = ReturnType<typeof useLocalCart> & CartUiState;
+type CartContextValue = ReturnType<typeof useLocalCart> &
+  CartUiState & {
+    /** Alias: add a CartItem (used by ProductCard & checkout-ready code) */
+    addItem: (item: CartItem) => void;
+    /** Alias: remove by id */
+    removeItem: (id: string) => void;
+    /** Alias: set quantity by id */
+    updateQuantity: (id: string, qty: number) => void;
+    /** Alias: empty the cart */
+    clearCart: () => void;
+    /** Checkout-ready payload for Razorpay / backend */
+    getCheckoutPayload: () => {
+      items: { product_id: string; quantity: number; price: number }[];
+      total: number;
+    };
+  };
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -17,7 +33,58 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cart = useLocalCart();
   const [open, setOpen] = useState(false);
 
-  const value = useMemo<CartContextValue>(() => ({ ...cart, open, setOpen }), [cart, open]);
+  const addItem = useCallback(
+    (item: CartItem) => {
+      cart.add({
+        id: item.id,
+        name: item.title,
+        price: item.price,
+        imageUrl: item.image,
+        qty: item.quantity,
+      });
+      console.log("Added to cart", item.id);
+    },
+    [cart.add],
+  );
+
+  const removeItem = useCallback(
+    (id: string) => cart.remove(id, 0),
+    [cart.remove],
+  );
+
+  const updateQuantity = useCallback(
+    (id: string, qty: number) => cart.setQty(id, 0, qty),
+    [cart.setQty],
+  );
+
+  const clearCart = useCallback(() => cart.clear(), [cart.clear]);
+
+  const getCheckoutPayload = useCallback(
+    () => ({
+      items: cart.lines.map((l) => ({
+        product_id: l.id,
+        quantity: l.qty,
+        price: l.price,
+      })),
+      total: cart.total,
+    }),
+    [cart.lines, cart.total],
+  );
+
+  const value = useMemo<CartContextValue>(
+    () => ({
+      ...cart,
+      open,
+      setOpen,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      getCheckoutPayload,
+    }),
+    [cart, open, addItem, removeItem, updateQuantity, clearCart, getCheckoutPayload],
+  );
+
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
 

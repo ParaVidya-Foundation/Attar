@@ -1,67 +1,22 @@
-"use client";
-
+import type { Metadata } from "next";
 import IncenseHero from "@/components/Incense/incenseHero";
-import ProductCard, { Product } from "@/components/shop/ProductCard";
+import ProductCard from "@/components/shop/ProductCard";
 import Image from "next/image";
 import BulkOrder from "@/components/Incense/BulkOrder";
+import { getProductsByCategorySlug } from "@/lib/fetchers";
+import { mapToCardProduct } from "@/lib/productMapper";
 
-const products: Product[] = [
-  {
-    id: "surya",
-    title: "Surya",
-    price: 1890,
-    originalPrice: 2490,
-    currency: "₹",
-    rating: 5,
-    reviewsCount: 32,
-    images: {
-      primary: "/products/sun-1.webp",
-      secondary: "/products/sun-2.webp",
-    },
-    href: "/product/surya",
-    isSale: true,
-  },
-  {
-    id: "chandra",
-    title: "Chandra",
-    price: 1590,
-    currency: "₹",
-    rating: 5,
-    reviewsCount: 18,
-    images: {
-      primary: "/products/moon-1.webp",
-      secondary: "/products/moon-2.webp",
-    },
-    href: "/product/chandra",
-  },
-  {
-    id: "aries",
-    title: "Aries",
-    price: 1490,
-    currency: "₹",
-    rating: 4.8,
-    reviewsCount: 14,
-    images: {
-      primary: "/products/aries-1.webp",
-      secondary: "/products/aries-2.webp",
-    },
-    href: "/product/aries",
-  },
-  {
-    id: "royal",
-    title: "Royal Collection",
-    price: 2590,
-    currency: "₹",
-    rating: 5,
-    reviewsCount: 22,
-    images: {
-      primary: "/products/collection-1.webp",
-      secondary: "/products/collection-2.webp",
-    },
-    href: "/product/royal",
-  },
-];
-export default function IncensePage() {
+export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: "Premium Incense Collection",
+  description:
+    "Sacred incense sticks for rituals, meditation, and daily spiritual use.",
+};
+
+export default async function IncensePage() {
+  const products = (await getProductsByCategorySlug("incense")).map(mapToCardProduct);
+
   return (
     <main className="w-full bg-white">
       {/* HERO */}

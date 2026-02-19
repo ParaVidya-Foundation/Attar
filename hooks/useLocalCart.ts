@@ -20,6 +20,15 @@ type CartState = {
 
 const STORAGE_KEY = "sm_cart_v1";
 
+type SimpleAddPayload = {
+  id: string;
+  slug?: string;
+  name: string;
+  imageUrl: string;
+  price: number;
+  qty: number;
+};
+
 function safeParse(raw: string | null): CartState | null {
   if (!raw) return null;
   try {
@@ -50,23 +59,70 @@ export function useLocalCart() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [lines, hydrated]);
 
-  const add = useCallback((attar: Attar, ml: number, qty: number) => {
-    const price = attar.sizes.find((s) => s.ml === ml)?.price ?? attar.price;
-    const imageUrl = attar.images[0]?.url ?? "";
-    setLines((prev) => {
-      const key = `${attar.id}:${ml}`;
-      const existing = prev.find((l) => `${l.id}:${l.ml}` === key);
-      if (!existing) {
-        return [
-          ...prev,
-          { id: attar.id, slug: attar.slug, name: attar.name, imageUrl, ml, price, qty: Math.max(1, qty) },
-        ];
+  const add = useCallback(
+    (item: Attar | SimpleAddPayload, ml?: number, qty?: number) => {
+      // Path 1: full Attar payload with explicit ml + qty (product detail pages)
+      if ("sizes" in item) {
+        const attar = item as Attar;
+        const mlValue = ml ?? attar.sizes[0]?.ml ?? 0;
+        const qtyValue = Math.max(1, qty ?? 1);
+        const price = attar.sizes.find((s) => s.ml === mlValue)?.price ?? attar.price;
+        const imageUrl = attar.images[0]?.url ?? "";
+
+        setLines((prev) => {
+          const key = `${attar.id}:${mlValue}`;
+          const existing = prev.find((l) => `${l.id}:${l.ml}` === key);
+          if (!existing) {
+            return [
+              ...prev,
+              {
+                id: attar.id,
+                slug: attar.slug,
+                name: attar.name,
+                imageUrl,
+                ml: mlValue,
+                price,
+                qty: qtyValue,
+              },
+            ];
+          }
+          return prev.map((l) =>
+            l.id === attar.id && l.ml === mlValue ? { ...l, qty: l.qty + qtyValue } : l,
+          );
+        });
+        return;
       }
-      return prev.map((l) =>
-        l.id === attar.id && l.ml === ml ? { ...l, qty: l.qty + Math.max(1, qty) } : l,
-      );
-    });
-  }, []);
+
+      // Path 2: simplified product payload from grid cards (no ml granularity yet)
+      const payload = item as SimpleAddPayload;
+      const qtyValue = Math.max(1, payload.qty ?? 1);
+      const lineMl = 0; // unknown size for now
+      const slug = payload.slug ?? payload.id;
+
+      setLines((prev) => {
+        const key = `${payload.id}:${lineMl}`;
+        const existing = prev.find((l) => `${l.id}:${l.ml}` === key);
+        if (!existing) {
+          return [
+            ...prev,
+            {
+              id: payload.id,
+              slug,
+              name: payload.name,
+              imageUrl: payload.imageUrl,
+              ml: lineMl,
+              price: payload.price,
+              qty: qtyValue,
+            },
+          ];
+        }
+        return prev.map((l) =>
+          l.id === payload.id && l.ml === lineMl ? { ...l, qty: l.qty + qtyValue } : l,
+        );
+      });
+    },
+    [],
+  );
 
   const remove = useCallback((id: string, ml: number) => {
     setLines((prev) => prev.filter((l) => !(l.id === id && l.ml === ml)));

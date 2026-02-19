@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useCart } from "@/components/cart/CartProvider";
 
 export type Product = {
   id: string;
@@ -10,37 +11,38 @@ export type Product = {
   price: number;
   originalPrice?: number;
   currency?: string;
-  rating?: number;
-  reviewsCount?: number;
   images: {
     primary: string;
     secondary?: string;
   };
-  href: string;
+  href?: string;
   isSale?: boolean;
+  slug?: string;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
-  const {
-    title,
-    price,
-    originalPrice,
-    currency = "₹",
-    rating = 5,
-    reviewsCount = 0,
-    images,
-    href: rawHref,
-    isSale,
-    id,
-  } = product;
-  const href = rawHref ?? `/product/${id}`;
+  const { id, title, price, originalPrice, currency = "₹", images, slug } = product;
 
+  const href = product.href ?? `/product/${slug ?? id}`;
   const [hovered, setHovered] = useState(false);
 
-  const discount =
-    originalPrice && originalPrice > price
-      ? Math.round(((originalPrice - price) / originalPrice) * 100)
-      : null;
+  const { add } = useCart(); // cart context
+
+  // Performance: memoized discount
+  const discount = useMemo(() => {
+    if (!originalPrice || originalPrice <= price) return null;
+    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  }, [price, originalPrice]);
+
+  const handleAddToCart = () => {
+    add({
+      id,
+      name: title,
+      price,
+      imageUrl: images.primary,
+      qty: 1,
+    });
+  };
 
   return (
     <article className="group w-full max-w-[520px] mx-auto" itemScope itemType="https://schema.org/Product">
@@ -58,17 +60,16 @@ export default function ProductCard({ product }: { product: Product }) {
         onMouseLeave={() => setHovered(false)}
       >
         {/* Sale Badge */}
-        {isSale && (
+        {discount && (
           <span className="absolute left-4 top-4 z-20 bg-black text-white text-[11px] px-3 py-1 tracking-wide">
             SALE
           </span>
         )}
 
-        {/* Large square visual area */}
+        {/* Image Container */}
         <div className="relative w-full aspect-square flex items-center justify-center p-10">
-          {/* Primary image */}
           <Image
-            src={images.primary}
+            src={images.primary || "/placeholder.png"}
             alt={title}
             fill
             sizes="(max-width:768px) 100vw, 520px"
@@ -78,11 +79,10 @@ export default function ProductCard({ product }: { product: Product }) {
             priority={false}
           />
 
-          {/* Secondary image */}
           {images.secondary && (
             <Image
               src={images.secondary}
-              alt={`${title} alternate view`}
+              alt={`${title} alternate`}
               fill
               sizes="(max-width:768px) 100vw, 520px"
               className={`absolute inset-0 object-contain transition-opacity duration-500 ease-out ${
@@ -94,19 +94,11 @@ export default function ProductCard({ product }: { product: Product }) {
       </Link>
 
       {/* CONTENT */}
-      <div className="pt-6 pb-2 text-center px-3">
+      <div className="pt-6 pb-3 text-center px-3">
         {/* Title */}
         <h3 className="font-serif text-[18px] leading-snug text-[#1e2023]" itemProp="name">
           {title}
         </h3>
-
-        {/* Rating */}
-        {rating > 0 && (
-          <div className="mt-2 text-[13px] text-[#1e2023]/80">
-            {"★★★★★".slice(0, Math.round(rating))}
-            <span className="ml-1 text-gray-400 text-xs">({reviewsCount})</span>
-          </div>
-        )}
 
         {/* Price */}
         <div
@@ -115,7 +107,7 @@ export default function ProductCard({ product }: { product: Product }) {
           itemScope
           itemType="https://schema.org/Offer"
         >
-          {originalPrice && (
+          {originalPrice && originalPrice > price && (
             <span className="text-gray-400 line-through text-sm">
               {currency} {originalPrice.toLocaleString()}
             </span>
@@ -126,21 +118,45 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
 
           {discount && <span className="text-xs text-black/60">-{discount}%</span>}
+
+          <meta itemProp="priceCurrency" content="INR" />
+          <link itemProp="availability" href="https://schema.org/InStock" />
         </div>
 
-        {/* CTA */}
-        <Link
-          href={href}
-          className="
-            mt-6 block w-full
-            border border-[#1e2023]
-            py-3 text-[12px] tracking-[0.18em]
-            transition-all duration-300
-            hover:bg-black hover:text-white
-          "
-        >
-          ADD TO CART
-        </Link>
+        {/* CTA Buttons */}
+        <div className="mt-6 grid grid-cols-2 gap-2">
+          {/* Add to Cart */}
+          <button
+            onClick={handleAddToCart}
+            className="
+              w-full
+              border border-[#1e2023]
+              py-3 text-[11px] tracking-[0.18em]
+              transition-all duration-300
+              hover:bg-black hover:text-white
+              active:scale-[0.98]
+            "
+            aria-label={`Add ${title} to cart`}
+          >
+            ADD TO CART
+          </button>
+
+          {/* Buy Now */}
+          <Link
+            href={`${href}?buyNow=true`}
+            className="
+              w-full
+              border border-[#1e2023]
+              py-3 text-[11px] tracking-[0.18em]
+              transition-all duration-300
+              hover:bg-black hover:text-white
+              active:scale-[0.98]
+            "
+            aria-label={`Buy ${title} now`}
+          >
+            BUY NOW
+          </Link>
+        </div>
       </div>
     </article>
   );

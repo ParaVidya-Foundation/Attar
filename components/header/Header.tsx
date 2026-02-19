@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { ShoppingCart, User } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { useCart } from "@/components/cart/CartProvider";
 
 const COLLECTIONS = [
@@ -256,13 +257,7 @@ export default function Header() {
             </button>
 
             {/* Account */}
-            <Link
-              href="/account"
-              aria-label="Account"
-              className="inline-flex items-center justify-center rounded-full p-2 hover:bg-white/40 transition"
-            >
-              <User className="h-5 w-5 text-slate-900/90" />
-            </Link>
+            <UserMenu />
 
             {/* Mobile toggle */}
             <button
@@ -354,9 +349,7 @@ export default function Header() {
               <ShoppingCart className="h-5 w-5" /> <span>Cart ({count})</span>
             </button>
 
-            <Link href="/account" onClick={() => setMobileOpen(false)} className="flex items-center gap-2">
-              <User className="h-5 w-5" /> <span>Account</span>
-            </Link>
+            <UserMenu onItemClick={() => setMobileOpen(false)} />
           </div>
         </div>
       </div>
