@@ -25,6 +25,7 @@ let _clientEnv: ClientEnv | null = null;
 
 /**
  * Validates and returns server-side environment variables.
+ * Server-only: Throws error in production if required vars are missing.
  * Lazy — only runs when first called at runtime, never during build.
  */
 export function getServerEnv(): ServerEnv {
@@ -33,10 +34,13 @@ export function getServerEnv(): ServerEnv {
   const parsed = serverSchema.safeParse(process.env);
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+    const errorMsg = `Missing or invalid server environment variables: ${missing}`;
+    
     if (process.env.NODE_ENV === "production") {
-      throw new Error(`Missing or invalid environment variables: ${missing}`);
+      throw new Error(errorMsg);
     }
-    console.warn(`[env] Missing or invalid environment variables: ${missing}`);
+    
+    console.warn(`[env] ${errorMsg}`);
     return {} as ServerEnv;
   }
   _serverEnv = parsed.data;
@@ -45,6 +49,7 @@ export function getServerEnv(): ServerEnv {
 
 /**
  * Validates and returns client-safe (NEXT_PUBLIC_*) environment variables.
+ * Client-safe: Returns safe fallbacks instead of throwing in production.
  * Lazy — only runs when first called at runtime, never during build.
  */
 export function getClientEnv(): ClientEnv {
@@ -56,14 +61,45 @@ export function getClientEnv(): ClientEnv {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   });
+  
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+    const errorMsg = `Missing or invalid public environment variables: ${missing}`;
+    
+    // In production, log error but return safe fallbacks to prevent crashes
     if (process.env.NODE_ENV === "production") {
-      throw new Error(`Missing or invalid public environment variables: ${missing}`);
+      console.error(`[env] ${errorMsg} - Using fallback values`);
+      // Return safe fallback object with empty strings to prevent crashes
+      _clientEnv = {
+        NEXT_PUBLIC_SUPABASE_URL: "",
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
+        NEXT_PUBLIC_RAZORPAY_KEY_ID: "",
+        NEXT_PUBLIC_SITE_URL: undefined,
+      } as ClientEnv;
+      return _clientEnv;
     }
-    console.warn(`[env] Missing or invalid public environment variables: ${missing}`);
+    
+    console.warn(`[env] ${errorMsg}`);
     return {} as ClientEnv;
   }
+  
   _clientEnv = parsed.data;
   return _clientEnv;
+}
+
+/**
+ * Checks if required client environment variables are available.
+ * Returns true if all required vars are present, false otherwise.
+ */
+export function hasClientEnv(): boolean {
+  try {
+    const env = getClientEnv();
+    return !!(
+      env.NEXT_PUBLIC_SUPABASE_URL &&
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+      env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+    );
+  } catch {
+    return false;
+  }
 }

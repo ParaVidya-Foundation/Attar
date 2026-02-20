@@ -26,24 +26,47 @@ export function UserMenu({ onItemClick }: UserMenuProps = {}) {
   }, []);
 
   useEffect(() => {
-    const supabase = createBrowserClient();
+    let subscription: { unsubscribe: () => void } | null = null;
 
-    supabase.auth.getUser().then(({ data: { user: u } }) => setUser(u ?? null));
+    try {
+      const supabase = createBrowserClient();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+      supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => setUser(u ?? null)).catch((err: unknown) => {
+        console.error("[UserMenu] Error getting user:", err);
+        setUser(null);
+      });
 
-    return () => subscription.unsubscribe();
+      const {
+        data: { subscription: sub },
+      } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
+        setUser(session?.user ?? null);
+      });
+
+      subscription = sub;
+    } catch (err) {
+      console.error("[UserMenu] Error initializing Supabase:", err);
+      setUser(null);
+    }
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   async function handleLogout() {
-    const supabase = createBrowserClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const supabase = createBrowserClient();
+      await supabase.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      console.error("[UserMenu] Error during logout:", err);
+      // Still redirect even if logout fails
+      router.push("/");
+      router.refresh();
+    }
   }
 
   if (!user) {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
 
 type Size = { id: string; label: string; priceModifier?: number };
@@ -28,6 +29,7 @@ export type FullProduct = {
 
 export default function ProductInfo({ product }: { product: FullProduct }) {
   const { addItem, setOpen } = useCart();
+  const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string>(product.sizes?.[0]?.id ?? "");
   const [quantity, setQuantity] = useState<number>(1);
   const [toast, setToast] = useState<string | null>(null);
@@ -58,14 +60,7 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function buyNow() {
-    addItem({
-      id: product.id,
-      title: product.title,
-      price: product.priceValue ?? 0,
-      image: product.images?.[0]?.src ?? `/products/${product.slug}.webp`,
-      quantity,
-    });
-    setOpen(true);
+    router.push(`/checkout?productId=${product.id}&qty=${quantity}`);
   }
 
   return (

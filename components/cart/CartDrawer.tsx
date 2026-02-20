@@ -1,20 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState, JSX } from "react";
+import React, { useCallback, useEffect, useRef, JSX } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FocusTrap } from "@/components/ui/FocusTrap";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "./CartProvider";
-
-declare global {
-  interface Window {
-    Razorpay: new (options: Record<string, unknown>) => {
-      open: () => void;
-      on: (event: string, cb: () => void) => void;
-    };
-  }
-}
+import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 
 function formatINR(v: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -22,20 +14,6 @@ function formatINR(v: number) {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(v);
-}
-
-function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (typeof window !== "undefined" && window.Razorpay) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
 }
 
 export function CartDrawer(): JSX.Element | null {
@@ -51,95 +29,30 @@ export function CartDrawer(): JSX.Element | null {
 
   const { open, setOpen, lines, total, remove, setQty, clear } = cart;
   const router = useRouter();
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const { loading: checkoutLoading, error: checkoutError, startCheckout } = useRazorpayCheckout({
+    onSuccess: () => {
+      clear();
+      setOpen(false);
+      router.push("/account/orders");
+      router.refresh();
+    },
+  });
+
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const handleCheckout = useCallback(async () => {
     if (lines.length === 0) return;
-    setCheckoutError(null);
-    setCheckoutLoading(true);
 
-    try {
-      const payload = {
-        items: lines.map((l) => ({
-          productId: l.id,
-          size_ml: l.ml || 3,
-          qty: l.qty,
-        })),
-      };
+    const items = lines.map((l) => ({
+      productId: l.id,
+      size_ml: l.ml || 3,
+      qty: l.qty,
+    }));
 
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 401) {
-        setOpen(false);
-        router.push("/login");
-        return;
-      }
-
-      const data = await res.json();
-      if (!res.ok) {
-        setCheckoutError(data.error ?? "Order creation failed");
-        return;
-      }
-
-      const loaded = await loadRazorpayScript();
-      if (!loaded) {
-        setCheckoutError("Payment system could not load. Please try again.");
-        return;
-      }
-
-      const options: Record<string, unknown> = {
-        key: data.keyId,
-        amount: data.amount,
-        currency: data.currency ?? "INR",
-        name: "Anand Ras",
-        description: "Luxury Attar Order",
-        order_id: data.razorpayOrderId,
-        handler: async (response: {
-          razorpay_order_id: string;
-          razorpay_payment_id: string;
-          razorpay_signature: string;
-        }) => {
-          try {
-            const verifyRes = await fetch("/api/orders/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
-            });
-
-            if (verifyRes.ok) {
-              clear();
-              setOpen(false);
-              router.push("/account/orders");
-              router.refresh();
-            } else {
-              setCheckoutError("Payment verification failed. Contact support if charged.");
-            }
-          } catch {
-            setCheckoutError("Verification error. Your payment is safe — check your orders.");
-          }
-        },
-        prefill: {},
-        theme: { color: "#1e2023" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", () => {
-        setCheckoutError("Payment failed. Please try again.");
-      });
-      rzp.open();
-    } catch {
-      setCheckoutError("Something went wrong. Please try again.");
-    } finally {
-      setCheckoutLoading(false);
-    }
-  }, [lines, clear, setOpen, router]);
+    await startCheckout(items);
+  }, [lines, startCheckout]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

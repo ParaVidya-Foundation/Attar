@@ -19,7 +19,8 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp",
-      "esbuild"
+      "esbuild",
+      "unrs-resolver"
     ]
   },
   "dependencies": {

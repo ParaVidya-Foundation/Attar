@@ -38,10 +38,10 @@ export function OrderTable({ orders }: Props) {
         <thead>
           <tr className="border-b border-neutral-200 bg-neutral-50">
             <th className="px-4 py-3 text-left font-medium text-neutral-700">Order ID</th>
-            <th className="px-4 py-3 text-left font-medium text-neutral-700">Customer</th>
+            <th className="px-4 py-3 text-left font-medium text-neutral-700">Name</th>
+            <th className="px-4 py-3 text-left font-medium text-neutral-700">Contact</th>
             <th className="px-4 py-3 text-left font-medium text-neutral-700">Amount</th>
             <th className="px-4 py-3 text-left font-medium text-neutral-700">Status</th>
-            <th className="px-4 py-3 text-left font-medium text-neutral-700">Razorpay</th>
             <th className="px-4 py-3 text-left font-medium text-neutral-700">Date</th>
           </tr>
         </thead>
@@ -49,7 +49,11 @@ export function OrderTable({ orders }: Props) {
           {orders.map((o) => (
             <tr key={o.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
               <td className="px-4 py-3 font-mono text-xs text-neutral-600">{o.id.slice(0, 8)}…</td>
-              <td className="px-4 py-3 text-neutral-700">{o.user_email || "—"}</td>
+              <td className="px-4 py-3 text-neutral-700">{o.name || "—"}</td>
+              <td className="px-4 py-3">
+                <div className="text-sm text-neutral-700">{o.user_email || o.email || "—"}</div>
+                {o.phone && <div className="text-xs text-neutral-400">{o.phone}</div>}
+              </td>
               <td className="px-4 py-3 text-neutral-700">₹{o.total_amount.toLocaleString("en-IN")}</td>
               <td className="px-4 py-3">
                 <select
@@ -64,9 +68,6 @@ export function OrderTable({ orders }: Props) {
                     </option>
                   ))}
                 </select>
-              </td>
-              <td className="px-4 py-3 font-mono text-xs text-neutral-500">
-                {o.razorpay_order_id ? o.razorpay_order_id.slice(0, 12) + "…" : "—"}
               </td>
               <td className="px-4 py-3 text-neutral-600">
                 {new Date(o.created_at).toLocaleDateString("en-IN")}

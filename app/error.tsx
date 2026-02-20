@@ -26,13 +26,42 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log to error tracking service in production
+    const errorInfo = {
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      name: error.name,
+      timestamp: new Date().toISOString(),
+    };
+
     if (process.env.NODE_ENV === "production") {
-      // TODO: Send to error tracking (e.g., Sentry, LogRocket)
-      // Example: captureException(error);
+      // Log to console for now - can be extended to send to error tracking service
+      console.error("[Error Boundary] Production error:", errorInfo);
+      
+      // Check if it's an environment-related error
+      if (
+        error.message.includes("environment") ||
+        error.message.includes("NEXT_PUBLIC") ||
+        error.message.includes("Supabase") ||
+        error.message.includes("Razorpay")
+      ) {
+        console.error(
+          "[Error Boundary] Environment configuration error detected. " +
+            "Please check Vercel environment variables."
+        );
+      }
     } else {
-      console.error("[Error Boundary]:", error);
+      console.error("[Error Boundary] Development error:", errorInfo);
     }
   }, [error]);
+
+  // Check if error is environment-related
+  const isEnvError =
+    error.message.includes("environment") ||
+    error.message.includes("NEXT_PUBLIC") ||
+    error.message.includes("Supabase") ||
+    error.message.includes("Razorpay") ||
+    error.message.includes("Missing");
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
@@ -40,8 +69,19 @@ export default function Error({
         <ErrorIcon className="mx-auto h-16 w-16 text-ink/60" />
         <h1 className="mt-6 font-serif text-3xl font-semibold text-ink">Something Went Wrong</h1>
         <p className="mt-4 text-lg text-charcoal/70">
-          We encountered an unexpected error. Please try again or return home.
+          {isEnvError
+            ? "Configuration error detected. Please check environment variables."
+            : "We encountered an unexpected error. Please try again or return home."}
         </p>
+        {process.env.NODE_ENV === "development" && (
+          <details className="mt-4 text-left">
+            <summary className="cursor-pointer text-sm text-charcoal/60">Error Details</summary>
+            <pre className="mt-2 overflow-auto rounded bg-charcoal/10 p-4 text-xs text-charcoal/80">
+              {error.message}
+              {error.stack && `\n\n${error.stack}`}
+            </pre>
+          </details>
+        )}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <button
             onClick={reset}

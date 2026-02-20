@@ -18,6 +18,9 @@ export type ProductRow = {
 export type OrderRow = {
   id: string;
   user_id: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
   status: string;
   total_amount: number;
   currency: string;
@@ -140,18 +143,30 @@ export async function getProducts(page = 1, search?: string): Promise<{ data: Pr
   };
 }
 
-export async function getOrders(page = 1): Promise<{ data: OrderRow[]; total: number }> {
+export async function getOrders(
+  page = 1,
+  statusFilter?: string,
+): Promise<{ data: OrderRow[]; total: number }> {
   const supabase = createAdminClient();
   const pageSize = 20;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  const { data: orders, error: ordersError, count } = await supabase
+  let query = supabase
     .from("orders")
-    .select("id,user_id,status,total_amount,currency,razorpay_order_id,razorpay_payment_id,created_at", { count: "exact" })
+    .select(
+      "id,user_id,name,email,phone,status,total_amount,currency,razorpay_order_id,razorpay_payment_id,created_at",
+      { count: "exact" },
+    )
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  if (statusFilter && statusFilter !== "all") {
+    query = query.eq("status", statusFilter);
+  }
+
+  const { data: orders, error: ordersError, count } = await query;
 
   if (ordersError || !orders?.length) {
     return { data: [], total: count ?? 0 };
@@ -169,7 +184,7 @@ export async function getOrders(page = 1): Promise<{ data: OrderRow[]; total: nu
 
   const data: OrderRow[] = orders.map((o) => ({
     ...o,
-    user_email: o.user_id ? emailMap.get(o.user_id) ?? "" : "",
+    user_email: o.email || (o.user_id ? emailMap.get(o.user_id) ?? "" : ""),
   }));
 
   return { data, total: count ?? 0 };

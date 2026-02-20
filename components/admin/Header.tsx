@@ -23,10 +23,17 @@ export function Header({ name, email }: HeaderProps) {
   const pageTitle = PAGE_TITLES[pathname] ?? "Admin";
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      console.error("[AdminHeader] Error during logout:", err);
+      // Still redirect even if logout fails
+      router.push("/");
+      router.refresh();
+    }
   }
 
   return (

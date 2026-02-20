@@ -6,6 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
+import { getServerEnv } from "@/lib/env";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -110,7 +111,7 @@ export async function POST(req: Request) {
       .from("orders")
       .insert({
         user_id: user.id,
-        status: "created",
+        status: "pending",
         total_amount: total,
         currency: "INR",
         razorpay_order_id: razorpayOrder.id,
@@ -137,12 +138,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
+    // Use safe env access
+    const env = getServerEnv();
+    const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+    if (!keyId) {
+      console.error("[orders] NEXT_PUBLIC_RAZORPAY_KEY_ID not configured");
+      return NextResponse.json(
+        { error: "Payment configuration error" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       orderId: order.id,
       razorpayOrderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
-      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      keyId,
     });
   } catch (err) {
     console.error("[orders/create] Unexpected error:", err);

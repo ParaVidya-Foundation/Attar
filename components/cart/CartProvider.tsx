@@ -42,7 +42,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         imageUrl: item.image,
         qty: item.quantity,
       });
-      console.log("Added to cart", item.id);
     },
     [cart.add],
   );
