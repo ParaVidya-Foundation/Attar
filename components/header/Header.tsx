@@ -187,14 +187,14 @@ export default function Header() {
                 id="collections-mega"
                 onMouseEnter={openMega}
                 onMouseLeave={closeMegaDelayed}
-                className={`pointer-events-auto absolute right-0 top-full mt-3 w-[680px] max-w-[95vw] rounded-2xl border border-white/20 bg-white/60 backdrop-blur-lg shadow-lg overflow-hidden transition-all duration-300 transform origin-top-right
+                className={`pointer-events-auto absolute right-0 top-full mt-3 w-[680px] max-w-[calc(100vw-2rem)] rounded-2xl border border-white/20 bg-white/60 backdrop-blur-lg shadow-lg overflow-hidden transition-all duration-300 transform origin-top-right
                   ${megaOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-[0.995] pointer-events-none"}`}
                 role="menu"
                 aria-label="Collections menu"
               >
-                <div className="flex w-full">
+                <div className="flex flex-col md:flex-row w-full">
                   {/* left list */}
-                  <div className="w-1/2 p-4 sm:p-6">
+                  <div className="w-full md:w-1/2 p-4 sm:p-6">
                     <ul className="grid gap-2">
                       {COLLECTIONS.map((c) => (
                         <li key={c.id}>
@@ -214,7 +214,7 @@ export default function Header() {
                   </div>
 
                   {/* right preview */}
-                  <div className="w-1/2 relative h-[220px] sm:h-[240px] bg-gradient-to-tr from-white/40 to-white/10 flex items-center justify-center">
+                  <div className="hidden md:block w-1/2 relative h-[220px] sm:h-[240px] bg-gradient-to-tr from-white/40 to-white/10 flex items-center justify-center">
                     {preview && (
                       <div className="relative w-full h-full p-4">
                         <Image

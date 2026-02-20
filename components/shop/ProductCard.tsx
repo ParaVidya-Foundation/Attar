@@ -45,7 +45,7 @@ export default function ProductCard({ product }: { product: Product }) {
   };
 
   return (
-    <article className="group w-full max-w-[520px] mx-auto" itemScope itemType="https://schema.org/Product">
+    <article className="group w-full mx-auto" itemScope itemType="https://schema.org/Product">
       {/* IMAGE BLOCK */}
       <Link
         href={href}
@@ -96,7 +96,7 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* CONTENT */}
       <div className="pt-6 pb-3 text-center px-3">
         {/* Title */}
-        <h3 className="font-serif text-[18px] leading-snug text-[#1e2023]" itemProp="name">
+        <h3 className="font-serif text-base sm:text-[18px] leading-snug text-[#1e2023] line-clamp-2" itemProp="name">
           {title}
         </h3>
 
@@ -131,7 +131,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className="
               w-full
               border border-[#1e2023]
-              py-3 text-[11px] tracking-[0.18em]
+              py-2.5 sm:py-3 text-[10px] sm:text-[11px] tracking-[0.18em]
               transition-all duration-300
               hover:bg-black hover:text-white
               active:scale-[0.98]
@@ -147,7 +147,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className="
               w-full
               border border-[#1e2023]
-              py-3 text-[11px] tracking-[0.18em]
+              py-2.5 sm:py-3 text-[10px] sm:text-[11px] tracking-[0.18em]
               transition-all duration-300
               hover:bg-black hover:text-white
               active:scale-[0.98]

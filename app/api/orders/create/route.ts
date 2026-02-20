@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { getServerEnv } from "@/lib/env";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
+import type { OrderPayload } from "@/types/cart";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -20,6 +22,26 @@ const guestSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Rate limiting: 5 order attempts per minute per IP
+  const identifier = getClientIdentifier(req);
+  const limit = rateLimit(identifier, 5, 60 * 1000);
+
+  if (!limit.allowed) {
+    console.warn("[RATE LIMIT EXCEEDED]", { identifier });
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Limit": "5",
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(limit.resetAt),
+        },
+      }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -27,8 +49,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = guestSchema.safeParse(body);
+  const parsed = guestSchema.safeParse(body as OrderPayload);
   if (!parsed.success) {
+    console.warn("[ORDER CREATE] Validation failed", {
+      issues: parsed.error.flatten(),
+    });
     return NextResponse.json(
       { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
       { status: 400 },
@@ -59,7 +84,29 @@ export async function POST(req: Request) {
       .single();
 
     if (!product || !product.is_active) {
+      console.warn("[orders/create] Product not found or inactive:", productId);
       return NextResponse.json({ error: "Product not found or unavailable" }, { status: 400 });
+    }
+
+    // INVENTORY CHECK: Verify stock availability before creating order
+    const { data: inventory } = await admin
+      .from("inventory")
+      .select("stock")
+      .eq("product_id", productId)
+      .eq("size_ml", 3) // Default size for guest checkout
+      .single();
+
+    const availableStock = inventory?.stock ?? 0;
+    if (availableStock < qty) {
+      console.warn("[orders/create] Insufficient inventory:", {
+        productId,
+        requested: qty,
+        available: availableStock,
+      });
+      return NextResponse.json(
+        { error: `Only ${availableStock} items available in stock` },
+        { status: 400 }
+      );
     }
 
     const unitPrice: number = product.price;
@@ -68,6 +115,14 @@ export async function POST(req: Request) {
     if (total <= 0) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
     }
+
+    console.info("[ORDER CREATED]", {
+      productId,
+      qty,
+      total,
+      email: email.trim().toLowerCase(),
+      userId: userId || "guest",
+    });
 
     const receipt = `ord_${Date.now()}`;
     const razorpayOrder = await createRazorpayOrder({
@@ -92,7 +147,11 @@ export async function POST(req: Request) {
       .single();
 
     if (orderErr || !order) {
-      console.error("[orders/create] Order insert failed:", orderErr);
+      console.error("[ORDER CREATION FAILED]", {
+        error: orderErr,
+        productId,
+        email: email.trim().toLowerCase(),
+      });
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -105,7 +164,10 @@ export async function POST(req: Request) {
     });
 
     if (itemsErr) {
-      console.error("[orders/create] Order items insert failed:", itemsErr);
+      console.error("[ORDER ITEMS INSERT FAILED]", {
+        error: itemsErr,
+        orderId: order.id,
+      });
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -117,7 +179,7 @@ export async function POST(req: Request) {
       console.error("[orders/create] NEXT_PUBLIC_RAZORPAY_KEY_ID not configured");
       return NextResponse.json(
         { error: "Payment configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -129,7 +191,11 @@ export async function POST(req: Request) {
       keyId,
     });
   } catch (err) {
-    console.error("[orders/create] Unexpected error:", err);
+    console.error("[ORDER CREATION ERROR]", {
+      error: err instanceof Error ? err.message : String(err),
+      productId,
+      email: email.trim().toLowerCase(),
+    });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

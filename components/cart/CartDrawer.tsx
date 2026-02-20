@@ -100,7 +100,7 @@ export function CartDrawer(): JSX.Element | null {
           role="dialog"
           aria-modal="true"
           aria-label="Shopping cart"
-          className="relative ml-auto w-full max-w-md h-screen
+          className="relative ml-auto w-full sm:max-w-md h-screen
                      top-[var(--site-header-height,0px)]
                      border-l border-white/12
                      bg-white/70 backdrop-blur-lg
@@ -140,7 +140,7 @@ export function CartDrawer(): JSX.Element | null {
                   {lines.map((l) => (
                     <li
                       key={`${l.id}:${l.ml}`}
-                      className="flex gap-3 rounded-2xl border border-white/12 bg-white/55 p-3"
+                      className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-white/12 bg-white/55 p-3"
                     >
                       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-gray-50">
                         {l.imageUrl ? (
@@ -150,10 +150,10 @@ export function CartDrawer(): JSX.Element | null {
                         )}
                       </div>
 
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 w-full">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="truncate font-serif text-base text-gray-900">{l.name}</p>
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="truncate font-serif text-sm sm:text-base text-gray-900">{l.name}</p>
+                          <p className="text-sm font-medium text-gray-900 shrink-0">
                             {formatINR((l.price ?? 0) * (l.qty ?? 1))}
                           </p>
                         </div>
@@ -162,7 +162,7 @@ export function CartDrawer(): JSX.Element | null {
                           {l.ml} ml • {formatINR(l.price)}
                         </p>
 
-                        <div className="mt-3 flex items-center gap-3">
+                        <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-3">
                           <label htmlFor={`qty-${l.id}-${l.ml}`} className="sr-only">
                             Quantity
                           </label>

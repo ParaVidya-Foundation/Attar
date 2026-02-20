@@ -5,6 +5,7 @@
  */
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { recordWebhookReceived } from "@/app/api/health/route";
 import crypto from "crypto";
 
 function extractPaymentEntity(payload: Record<string, unknown>) {
@@ -29,9 +30,21 @@ async function markOrderPaid(
 ) {
   const admin = createAdminClient();
 
+  // IDEMPOTENCY CHECK: If payment already exists, return success immediately
+  const { data: existingPayment } = await admin
+    .from("payments")
+    .select("id")
+    .eq("razorpay_payment_id", razorpayPaymentId)
+    .single();
+
+  if (existingPayment) {
+    console.info("[webhook] Payment already processed (idempotent):", razorpayPaymentId);
+    return { ok: true, alreadyProcessed: true };
+  }
+
   const { data: order, error: orderErr } = await admin
     .from("orders")
-    .select("id, status")
+    .select("id, status, razorpay_payment_id")
     .eq("razorpay_order_id", razorpayOrderId)
     .single();
 
@@ -40,10 +53,24 @@ async function markOrderPaid(
     return { ok: false, status: 404 };
   }
 
-  if (order.status === "paid") {
+  // Additional idempotency check: if order already has this payment_id
+  if (order.razorpay_payment_id === razorpayPaymentId && order.status === "paid") {
+    console.info("[webhook] Order already marked as paid with this payment:", razorpayPaymentId);
     return { ok: true, alreadyProcessed: true };
   }
 
+  // If order is already paid with different payment_id, log warning but return success
+  if (order.status === "paid" && order.razorpay_payment_id !== razorpayPaymentId) {
+    console.warn(
+      "[webhook] Order already paid with different payment_id:",
+      order.razorpay_payment_id,
+      "new:",
+      razorpayPaymentId,
+    );
+    return { ok: true, alreadyProcessed: true };
+  }
+
+  // Update order status atomically
   const { error: updateErr } = await admin
     .from("orders")
     .update({
@@ -51,13 +78,15 @@ async function markOrderPaid(
       razorpay_payment_id: razorpayPaymentId,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", order.id);
+    .eq("id", order.id)
+    .eq("status", order.status); // Optimistic locking: only update if status hasn't changed
 
   if (updateErr) {
     console.error("[webhook] Order status update failed:", updateErr);
     return { ok: false, status: 500 };
   }
 
+  // Insert payment record (with idempotency protection via UNIQUE constraint)
   const { error: paymentErr } = await admin.from("payments").insert({
     order_id: order.id,
     razorpay_payment_id: razorpayPaymentId,
@@ -65,12 +94,20 @@ async function markOrderPaid(
     status: "captured",
     amount: Math.round(amount / 100),
     currency,
+    method: "razorpay",
   });
 
   if (paymentErr) {
-    console.error("[webhook] Payment insert failed:", paymentErr);
+    // If payment insert fails due to duplicate, that's okay (idempotent)
+    if (paymentErr.code === "23505") {
+      console.info("[webhook] Payment record already exists (idempotent):", razorpayPaymentId);
+    } else {
+      console.error("[webhook] Payment insert failed:", paymentErr);
+      // Don't fail the webhook - order is already updated
+    }
   }
 
+  // Decrement inventory
   const { data: orderItems } = await admin
     .from("order_items")
     .select("product_id, size_ml, qty")
@@ -91,9 +128,17 @@ async function markOrderPaid(
           item.size_ml,
           invErr,
         );
+        // Log but don't fail - inventory can be manually adjusted
       }
     }
   }
+
+  console.info("[webhook] Order marked as paid successfully:", {
+    orderId: order.id,
+    razorpayOrderId,
+    razorpayPaymentId,
+    amount,
+  });
 
   return { ok: true };
 }
@@ -127,8 +172,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Record webhook received for health monitoring
+  recordWebhookReceived();
+
   const event = payload.event as string | undefined;
-  console.info("[webhook] Received event:", event);
+  const webhookId = (payload as { id?: string }).id;
+  
+  console.info("[WEBHOOK RECEIVED]", {
+    event,
+    webhookId,
+    timestamp: new Date().toISOString(),
+  });
 
   // ── payment.captured ──────────────────────────────────────────────
   if (event === "payment.captured") {
@@ -146,7 +200,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing order_id or payment_id" }, { status: 400 });
     }
 
-    console.info("[webhook] payment.captured:", { razorpayOrderId, razorpayPaymentId, amount });
+    console.info("[WEBHOOK PAYMENT CAPTURED]", {
+      razorpayOrderId,
+      razorpayPaymentId,
+      amount,
+      currency,
+      webhookId,
+    });
 
     const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId, amount, currency);
 
@@ -183,7 +243,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
     }
 
-    console.info("[webhook] order.paid:", { razorpayOrderId, razorpayPaymentId, amount });
+    console.info("[WEBHOOK ORDER PAID]", {
+      razorpayOrderId,
+      razorpayPaymentId,
+      amount,
+      currency,
+      webhookId,
+    });
 
     const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId, amount, currency);
 
@@ -205,7 +271,10 @@ export async function POST(req: Request) {
     const entity = extractPaymentEntity(payload);
     const razorpayOrderId = entity?.order_id as string | undefined;
 
-    console.info("[webhook] payment.failed:", { razorpayOrderId });
+    console.info("[WEBHOOK PAYMENT FAILED]", {
+      razorpayOrderId,
+      webhookId,
+    });
 
     if (razorpayOrderId) {
       const admin = createAdminClient();
@@ -219,6 +288,10 @@ export async function POST(req: Request) {
   }
 
   // ── unhandled event ───────────────────────────────────────────────
-  console.info("[webhook] Unhandled event type:", event);
+  console.warn("[WEBHOOK UNHANDLED EVENT]", {
+    event,
+    webhookId,
+    payload: JSON.stringify(payload).slice(0, 500), // Log first 500 chars
+  });
   return NextResponse.json({ ok: true, message: "Event ignored" });
 }

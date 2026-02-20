@@ -33,7 +33,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-wrap gap-2">
         {STATUS_FILTERS.map((s) => (
           <Link

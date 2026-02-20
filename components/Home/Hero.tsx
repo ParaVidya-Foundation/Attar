@@ -25,7 +25,7 @@ export default function Hero() {
           >
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gray-500">ANAND RAS</p>
 
-            <h1 className="mt-3 font-serif text-4xl leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-3 font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-gray-900">
               Perfume for your soul
             </h1>
 
@@ -59,12 +59,14 @@ export default function Hero() {
               className="
                 relative
                 ml-auto
-                w-[120%]              /* bigger than container */
-                max-w-none
-                aspect-[3/2]          /* correct horizontal ratio */
-                lg:w-[140%]           /* extra large on desktop */
-                lg:-mr-32             /* overlap outside right */
+                w-full
+                max-w-full
+                aspect-[3/2]
+                sm:w-[110%]
+                lg:w-[140%]
+                lg:-mr-32
                 xl:-mr-48
+                overflow-hidden
               "
             >
               <Image

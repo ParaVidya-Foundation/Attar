@@ -6,10 +6,18 @@ import { NextResponse } from "next/server";
 import { getServerEnv, getClientEnv, hasClientEnv } from "@/lib/env";
 import { createStaticClient } from "@/lib/supabase/server";
 
+// Track last webhook received time
+let lastWebhookTime: Date | null = null;
+
+export function recordWebhookReceived() {
+  lastWebhookTime = new Date();
+}
+
 export async function GET() {
   const health: {
     status: "ok" | "degraded" | "error";
     timestamp: string;
+    environment: "production" | "development";
     env: {
       supabase: boolean;
       razorpay: boolean;
@@ -19,9 +27,17 @@ export async function GET() {
       connected: boolean;
       error?: string;
     };
+    razorpay?: {
+      keysPresent: boolean;
+    };
+    webhook?: {
+      lastReceivedTime: string | null;
+      status: "active" | "stale" | "never";
+    };
   } = {
     status: "ok",
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV === "production" ? "production" : "development",
     env: {
       supabase: false,
       razorpay: false,
@@ -81,10 +97,35 @@ export async function GET() {
       health.status = "degraded";
     }
 
+    // Razorpay keys check
+    health.razorpay = {
+      keysPresent: !!(
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID &&
+        process.env.RAZORPAY_KEY_SECRET &&
+        process.env.RAZORPAY_WEBHOOK_SECRET
+      ),
+    };
+
+    // Webhook status
+    if (lastWebhookTime) {
+      const minutesSinceLastWebhook = (Date.now() - lastWebhookTime.getTime()) / (1000 * 60);
+      health.webhook = {
+        lastReceivedTime: lastWebhookTime.toISOString(),
+        status: minutesSinceLastWebhook < 60 ? "active" : "stale",
+      };
+    } else {
+      health.webhook = {
+        lastReceivedTime: null,
+        status: "never",
+      };
+    }
+
     // Determine final status
     if (!health.env.allRequired) {
       health.status = "error";
-    } else if (!health.supabase?.connected) {
+    } else if (!health.supabase?.connected || !health.razorpay?.keysPresent) {
+      health.status = "degraded";
+    } else if (health.webhook?.status === "stale") {
       health.status = "degraded";
     }
 

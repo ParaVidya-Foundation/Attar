@@ -58,7 +58,11 @@ export function useRazorpayCheckout(opts?: {
       setLoading(true);
 
       try {
-        const res = await fetch("/api/orders/create", {
+        // Cart-based checkout goes through /api/orders (cart endpoint),
+        // which expects { items: [{ productId, size_ml, qty }, ...] }.
+        // This keeps the cart flow separate from the guest /checkout page
+        // which uses /api/orders/create.
+        const res = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items }),

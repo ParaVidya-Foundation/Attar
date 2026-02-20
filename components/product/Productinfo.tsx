@@ -64,9 +64,9 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   return (
-    <aside className="w-full lg:w-1/2 p-6 md:p-10 flex flex-col justify-start border-[2px] border-[#1e2023]">
+    <aside className="w-full lg:w-1/2 p-4 sm:p-6 md:p-10 flex flex-col justify-start border-[2px] border-[#1e2023]">
       <div className="max-w-xl">
-        <h1 className="font-serif text-3xl sm:text-4xl leading-tight">{product.title}</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight">{product.title}</h1>
 
         <p className="mt-3 text-2xl font-semibold">{product.price}</p>
 
@@ -122,8 +122,8 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
         )}
 
         {/* Quantity + actions */}
-        <div className="mt-6 flex items-center gap-4">
-          <div className="inline-flex items-center border border-gray-200 rounded">
+        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+          <div className="inline-flex items-center border border-gray-200 rounded self-start">
             <button
               aria-label="Decrease quantity"
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -143,12 +143,12 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
 
           <button
             onClick={addToCart}
-            className="flex-1 border border-[#1e2023] px-5 py-2 text-sm tracking-wider hover:bg-black hover:text-white transition-all"
+            className="flex-1 sm:flex-1 border border-[#1e2023] px-5 py-2.5 sm:py-2 text-sm tracking-wider hover:bg-black hover:text-white transition-all"
           >
             Add to cart
           </button>
 
-          <button onClick={buyNow} className="bg-[#1e2023] text-white px-4 py-2 text-sm rounded-sm">
+          <button onClick={buyNow} className="w-full sm:w-auto bg-[#1e2023] text-white px-4 py-2.5 sm:py-2 text-sm rounded-sm">
             Buy it now
           </button>
         </div>

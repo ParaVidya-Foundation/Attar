@@ -49,7 +49,70 @@ export function ProductTable({ products, categories }: Props) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+      {/* Mobile Card Layout */}
+      <div className="block md:hidden space-y-4">
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="rounded-xl border border-neutral-200 bg-white p-4 space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-neutral-900 truncate">{p.name}</p>
+                <p className="mt-1 text-sm text-neutral-600">{getCategoryName(p.category_id)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggle(p.id, p.is_active)}
+                disabled={updating === p.id}
+                className="shrink-0 focus:outline-none disabled:opacity-50"
+              >
+                <Badge variant={p.is_active ? "success" : "secondary"}>
+                  {p.is_active ? "Active" : "Inactive"}
+                </Badge>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-neutral-500">Price</p>
+                <p className="mt-0.5 font-medium text-neutral-900">₹{p.price.toLocaleString("en-IN")}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500">Original</p>
+                <p className="mt-0.5 text-neutral-600">
+                  {p.original_price ? `₹${p.original_price.toLocaleString("en-IN")}` : "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-100">
+              <p className="text-xs text-neutral-600">
+                {new Date(p.created_at).toLocaleDateString("en-IN")}
+              </p>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/admin/products/${p.id}`}
+                  className="text-sm text-neutral-500 hover:text-neutral-900"
+                >
+                  Edit
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete({ id: p.id, name: p.name })}
+                  className="text-red-600 hover:text-red-700 p-1"
+                  aria-label={`Delete ${p.name}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-neutral-200 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50">

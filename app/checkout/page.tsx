@@ -82,6 +82,9 @@ function CheckoutForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Debug log to trace real-world issues with bad URLs / params
+    console.log("[Checkout] Incoming params", { productId, qty });
+
     if (!productId) {
       setError("No product selected.");
       setLoading(false);
@@ -216,10 +219,10 @@ function CheckoutForm() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-      <h1 className="font-serif text-3xl tracking-tight text-neutral-900">Checkout</h1>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:py-10 sm:px-6 lg:px-8">
+      <h1 className="font-serif text-2xl sm:text-3xl tracking-tight text-neutral-900">Checkout</h1>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-2">
+      <div className="mt-6 sm:mt-8 grid gap-8 sm:gap-10 lg:grid-cols-2">
         {/* Product summary */}
         <div className="order-2 lg:order-1">
           <div className="rounded-2xl border border-neutral-200 bg-white p-5">
@@ -255,7 +258,7 @@ function CheckoutForm() {
         </div>
 
         {/* Guest form */}
-        <form onSubmit={handleSubmit} className="order-1 space-y-5 lg:order-2">
+        <form onSubmit={handleSubmit} className="order-1 space-y-4 sm:space-y-5 lg:order-2">
           <div>
             <label htmlFor="ck-name" className="mb-1.5 block text-sm font-medium text-neutral-700">
               Full Name
@@ -321,7 +324,7 @@ function CheckoutForm() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-xl bg-neutral-900 px-4 py-3.5 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full rounded-xl bg-neutral-900 px-4 py-3 sm:py-3.5 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Processing…" : `Pay ${formatINR(total)}`}
           </button>

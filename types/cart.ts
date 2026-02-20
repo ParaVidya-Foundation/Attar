@@ -12,3 +12,12 @@ export type CheckoutPayload = {
   items: { product_id: string; quantity: number; price: number }[];
   total: number;
 };
+
+/** Guest checkout payload sent to /api/orders/create */
+export type OrderPayload = {
+  name: string;
+  email: string;
+  phone: string;
+  productId: string;
+  qty: number;
+};

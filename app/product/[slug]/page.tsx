@@ -118,7 +118,7 @@ export default async function ProductPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="flex w-full flex-col lg:flex-row">
+      <div className="flex w-full flex-col lg:flex-row overflow-hidden">
         <ProductShowcase product={showcaseProduct} />
         <ProductInfo product={infoProduct} />
       </div>
