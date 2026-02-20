@@ -7,7 +7,7 @@ import { absoluteUrl } from "@/lib/seo";
 export default function robots(): MetadataRoute.Robots {
   const baseUrl =
     (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SITE_URL) ||
-    "https://kamalvallabh.example";
+    "https://anandras.example";
 
   return {
     rules: [

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { ShoppingBag } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "My Orders",
   robots: "noindex",

@@ -47,8 +47,8 @@ export default function BulkOrder() {
 
               <div>
                 <p className="text-xs tracking-widest text-gray-500 mb-1">EMAIL</p>
-                <a href="mailto:bulk@kamalvallabh.com" className="font-medium text-[#1e2023] hover:underline">
-                  bulk@kamalvallabh.com
+                <a href="mailto:bulk@anandras.com" className="font-medium text-[#1e2023] hover:underline">
+                  bulk@anandras.com
                 </a>
               </div>
 

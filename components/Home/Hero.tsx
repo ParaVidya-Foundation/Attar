@@ -23,7 +23,7 @@ export default function Hero() {
               mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
             }`}
           >
-            <p className="text-[11px] font-semibold tracking-[0.28em] text-gray-500">KAMAL VALLABH</p>
+            <p className="text-[11px] font-semibold tracking-[0.28em] text-gray-500">ANAND RAS</p>
 
             <h1 className="mt-3 font-serif text-4xl leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
               Perfume for your soul

@@ -98,7 +98,7 @@ export function CartDrawer(): JSX.Element | null {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency ?? "INR",
-        name: "Kamal Vallabh",
+        name: "Anand Ras",
         description: "Luxury Attar Order",
         order_id: data.razorpayOrderId,
         handler: async (response: {

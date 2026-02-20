@@ -22,7 +22,7 @@ export default function IncenseHero() {
             mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
           }`}
         >
-          <p className="text-xs font-semibold tracking-[0.28em] text-charcoal/60">KAMAL VALLABH</p>
+          <p className="text-xs font-semibold tracking-[0.28em] text-charcoal/60">ANAND RAS</p>
 
           <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
             Perfume for your soul

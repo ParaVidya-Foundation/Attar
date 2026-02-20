@@ -3,6 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import { AccountMain } from "@/components/account/accountmain";
 import { requireUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = pageMetadata({
   title: "Account",
   description: "Manage your account details, orders, and addresses. Secure account dashboard.",

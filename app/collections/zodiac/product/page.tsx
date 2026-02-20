@@ -19,7 +19,7 @@ export default async function ZodiacProductPage() {
     id: product.id,
     slug: product.slug,
     title: product.name,
-    brand: "Kamal Vallabh",
+    brand: "Anand Ras",
     price: `₹${product.price.toLocaleString("en-IN")}`,
     priceValue: product.price,
     currency: "INR",
@@ -33,7 +33,7 @@ export default async function ZodiacProductPage() {
     <main className="w-full min-h-screen bg-white" itemScope itemType="https://schema.org/Product">
       <meta itemProp="name" content={product.name} />
       <meta itemProp="description" content={product.short_description ?? product.description ?? ""} />
-      <meta itemProp="brand" content="Kamal Vallabh" />
+      <meta itemProp="brand" content="Anand Ras" />
       <meta itemProp="sku" content={product.id} />
 
       <div className="flex w-full flex-col lg:flex-row">

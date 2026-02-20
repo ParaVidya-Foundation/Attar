@@ -1,6 +1,6 @@
 # System Audit Report
 
-**Project:** Kamal Vallabh — Luxury Attar E-Commerce  
+**Project:** Anand Ras — Luxury Attar E-Commerce  
 **Stack:** Next.js 16 (App Router) + Supabase + Razorpay  
 **Date:** 2026-02-20  
 **Auditor:** Production Architect

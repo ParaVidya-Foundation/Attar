@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: PageProps) {
     id: product.id,
     slug: product.slug,
     title: product.name,
-    brand: "Kamal Vallabh",
+    brand: "Anand Ras",
     price: `₹${product.price.toLocaleString("en-IN")}`,
     priceValue: product.price,
     currency: "INR",

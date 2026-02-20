@@ -1,6 +1,9 @@
 import { requireUser } from "@/lib/auth";
 import AccountSidebar from "@/components/account/accountsidebar";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   await requireUser();
 

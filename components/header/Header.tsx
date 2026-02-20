@@ -159,7 +159,7 @@ export default function Header() {
                 className="font-serif text-lg tracking-wide text-slate-900"
                 style={{ letterSpacing: "0.06em" }}
               >
-                Kamal Vallabh
+                Anand Ras
               </span>
             </Link>
           </div>

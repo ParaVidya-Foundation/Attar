@@ -1,4 +1,4 @@
-# Kamal Vallabh — Luxury Attar Frontend (Next.js App Router)
+# Anand Ras — Luxury Attar Frontend (Next.js App Router)
 
 Production-ready, frontend-only Next.js template for a luxury attar brand.
 

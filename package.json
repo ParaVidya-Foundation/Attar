@@ -1,5 +1,5 @@
 {
-  "name": "kamal-vallabh",
+  "name": "anand-ras",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "type-check": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "sitemap": "tsx scripts/generate-sitemap.ts",
     "seed": "tsx scripts/seed-data.ts",

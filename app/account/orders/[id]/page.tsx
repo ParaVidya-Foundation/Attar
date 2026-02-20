@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { ArrowLeft } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Order Details",
   robots: "noindex",

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import AddressList from "@/components/account/addresslist";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "My Addresses",
   robots: "noindex",

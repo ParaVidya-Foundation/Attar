@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kamalvallabh.example/sitemap.xml
+Sitemap: https://anandras.example/sitemap.xml
 

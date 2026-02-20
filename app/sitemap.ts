@@ -28,7 +28,7 @@ async function getProducts() {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
     (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SITE_URL) ||
-    "https://kamalvallabh.example";
+    "https://anandras.example";
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [

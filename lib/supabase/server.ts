@@ -2,27 +2,39 @@ import { createServerClient as createSupabaseServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-function getEnv(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"): string {
-  const value = process.env[name];
-  if (!value) {
-    // During build / static generation env vars may not be present.
-    // Log a warning instead of throwing so the build doesn't crash.
-    // Callers (fetchers) catch downstream Supabase errors and return [].
-    console.warn(`[supabase/server] ${name} is not set`);
-    return "";
-  }
-  return value;
-}
-
+/**
+ * Cookie-based Supabase client for server components, server actions, and route handlers.
+ *
+ * Calls cookies() FIRST so Next.js opts the page into dynamic rendering before
+ * any env-var check runs. This prevents prerender crashes during `next build`.
+ * If env vars are still missing at runtime, a no-op SSR client is returned
+ * whose auth.getUser() resolves to { user: null }, letting requireUser()
+ * redirect to /login instead of crashing.
+ */
 export async function createServerClient() {
-  const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const supabaseAnonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  // cookies() must be called before anything else.
+  // During prerender this triggers a DYNAMIC_USAGE bailout — Next.js skips
+  // static generation for this page and renders it on-demand at request time.
+  const cookieStore = await cookies();
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Supabase environment variables are required for server client");
+    console.warn(
+      "[supabase/server] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. " +
+        "Returning no-op client — auth calls will resolve to null.",
+    );
+    // Return a real SSR-shaped client with a placeholder URL.
+    // auth.getUser() will return { user: null } because there is no valid
+    // session, which causes requireUser() to redirect to /login.
+    return createSupabaseServerClient("https://placeholder.invalid", "placeholder", {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      },
+    });
   }
-
-  const cookieStore = await cookies();
 
   return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
