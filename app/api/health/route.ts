@@ -34,6 +34,11 @@ export async function GET() {
       lastReceivedTime: string | null;
       status: "active" | "stale" | "never";
     };
+  } & {
+    // Simple boolean flags for quick checks (/api/health)
+    supabaseEnv: boolean;
+    anonEnv: boolean;
+    razorpayEnv: boolean;
   } = {
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -43,15 +48,27 @@ export async function GET() {
       razorpay: false,
       allRequired: false,
     },
+    // default simple flags (updated below)
+    supabaseEnv: false,
+    anonEnv: false,
+    razorpayEnv: false,
   };
 
   try {
-    // Check client env vars
+    // Simple env booleans for quick smoke tests
+    const supabaseUrlPresent = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonPresent = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const razorpaySecretPresent = !!process.env.RAZORPAY_KEY_SECRET;
+
+    health.supabaseEnv = supabaseUrlPresent;
+    health.anonEnv = supabaseAnonPresent;
+    health.razorpayEnv = razorpaySecretPresent;
+
+    // Check client env vars with schema
     const clientEnv = getClientEnv();
-    health.env.supabase = !!(
-      clientEnv.NEXT_PUBLIC_SUPABASE_URL &&
-      clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+    health.env.supabase =
+      !!clientEnv.NEXT_PUBLIC_SUPABASE_URL &&
+      !!clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     health.env.razorpay = !!clientEnv.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     health.env.allRequired = health.env.supabase && health.env.razorpay;
 
