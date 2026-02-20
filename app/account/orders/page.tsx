@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { ShoppingBag } from "lucide-react";
 
@@ -33,9 +34,8 @@ export default async function OrdersPage() {
     });
 
   const formatAmount = (amount: number, currency: string) => {
-    const value = amount / 100;
-    if (currency === "INR") return `₹${value.toLocaleString("en-IN")}`;
-    return `${currency} ${value.toFixed(2)}`;
+    if (currency === "INR") return `₹${amount.toLocaleString("en-IN")}`;
+    return `${currency} ${amount.toFixed(2)}`;
   };
 
   const statusColor: Record<string, string> = {
@@ -67,9 +67,10 @@ export default async function OrdersPage() {
               const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
 
               return (
-                <div
+                <Link
                   key={order.id}
-                  className="rounded-2xl border border-ash/50 p-5 transition-colors hover:border-ash"
+                  href={`/account/orders/${order.id}`}
+                  className="block rounded-2xl border border-ash/50 p-5 transition-colors hover:border-ash"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
@@ -102,7 +103,7 @@ export default async function OrdersPage() {
                       {itemCount}
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

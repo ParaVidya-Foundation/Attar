@@ -1,9 +1,11 @@
 /**
  * POST /api/orders — Create order and return Razorpay checkout info
- * Forwards to Supabase Edge Function create-order
- * Server-only; validates cart with zod
+ * Validates cart server-side, looks up prices from DB, creates Razorpay order.
+ * Never trusts client-supplied prices.
  */
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -38,42 +40,112 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // TODO: Support anonymous checkout — for now require auth
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  try {
+    const admin = createAdminClient();
+    const items = parsed.data.items;
+
+    const resolved: Array<{
+      productId: string;
+      size_ml: number;
+      qty: number;
+      unit_price: number;
+    }> = [];
+    let total = 0;
+
+    for (const item of items) {
+      const { data: sizeRow } = await admin
+        .from("product_sizes")
+        .select("price")
+        .eq("product_id", item.productId)
+        .eq("size_ml", item.size_ml)
+        .single();
+
+      const { data: invRow } = await admin
+        .from("inventory")
+        .select("stock")
+        .eq("product_id", item.productId)
+        .eq("size_ml", item.size_ml)
+        .single();
+
+      if (!sizeRow) {
+        return NextResponse.json(
+          { error: `Product size not found: ${item.productId}/${item.size_ml}ml` },
+          { status: 400 },
+        );
+      }
+
+      const stock = invRow?.stock ?? 0;
+      if (stock < item.qty) {
+        return NextResponse.json(
+          { error: `Insufficient stock for product ${item.productId} size ${item.size_ml}ml` },
+          { status: 400 },
+        );
+      }
+
+      resolved.push({
+        productId: item.productId,
+        size_ml: item.size_ml,
+        qty: item.qty,
+        unit_price: sizeRow.price,
+      });
+      total += sizeRow.price * item.qty;
+    }
+
+    if (resolved.length === 0) {
+      return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
+    }
+
+    const receipt = `ord_${Date.now()}`;
+    const razorpayOrder = await createRazorpayOrder({
+      amount: total * 100,
+      currency: "INR",
+      receipt,
+    });
+
+    const { data: order, error: orderErr } = await admin
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        status: "created",
+        total_amount: total,
+        currency: "INR",
+        razorpay_order_id: razorpayOrder.id,
+      })
+      .select("id")
+      .single();
+
+    if (orderErr || !order) {
+      console.error("[orders/create] Order insert failed:", orderErr);
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+    }
+
+    const orderItems = resolved.map((r) => ({
+      order_id: order.id,
+      product_id: r.productId,
+      size_ml: r.size_ml,
+      qty: r.qty,
+      unit_price: r.unit_price,
+    }));
+
+    const { error: itemsErr } = await admin.from("order_items").insert(orderItems);
+    if (itemsErr) {
+      console.error("[orders/create] Order items insert failed:", itemsErr);
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      orderId: order.id,
+      razorpayOrderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    });
+  } catch (err) {
+    console.error("[orders/create] Unexpected error:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  const token = session?.access_token;
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const fnUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/create-order`;
-  const res = await fetch(fnUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ cart: parsed.data }),
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: data.error ?? "Order creation failed" },
-      { status: res.status >= 400 ? res.status : 500 },
-    );
-  }
-
-  return NextResponse.json(data);
 }

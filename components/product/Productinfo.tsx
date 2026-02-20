@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCart } from "@/components/cart/CartProvider";
 
 type Size = { id: string; label: string; priceModifier?: number };
 
@@ -27,32 +27,17 @@ export type FullProduct = {
 };
 
 export default function ProductInfo({ product }: { product: FullProduct }) {
-  const router = useRouter();
+  const { addItem, setOpen } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>(product.sizes?.[0]?.id ?? "");
   const [quantity, setQuantity] = useState<number>(1);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
-  // Ensure default size exists after hydration
   useEffect(() => {
     if (!selectedSize && product.sizes && product.sizes.length) {
       setSelectedSize(product.sizes[0].id);
     }
   }, [product.sizes, selectedSize]);
-
-  // Cart localStorage helpers
-  const CART_KEY = "sm_cart_v1";
-  function readCart(): any[] {
-    try {
-      const raw = localStorage.getItem(CART_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
-  function writeCart(items: any[]) {
-    localStorage.setItem(CART_KEY, JSON.stringify(items));
-  }
 
   function showToast(msg: string) {
     setToast(msg);
@@ -61,34 +46,26 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function addToCart() {
-    const cart = readCart();
-    const item = {
+    addItem({
       id: product.id,
-      slug: product.slug,
       title: product.title,
-      size: selectedSize,
-      quantity,
       price: product.priceValue ?? 0,
-    };
-    cart.push(item);
-    writeCart(cart);
+      image: product.images?.[0]?.src ?? `/products/${product.slug}.webp`,
+      quantity,
+    });
     showToast("Added to cart");
+    setOpen(true);
   }
 
   function buyNow() {
-    const draft = {
-      items: [
-        {
-          id: product.id,
-          title: product.title,
-          size: selectedSize,
-          quantity,
-          price: product.priceValue ?? 0,
-        },
-      ],
-    };
-    localStorage.setItem("sm_checkout_draft", JSON.stringify(draft));
-    router.push("/checkout");
+    addItem({
+      id: product.id,
+      title: product.title,
+      price: product.priceValue ?? 0,
+      image: product.images?.[0]?.src ?? `/products/${product.slug}.webp`,
+      quantity,
+    });
+    setOpen(true);
   }
 
   return (

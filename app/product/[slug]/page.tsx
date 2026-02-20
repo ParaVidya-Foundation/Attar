@@ -5,6 +5,7 @@ import ProductInfo from "@/components/product/Productinfo";
 import TrustBar from "@/components/Home/TrustBar";
 import OtherInfo from "@/components/product/otherinfo";
 import { getProductBySlug } from "@/lib/fetchers";
+import { absoluteUrl, BRAND } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -36,6 +37,38 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: [{ url: `/products/${product.slug}.webp` }],
       type: "website",
+    },
+  };
+}
+
+function buildProductJsonLd(product: {
+  name: string;
+  slug: string;
+  price: number;
+  original_price: number | null;
+  description: string | null;
+  short_description: string | null;
+}) {
+  const url = absoluteUrl(`/product/${product.slug}`);
+  const image = absoluteUrl(`/products/${product.slug}.webp`);
+  const desc = product.short_description ?? product.description ?? "Premium handcrafted attar.";
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: desc,
+    image: [image],
+    url,
+    brand: { "@type": "Brand", name: BRAND.name },
+    category: "Attar / Natural Perfume Oil",
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "INR",
+      price: product.price,
+      availability: "https://schema.org/InStock",
+      url,
+      seller: { "@type": "Organization", name: BRAND.name },
     },
   };
 }
@@ -76,8 +109,15 @@ export default async function ProductPage({ params }: PageProps) {
     inStock: true,
   };
 
+  const jsonLd = buildProductJsonLd(product);
+
   return (
-    <main className="w-full min-h-screen bg-white" itemScope itemType="https://schema.org/Product">
+    <main className="w-full min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <div className="flex w-full flex-col lg:flex-row">
         <ProductShowcase product={showcaseProduct} />
         <ProductInfo product={infoProduct} />

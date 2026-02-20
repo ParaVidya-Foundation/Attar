@@ -3,14 +3,16 @@
  * Fetches products from Supabase and generates sitemap.xml
  */
 import { MetadataRoute } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createStaticClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/seo";
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 3600;
 
 async function getProducts() {
   try {
-    const supabase = await createClient();
+    const supabase = createStaticClient();
+    if (!supabase) return [];
+
     const { data } = await supabase
       .from("products")
       .select("slug, updated_at")
@@ -31,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: absoluteUrl("/home"),
+      url: absoluteUrl("/"),
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 1.0,

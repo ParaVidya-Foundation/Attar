@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth";
 
 export type ProductFormData = {
   name: string;
@@ -25,6 +26,7 @@ function slugify(text: string): string {
 }
 
 export async function createProduct(data: ProductFormData) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const slug = data.slug || slugify(data.name);
 
@@ -48,6 +50,7 @@ export async function createProduct(data: ProductFormData) {
 }
 
 export async function updateProduct(id: string, data: ProductFormData) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const slug = data.slug || slugify(data.name);
 
@@ -76,6 +79,7 @@ export async function updateProduct(id: string, data: ProductFormData) {
 }
 
 export async function toggleProductActive(id: string, isActive: boolean) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", id);
 
@@ -89,6 +93,7 @@ export async function toggleProductActive(id: string, isActive: boolean) {
 }
 
 export async function deleteProduct(id: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
 
@@ -102,6 +107,7 @@ export async function deleteProduct(id: string) {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
+  await requireAdmin();
   const valid = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled"];
   if (!valid.includes(status)) {
     return { ok: false, error: "Invalid status" };

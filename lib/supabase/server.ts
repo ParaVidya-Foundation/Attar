@@ -5,15 +5,24 @@ import { cookies } from "next/headers";
 function getEnv(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    // During build / static generation env vars may not be present.
+    // Log a warning instead of throwing so the build doesn't crash.
+    // Callers (fetchers) catch downstream Supabase errors and return [].
+    console.warn(`[supabase/server] ${name} is not set`);
+    return "";
   }
   return value;
 }
 
 export async function createServerClient() {
-  const cookieStore = await cookies();
   const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL");
   const supabaseAnonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Supabase environment variables are required for server client");
+  }
+
+  const cookieStore = await cookies();
 
   return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -33,8 +42,19 @@ export async function createServerClient() {
   });
 }
 
+/**
+ * Lightweight Supabase client for data fetching in server components / ISR.
+ * Returns null if env vars are missing (build-time safety).
+ */
 export function createStaticClient() {
-  return createSupabaseClient(getEnv("NEXT_PUBLIC_SUPABASE_URL"), getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"), {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    return null;
+  }
+
+  return createSupabaseClient(url, anonKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -42,5 +62,4 @@ export function createStaticClient() {
   });
 }
 
-// Alias for backwards compatibility
 export const createClient = createServerClient;

@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useEffect, useRef, JSX } from "react";
+import React, { useCallback, useEffect, useRef, useState, JSX } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { FocusTrap } from "@/components/ui/FocusTrap";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "./CartProvider";
+
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, cb: () => void) => void;
+    };
+  }
+}
 
 function formatINR(v: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -14,8 +24,21 @@ function formatINR(v: number) {
   }).format(v);
 }
 
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export function CartDrawer(): JSX.Element | null {
-  // Defensive: useCart might be undefined during tests or if provider missing.
   const cart = (typeof useCart === "function" ? useCart() : null) ?? {
     open: false,
     setOpen: (_: boolean) => {},
@@ -27,10 +50,97 @@ export function CartDrawer(): JSX.Element | null {
   };
 
   const { open, setOpen, lines, total, remove, setQty, clear } = cart;
+  const router = useRouter();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  // Manage Escape and body scroll lock
+  const handleCheckout = useCallback(async () => {
+    if (lines.length === 0) return;
+    setCheckoutError(null);
+    setCheckoutLoading(true);
+
+    try {
+      const payload = {
+        items: lines.map((l) => ({
+          productId: l.id,
+          size_ml: l.ml || 3,
+          qty: l.qty,
+        })),
+      };
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401) {
+        setOpen(false);
+        router.push("/login");
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) {
+        setCheckoutError(data.error ?? "Order creation failed");
+        return;
+      }
+
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        setCheckoutError("Payment system could not load. Please try again.");
+        return;
+      }
+
+      const options: Record<string, unknown> = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency ?? "INR",
+        name: "Kamal Vallabh",
+        description: "Luxury Attar Order",
+        order_id: data.razorpayOrderId,
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch("/api/orders/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+
+            if (verifyRes.ok) {
+              clear();
+              setOpen(false);
+              router.push("/account/orders");
+              router.refresh();
+            } else {
+              setCheckoutError("Payment verification failed. Contact support if charged.");
+            }
+          } catch {
+            setCheckoutError("Verification error. Your payment is safe — check your orders.");
+          }
+        },
+        prefill: {},
+        theme: { color: "#1e2023" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", () => {
+        setCheckoutError("Payment failed. Please try again.");
+      });
+      rzp.open();
+    } catch {
+      setCheckoutError("Something went wrong. Please try again.");
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }, [lines, clear, setOpen, router]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -199,21 +309,23 @@ export function CartDrawer(): JSX.Element | null {
               </div>
 
               <div className="mt-4 grid gap-3">
+                {checkoutError && (
+                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                    {checkoutError}
+                  </div>
+                )}
+
                 <Button
                   type="button"
-                  onClick={() => alert("Checkout placeholder — implement backend checkout")}
-                  disabled={lines.length === 0}
+                  onClick={handleCheckout}
+                  disabled={lines.length === 0 || checkoutLoading}
                 >
-                  Checkout
+                  {checkoutLoading ? "Processing…" : "Checkout"}
                 </Button>
 
                 <Button type="button" variant="secondary" onClick={clear} disabled={lines.length === 0}>
                   Clear cart
                 </Button>
-
-                <p className="mt-2 text-xs text-gray-600">
-                  Demo only: for production create a secure backend checkout session (Stripe/Razorpay).
-                </p>
               </div>
             </div>
           </div>

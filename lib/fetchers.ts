@@ -25,6 +25,8 @@ const PRODUCT_COLUMNS =
 export async function getCategories(): Promise<CategoryRow[]> {
   try {
     const supabase = createStaticClient();
+    if (!supabase) return [];
+
     const { data, error } = await supabase.from("categories").select("id,name,slug").order("name");
 
     if (error) {
@@ -43,6 +45,8 @@ export async function getCategories(): Promise<CategoryRow[]> {
 export async function getProductsByCategorySlug(slug: string): Promise<ProductRow[]> {
   try {
     const supabase = createStaticClient();
+    if (!supabase) return [];
+
     const { data: category, error: categoryError } = await supabase
       .from("categories")
       .select("id")
@@ -54,7 +58,6 @@ export async function getProductsByCategorySlug(slug: string): Promise<ProductRo
       return [];
     }
 
-    console.log("CATEGORY:", slug, "→", category?.id ?? "NOT FOUND");
     if (!category?.id) return [];
 
     const { data, error } = await supabase
@@ -69,7 +72,6 @@ export async function getProductsByCategorySlug(slug: string): Promise<ProductRo
       return [];
     }
 
-    console.log("TEST PRODUCTS COUNT:", data?.length);
     if (!data) return [];
     return data as ProductRow[];
   } catch (error) {
@@ -81,6 +83,8 @@ export async function getProductsByCategorySlug(slug: string): Promise<ProductRo
 export async function getAllActiveProducts(): Promise<ProductRow[]> {
   try {
     const supabase = createStaticClient();
+    if (!supabase) return [];
+
     const { data, error } = await supabase
       .from("products")
       .select(PRODUCT_COLUMNS)
@@ -103,6 +107,8 @@ export async function getAllActiveProducts(): Promise<ProductRow[]> {
 export async function getProductBySlug(slug: string): Promise<ProductRow | null> {
   try {
     const supabase = createStaticClient();
+    if (!supabase) return null;
+
     const { data, error } = await supabase
       .from("products")
       .select(PRODUCT_COLUMNS)
