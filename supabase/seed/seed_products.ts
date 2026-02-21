@@ -1,6 +1,6 @@
 /**
  * Seed products from data/attars.json into Supabase
- * Uses SUPABASE_SERVICE_ROLE_KEY (admin client)
+ * Uses product_variants and product_images (no product_sizes or inventory).
  * Run: pnpm run seed:products [-- --dry-run]
  */
 import { config } from "dotenv";
@@ -17,6 +17,10 @@ function getEnv(key: string): string {
   const val = process.env[key];
   if (!val) throw new Error(`Missing env: ${key}`);
   return val;
+}
+
+function toPaise(rupees: number): number {
+  return Math.round(rupees * 100);
 }
 
 async function main() {
@@ -39,21 +43,18 @@ async function main() {
       ? attar.description.join("\n\n")
       : String(attar.description ?? "");
 
+    const basePricePaise = toPaise(attar.price);
     const productRow = {
       slug: attar.slug,
       name: attar.name,
       description,
-      origin: attar.origin ?? null,
-      notes: attar.notes ?? null,
-      zodiac: attar.zodiac ?? [],
-      planet: attar.planet ?? null,
-      longevity: attar.longevity ?? null,
-      spiritual_benefits: attar.spiritual_benefits ?? [],
-      badges: attar.badges ?? [],
-      price: attar.price,
-      currency: "INR",
+      short_description: description.slice(0, 160) || null,
+      category_id: null,
+      price: basePricePaise,
+      original_price: null,
+      is_active: true,
       meta_title: attar.name,
-      meta_description: description.slice(0, 160),
+      meta_description: description.slice(0, 160) || null,
     };
 
     if (DRY_RUN) {
@@ -74,44 +75,41 @@ async function main() {
 
     const productId = product!.id;
 
-    // Insert images
-    for (let i = 0; i < (attar.images?.length ?? 0); i++) {
-      const img = attar.images![i];
+    // Insert product_images (image_url, is_primary, sort_order)
+    const images = attar.images ?? [];
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
       await supabase.from("product_images").insert({
         product_id: productId,
-        url: img.url,
-        alt: img.alt ?? null,
-        position: i,
+        image_url: img.url,
+        is_primary: i === 0,
+        sort_order: i,
       });
     }
 
-    // Insert sizes and inventory
+    // Insert product_variants (size_ml, price in paise, stock)
     const sizes = attar.sizes ?? [];
-    const stockPerSize = sizes.length > 0 ? Math.max(1, Math.floor((attar.stock ?? 0) / sizes.length)) : 0;
+    const stockPerSize =
+      sizes.length > 0
+        ? Math.max(1, Math.floor((attar.stock ?? 0) / sizes.length))
+        : 0;
 
     for (const sz of sizes) {
-      await supabase.from("product_sizes").insert({
+      await supabase.from("product_variants").insert({
         product_id: productId,
         size_ml: sz.ml,
-        price: sz.price,
-      });
-      await supabase.from("inventory").insert({
-        product_id: productId,
-        size_ml: sz.ml,
+        price: toPaise(sz.price),
+        sku: null,
         stock: stockPerSize,
       });
     }
 
-    // If no sizes, use price and stock from root attar
     if (sizes.length === 0) {
-      await supabase.from("product_sizes").insert({
+      await supabase.from("product_variants").insert({
         product_id: productId,
         size_ml: 3,
-        price: attar.price,
-      });
-      await supabase.from("inventory").insert({
-        product_id: productId,
-        size_ml: 3,
+        price: basePricePaise,
+        sku: null,
         stock: attar.stock ?? 0,
       });
     }

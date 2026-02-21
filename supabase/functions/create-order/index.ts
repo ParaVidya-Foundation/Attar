@@ -1,8 +1,9 @@
 /**
  * Supabase Edge Function: create-order
  * Invoked by Next.js API with JWT
- * Validates cart, creates order, calls Razorpay, returns order info
+ * Validates cart (variant_id + quantity), creates order, calls Razorpay, returns order info
  */
+/// <reference path="./globals.d.ts" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -12,9 +13,8 @@ const corsHeaders = {
 };
 
 interface CartItem {
-  productId: string;
-  size_ml: number;
-  qty: number;
+  variant_id: string;
+  quantity: number;
 }
 
 serve(async (req) => {
@@ -69,49 +69,43 @@ serve(async (req) => {
 
     const admin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate items and get prices + inventory
-    const resolved: Array<{ productId: string; size_ml: number; qty: number; unit_price: number }> = [];
-    let total = 0;
+    const resolved: Array<{ product_id: string; variant_id: string; quantity: number; price: number }> = [];
+    let totalPaise = 0;
 
     for (const item of cart) {
-      const pid = String(item?.productId ?? "");
-      const sizeMl = Number(item?.size_ml) || 0;
-      const qty = Math.max(1, Math.min(99, Number(item?.qty) || 1));
+      const variantId = String(item?.variant_id ?? "").trim();
+      const qty = Math.max(1, Math.min(99, Number(item?.quantity) || 1));
+      if (!variantId) continue;
 
-      if (!pid || sizeMl <= 0) continue;
-
-      const { data: sizeRow } = await admin
-        .from("product_sizes")
-        .select("price")
-        .eq("product_id", pid)
-        .eq("size_ml", sizeMl)
+      const { data: variant } = await admin
+        .from("product_variants")
+        .select("id, product_id, price, stock")
+        .eq("id", variantId)
         .single();
 
-      const { data: invRow } = await admin
-        .from("inventory")
-        .select("stock")
-        .eq("product_id", pid)
-        .eq("size_ml", sizeMl)
-        .single();
-
-      if (!sizeRow || !invRow) {
-        return new Response(JSON.stringify({ error: `Product or size not found: ${pid}/${sizeMl}` }), {
+      if (!variant) {
+        return new Response(JSON.stringify({ error: `Variant not found: ${variantId}` }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      const stock = invRow.stock ?? 0;
+      const stock = variant.stock ?? 0;
       if (stock < qty) {
         return new Response(
-          JSON.stringify({ error: `Insufficient stock for product ${pid} size ${sizeMl}` }),
+          JSON.stringify({ error: `Insufficient stock for variant ${variantId}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
-      const unitPrice = sizeRow.price;
-      resolved.push({ productId: pid, size_ml: sizeMl, qty, unit_price: unitPrice });
-      total += unitPrice * qty;
+      const price = variant.price;
+      resolved.push({
+        product_id: variant.product_id,
+        variant_id: variant.id,
+        quantity: qty,
+        price,
+      });
+      totalPaise += price * qty;
     }
 
     if (resolved.length === 0) {
@@ -121,9 +115,7 @@ serve(async (req) => {
       });
     }
 
-    const amountPaise = total * 100;
     const receipt = `ord_${Date.now()}`;
-
     const razorpayRes = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
@@ -131,7 +123,7 @@ serve(async (req) => {
         Authorization: "Basic " + btoa(Deno.env.get("NEXT_PUBLIC_RAZORPAY_KEY_ID") + ":" + razorpayKeySecret),
       },
       body: JSON.stringify({
-        amount: amountPaise,
+        amount: totalPaise,
         currency: "INR",
         receipt,
       }),
@@ -153,8 +145,9 @@ serve(async (req) => {
       .from("orders")
       .insert({
         user_id: user.id,
-        status: "created",
-        total_amount: total,
+        email: user.email ?? "",
+        status: "pending",
+        amount: totalPaise,
         currency: "INR",
         razorpay_order_id: razorpayOrderId,
       })
@@ -171,23 +164,21 @@ serve(async (req) => {
 
     const orderItems = resolved.map((r) => ({
       order_id: order.id,
-      product_id: r.productId,
-      size_ml: r.size_ml,
-      qty: r.qty,
-      unit_price: r.unit_price,
+      product_id: r.product_id,
+      variant_id: r.variant_id,
+      quantity: r.quantity,
+      price: r.price,
     }));
 
     const { error: itemsErr } = await admin.from("order_items").insert(orderItems);
     if (itemsErr) {
       console.error("[create-order] Order items insert failed:", itemsErr);
-      // TODO: Compensate — cancel Razorpay order or mark order failed
       return new Response(JSON.stringify({ error: "Order creation failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // TODO: Decrement inventory atomically (move to update-inventory Edge Fn after payment)
     console.info("[create-order] Order created:", order.id, "razorpay:", razorpayOrderId);
 
     return new Response(

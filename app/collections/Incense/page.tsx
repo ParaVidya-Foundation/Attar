@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import IncenseHero from "@/components/Incense/incenseHero";
-import ProductCard from "@/components/shop/ProductCard";
+import ProductCard, { type Product as CardProduct } from "@/components/shop/ProductCard";
 import Image from "next/image";
 import BulkOrder from "@/components/Incense/BulkOrder";
-import { getProductsByCategorySlug } from "@/lib/fetchers";
+import { getProductsByCategory } from "@/lib/api/products";
+import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Premium Incense Collection",
@@ -15,7 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function IncensePage() {
-  const products = (await getProductsByCategorySlug("incense")).map(mapToCardProduct);
+  let products: CardProduct[] = [];
+  try {
+    products = (await getProductsByCategory(COLLECTION_SLUGS.incense)).map(mapToCardProduct);
+  } catch {
+    products = [];
+  }
 
   return (
     <main className="w-full bg-white">
@@ -43,9 +49,13 @@ export default async function IncensePage() {
             xl:grid-cols-4
           "
         >
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {products.length === 0 ? (
+            <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
+          ) : (
+            products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </div>
       </section>
 
@@ -85,9 +95,13 @@ export default async function IncensePage() {
             xl:grid-cols-4
           "
         >
-          {products.map((product) => (
-            <ProductCard key={`premium-${product.id}`} product={product} />
-          ))}
+          {products.length === 0 ? (
+            <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
+          ) : (
+            products.map((product) => (
+              <ProductCard key={`premium-${product.id}`} product={product} />
+            ))
+          )}
         </div>
       </section>
 

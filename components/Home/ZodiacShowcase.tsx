@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 
-type Product = {
+export type ZodiacShowcaseProduct = {
   id: string;
   name: string;
   type: string;
@@ -15,110 +15,11 @@ type Product = {
   href: string;
 };
 
-const products: Product[] = [
-  {
-    id: "halfeti-1",
-    name: "Halfeti",
-    type: "Eau de Parfum",
-    description: "Rose, fruits and spice captured in a warm embrace.",
-    price: "£110",
-    size: "30 ml",
-    image: "/demo1.webp",
-    href: "/product/halfeti",
-  },
-  {
-    id: "luna-1",
-    name: "Luna",
-    type: "Eau de Toilette",
-    description: "Orange, jasmine and fir. A soft celestial fragrance.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo2.webp",
-    href: "/product/luna",
-  },
-  {
-    id: "cut-1",
-    name: "The Cut",
-    type: "Eau de Parfum",
-    description: "Mint, cypress and fir balsam tailored to precision.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo1.webp",
-    href: "/product/the-cut",
-  },
-  {
-    id: "favourite-1",
-    name: "The Favourite",
-    type: "Eau de Parfum",
-    description: "Golden mimosa, iris and musk for refined elegance.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo2.webp",
-    href: "/product/the-favourite",
-  },
-  {
-    id: "madu-1",
-    name: "Madu",
-    type: "Eau de Parfum",
-    description: "Wood, leather and soft smoky warmth.",
-    price: "£65",
-    size: "30 ml",
-    image: "/demo1.webp",
-    href: "/product/madu",
-  },
-  {
-    id: "halfeti-2",
-    name: "Halfeti",
-    type: "Eau de Parfum",
-    description: "Rose, fruits and spice captured in a warm embrace.",
-    price: "£110",
-    size: "30 ml",
-    image: "/demo2.webp",
-    href: "/product/halfeti",
-  },
-  {
-    id: "luna-2",
-    name: "Luna",
-    type: "Eau de Toilette",
-    description: "Orange, jasmine and fir. A soft celestial fragrance.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo1.webp",
-    href: "/product/luna",
-  },
-  {
-    id: "cut-2",
-    name: "The Cut",
-    type: "Eau de Parfum",
-    description: "Mint, cypress and fir balsam tailored to precision.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo2.webp",
-    href: "/product/the-cut",
-  },
-  {
-    id: "favourite-2",
-    name: "The Favourite",
-    type: "Eau de Parfum",
-    description: "Golden mimosa, iris and musk for refined elegance.",
-    price: "£85",
-    size: "30 ml",
-    image: "/demo1.webp",
-    href: "/product/the-favourite",
-  },
-  {
-    id: "madu-2",
-    name: "Madu",
-    type: "Eau de Parfum",
-    description: "Wood, leather and soft smoky warmth.",
-    price: "£65",
-    size: "30 ml",
-    image: "/demo2.webp",
-    href: "/product/madu",
-  },
-];
+type ZodiacShowcaseProps = {
+  products?: ZodiacShowcaseProduct[];
+};
 
-export default function ZodiacShowcase() {
+export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {

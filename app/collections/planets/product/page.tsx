@@ -4,31 +4,37 @@ import ProductShowcase from "@/components/product/ProductShowcase";
 import OtherInfo from "@/components/product/otherinfo";
 import TrustBar from "@/components/Home/TrustBar";
 import ProductSlider from "@/components/product/ProductSlider";
-import { getProductsByCategorySlug } from "@/lib/fetchers";
+import { getProductsByCategory } from "@/lib/api/products";
+import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export default async function PlanetsProductPage() {
-  const products = await getProductsByCategorySlug("planets");
+  const products = await getProductsByCategory(COLLECTION_SLUGS.planets);
   const product = products[0];
 
   if (!product) {
     notFound();
   }
 
+  const images =
+    product.images?.length > 0
+      ? product.images.map((img) => ({ src: img.url, alt: product.name }))
+      : [{ src: `/products/${product.slug}.webp`, alt: product.name }];
   const viewProduct = {
     id: product.id,
     slug: product.slug,
     title: product.name,
     brand: "Anand Ras",
-    price: `₹${product.price.toLocaleString("en-IN")}`,
+    price: `₹${(product.price / 100).toLocaleString("en-IN")}`,
     priceValue: product.price,
     currency: "INR",
     description: product.short_description ?? product.description ?? "",
     longDescription: product.description ?? undefined,
-    images: [{ src: `/products/${product.slug}.webp`, alt: product.name }],
-    inStock: true,
+    images,
+    sizes: (product.variants ?? []).map((v) => ({ id: v.id, label: `${v.size_ml}ml`, priceValue: v.price })),
+    inStock: (product.variants ?? []).some((v) => v.stock > 0),
   };
 
   const relatedProducts = products.slice(1).map(mapToCardProduct);

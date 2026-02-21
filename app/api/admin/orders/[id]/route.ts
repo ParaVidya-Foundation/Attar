@@ -2,30 +2,18 @@
  * GET /api/admin/orders/[id] — Get single order details for admin
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertAdminEnv } from "@/lib/admin/envCheck";
+import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 import { NextResponse } from "next/server";
 
-async function checkAdmin() {
-  const { createServerClient } = await import("@/lib/supabase/server");
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  
-  if (!user) {
-    throw new Error("Unauthorized");
+function adminErrorStatus(err: unknown): { status: number; body: { error: string } } {
+  if (err instanceof NotAuthenticatedError) {
+    return { status: 401, body: { error: "Not authenticated" } };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Unauthorized");
+  if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+    return { status: 403, body: { error: "Forbidden" } };
   }
-
-  return user;
+  return { status: 500, body: { error: "Internal server error" } };
 }
 
 export async function GET(
@@ -33,7 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await checkAdmin();
+    assertAdminEnv();
+    await assertAdmin();
     const { id } = await params;
 
     const admin = createAdminClient();
@@ -42,10 +31,9 @@ export async function GET(
     const { data: order, error: orderError } = await admin
       .from("orders")
       .select(
-        "id,user_id,name,email,phone,status,total_amount,currency,razorpay_order_id,razorpay_payment_id,created_at,updated_at"
+        "id,user_id,name,email,phone,status,amount,currency,razorpay_order_id,razorpay_payment_id,created_at,updated_at"
       )
       .eq("id", id)
-      .is("deleted_at", null)
       .single();
 
     if (orderError || !order) {
@@ -55,7 +43,7 @@ export async function GET(
     // Get order items
     const { data: items } = await admin
       .from("order_items")
-      .select("product_id,size_ml,qty,unit_price")
+      .select("product_id,variant_id,quantity,price")
       .eq("order_id", id);
 
     // Get product names
@@ -66,13 +54,6 @@ export async function GET(
       .in("id", productIds);
 
     const productMap = new Map(products?.map((p) => [p.id, p.name]) ?? []);
-
-    // Get payment details
-    const { data: payment } = await admin
-      .from("payments")
-      .select("id,razorpay_payment_id,status,amount,currency,created_at")
-      .eq("order_id", id)
-      .single();
 
     // Get customer email if user_id exists
     let customerEmail = order.email;
@@ -94,11 +75,11 @@ export async function GET(
         ...item,
         productName: productMap.get(item.product_id) ?? "Unknown",
       })),
-      payment,
     });
   } catch (err) {
-    if (err instanceof Error && err.message.includes("Unauthorized")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (err instanceof NotAuthenticatedError || err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+      const { status, body } = adminErrorStatus(err);
+      return NextResponse.json(body, { status });
     }
     console.error("[ADMIN ORDER DETAIL API ERROR]", {
       error: err instanceof Error ? err.message : String(err),

@@ -16,7 +16,7 @@ async function getProducts() {
     const { data } = await supabase
       .from("products")
       .select("slug, updated_at")
-      .is("deleted_at", null)
+      .eq("is_active", true)
       .order("updated_at", { ascending: false });
 
     return data ?? [];

@@ -1,16 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 
 const PROTECTED_PREFIXES = ["/account", "/admin"];
 
 export async function middleware(request: NextRequest) {
-  // Use safe env access - if missing, allow through (will be handled by page-level auth)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // During build or if env is misconfigured, pass through silently.
-    // Page-level auth checks will handle protection if needed.
     return NextResponse.next({ request });
   }
 
@@ -42,19 +40,22 @@ export async function middleware(request: NextRequest) {
     }
 
     if (path.startsWith("/admin") && user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single();
-
-      if (profile?.role !== "admin") {
+      try {
+        await assertAdmin(supabase);
+      } catch (err) {
+        if (err instanceof NotAuthenticatedError) {
+          return NextResponse.redirect(new URL("/login", request.url));
+        }
+        if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+          return NextResponse.redirect(new URL("/", request.url));
+        }
+        console.error("[middleware] Admin check failed:", err);
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
   } catch (error) {
-    // If Supabase fails, allow through - page-level checks will handle it
     console.error("[middleware] Error:", error);
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return response;

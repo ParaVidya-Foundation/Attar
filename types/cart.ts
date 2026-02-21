@@ -1,5 +1,7 @@
 export type CartItem = {
   id: string;
+  variantId?: string;
+  slug?: string;
   title: string;
   price: number;
   originalPrice?: number;
@@ -18,6 +20,6 @@ export type OrderPayload = {
   name: string;
   email: string;
   phone: string;
-  productId: string;
-  qty: number;
+  variant_id: string;
+  quantity: number;
 };

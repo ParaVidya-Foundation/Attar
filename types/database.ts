@@ -34,21 +34,19 @@ export type Order = {
   id: string;
   user_id: string | null;
   status: string;
-  total_amount: number;
+  amount: number;
   currency: string;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
-  shipping_address_id: string | null;
   created_at: string;
   updated_at: string;
 };
 
 export type OrderItem = {
-  id: number;
+  id: string;
   order_id: string;
   product_id: string;
-  size_ml: number;
-  qty: number;
-  unit_price: number;
-  created_at: string;
+  variant_id: string;
+  quantity: number;
+  price: number;
 };

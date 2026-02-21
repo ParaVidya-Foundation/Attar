@@ -1,8 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
+import { config } from "dotenv";
 import { BRAND, absoluteUrl } from "../lib/seo";
-import attars from "../data/attars.json";
 import blogs from "../data/blogs.json";
+
+config({ path: ".env.local" });
 
 type UrlEntry = { loc: string; lastmod?: string; changefreq?: string; priority?: number };
 
@@ -45,8 +48,16 @@ async function main() {
     { loc: absoluteUrl("/account"), changefreq: "weekly", priority: 0.2 },
   ];
 
-  for (const a of attars)
-    urls.push({ loc: absoluteUrl(`/product/${a.slug}`), changefreq: "weekly", priority: 0.8 });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { data: products } = await supabase.from("products").select("slug").eq("is_active", true);
+    for (const p of products ?? []) {
+      urls.push({ loc: absoluteUrl(`/product/${p.slug}`), changefreq: "weekly", priority: 0.8 });
+    }
+  }
+
   for (const b of blogs)
     urls.push({ loc: absoluteUrl(`/blog/${b.slug}`), lastmod: b.date, changefreq: "monthly", priority: 0.6 });
 

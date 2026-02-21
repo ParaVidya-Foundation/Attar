@@ -47,7 +47,7 @@ export function OrderTable({ orders }: Props) {
                 <p className="mt-1 font-medium text-neutral-900">{o.name || "—"}</p>
               </div>
               <p className="text-sm font-semibold text-neutral-900 shrink-0">
-                ₹{o.total_amount.toLocaleString("en-IN")}
+                ₹{(o.amount / 100).toLocaleString("en-IN")}
               </p>
             </div>
 
@@ -99,7 +99,7 @@ export function OrderTable({ orders }: Props) {
                   <div className="text-sm text-neutral-700">{o.user_email || o.email || "—"}</div>
                   {o.phone && <div className="text-xs text-neutral-400">{o.phone}</div>}
                 </td>
-                <td className="px-4 py-3 text-neutral-700">₹{o.total_amount.toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3 text-neutral-700">₹{(o.amount / 100).toLocaleString("en-IN")}</td>
                 <td className="px-4 py-3">
                   <select
                     value={o.status}

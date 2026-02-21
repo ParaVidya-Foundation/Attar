@@ -4,10 +4,10 @@ import ProductShowcase from "@/components/product/ProductShowcase";
 import ProductInfo from "@/components/product/Productinfo";
 import TrustBar from "@/components/Home/TrustBar";
 import OtherInfo from "@/components/product/otherinfo";
-import { getProductBySlug } from "@/lib/fetchers";
+import { getProductBySlug } from "@/lib/api/products";
 import { absoluteUrl, BRAND } from "@/lib/seo";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -24,18 +24,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const description = product.short_description ?? product.description ?? "Shop premium attars.";
+  const title = product.meta_title ?? product.name;
+  const description = product.meta_description ?? product.short_description ?? product.description ?? "Shop premium attars.";
 
   return {
-    title: product.name,
+    title,
     description,
     alternates: {
       canonical: `/product/${product.slug}`,
     },
     openGraph: {
-      title: product.name,
+      title,
       description,
-      images: [{ url: `/products/${product.slug}.webp` }],
+      images: [
+        {
+          url: product.images[0]?.url
+            ? (product.images[0].url.startsWith("http") ? product.images[0].url : absoluteUrl(product.images[0].url))
+            : absoluteUrl(`/products/${product.slug}.webp`),
+        },
+      ],
       type: "website",
     },
   };
@@ -48,9 +55,12 @@ function buildProductJsonLd(product: {
   original_price: number | null;
   description: string | null;
   short_description: string | null;
+  images: { url: string }[];
 }) {
   const url = absoluteUrl(`/product/${product.slug}`);
-  const image = absoluteUrl(`/products/${product.slug}.webp`);
+  const image = product.images[0]?.url
+    ? (product.images[0].url.startsWith("http") ? product.images[0].url : absoluteUrl(product.images[0].url))
+    : absoluteUrl(`/products/${product.slug}.webp`);
   const desc = product.short_description ?? product.description ?? "Premium handcrafted attar.";
 
   return {
@@ -81,12 +91,10 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
-  const images = [
-    {
-      src: `/products/${product.slug}.webp`,
-      alt: product.name,
-    },
-  ];
+  const images =
+    product.images?.length > 0
+      ? product.images.map((img) => ({ src: img.url, alt: product.name }))
+      : [{ src: `/products/${product.slug}.webp`, alt: product.name }];
 
   const showcaseProduct = {
     id: product.id,
@@ -95,18 +103,21 @@ export default async function ProductPage({ params }: PageProps) {
     images,
   };
 
+  const variants = product.variants ?? [];
+  const firstPrice = variants[0]?.price ?? product.price;
   const infoProduct = {
     id: product.id,
     slug: product.slug,
     title: product.name,
     brand: "Anand Ras",
-    price: `₹${product.price.toLocaleString("en-IN")}`,
-    priceValue: product.price,
+    price: `₹${(firstPrice / 100).toLocaleString("en-IN")}`,
+    priceValue: firstPrice,
     currency: "INR",
     description: product.short_description ?? product.description ?? "",
     longDescription: product.description ?? undefined,
     images,
-    inStock: true,
+    sizes: (variants ?? []).map((v) => ({ id: v.id, label: `${v.size_ml}ml`, priceValue: v.price })),
+    inStock: (variants ?? []).some((v) => v.stock > 0),
   };
 
   const jsonLd = buildProductJsonLd(product);

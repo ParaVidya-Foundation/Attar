@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
 
-type Size = { id: string; label: string; priceModifier?: number };
+type Size = { id: string; label: string; priceModifier?: number; priceValue?: number };
 
 export type FullProduct = {
   id: string;
@@ -48,10 +48,18 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function addToCart() {
+    const variantId = product.sizes?.length ? (selectedSize || product.sizes[0]?.id) : undefined;
+    if (!variantId) {
+      console.error("[ProductInfo] Add to cart rejected: variantId required for checkout");
+      return;
+    }
+    const price = product.sizes?.find((s) => s.id === selectedSize)?.priceValue ?? product.priceValue ?? 0;
     addItem({
       id: product.id,
+      variantId,
+      slug: product.slug,
       title: product.title,
-      price: product.priceValue ?? 0,
+      price,
       image: product.images?.[0]?.src ?? `/products/${product.slug}.webp`,
       quantity,
     });
@@ -60,7 +68,12 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function buyNow() {
-    router.push(`/checkout?productId=${product.id}&qty=${quantity}`);
+    const variantId = (selectedSize || product.sizes?.[0]?.id)?.trim();
+    if (!variantId) {
+      console.error("Buy Now blocked: no variantId");
+      return;
+    }
+    router.push(`/checkout?variant_id=${encodeURIComponent(variantId)}&quantity=${quantity}`);
   }
 
   return (

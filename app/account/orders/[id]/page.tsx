@@ -25,7 +25,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
       `
       id,
       status,
-      total_amount,
+      amount,
       currency,
       razorpay_order_id,
       razorpay_payment_id,
@@ -34,9 +34,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
       order_items (
         id,
         product_id,
-        size_ml,
-        qty,
-        unit_price
+        variant_id,
+        quantity,
+        price
       )
     `,
     )
@@ -47,11 +47,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
   if (!order) notFound();
 
   const items = (order.order_items as {
-    id: number;
+    id: string;
     product_id: string;
-    size_ml: number;
-    qty: number;
-    unit_price: number;
+    variant_id: string;
+    quantity: number;
+    price: number;
   }[]) ?? [];
 
   const productIds = items.map((i) => i.product_id);
@@ -73,7 +73,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
       minute: "2-digit",
     });
 
-  const formatAmount = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
+  const formatAmount = (amountPaise: number) => `₹${(amountPaise / 100).toLocaleString("en-IN")}`;
 
   const statusColor: Record<string, string> = {
     paid: "bg-green-50 text-green-700 border-green-200",
@@ -117,7 +117,6 @@ export default async function OrderDetailPage({ params }: PageProps) {
             <thead>
               <tr className="border-b border-ash/30 bg-neutral-50/50">
                 <th className="px-5 py-3 text-left font-medium text-charcoal/70">Product</th>
-                <th className="px-5 py-3 text-left font-medium text-charcoal/70">Size</th>
                 <th className="px-5 py-3 text-right font-medium text-charcoal/70">Qty</th>
                 <th className="px-5 py-3 text-right font-medium text-charcoal/70">Price</th>
                 <th className="px-5 py-3 text-right font-medium text-charcoal/70">Total</th>
@@ -140,13 +139,12 @@ export default async function OrderDetailPage({ params }: PageProps) {
                         <span className="text-charcoal/50">Product unavailable</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-charcoal/70">{item.size_ml}ml</td>
-                    <td className="px-5 py-4 text-right text-charcoal/70">{item.qty}</td>
+                    <td className="px-5 py-4 text-right text-charcoal/70">{item.quantity}</td>
                     <td className="px-5 py-4 text-right text-charcoal/70">
-                      {formatAmount(item.unit_price)}
+                      {formatAmount(item.price)}
                     </td>
                     <td className="px-5 py-4 text-right font-medium text-ink">
-                      {formatAmount(item.unit_price * item.qty)}
+                      {formatAmount(item.price * item.quantity)}
                     </td>
                   </tr>
                 );
@@ -159,11 +157,11 @@ export default async function OrderDetailPage({ params }: PageProps) {
           <div className="w-64 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-charcoal/60">Subtotal</span>
-              <span className="font-medium text-ink">{formatAmount(order.total_amount)}</span>
+              <span className="font-medium text-ink">{formatAmount(order.amount)}</span>
             </div>
             <div className="flex justify-between border-t border-ash/30 pt-2">
               <span className="font-medium text-ink">Total</span>
-              <span className="font-serif text-lg text-ink">{formatAmount(order.total_amount)}</span>
+              <span className="font-serif text-lg text-ink">{formatAmount(order.amount)}</span>
             </div>
           </div>
         </div>

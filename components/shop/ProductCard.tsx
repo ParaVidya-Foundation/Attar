@@ -100,7 +100,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {title}
         </h3>
 
-        {/* Price */}
+        {/* Price (stored in paise; display in rupees for INR) */}
         <div
           className="mt-3 flex items-center justify-center gap-3"
           itemProp="offers"
@@ -109,12 +109,12 @@ export default function ProductCard({ product }: { product: Product }) {
         >
           {originalPrice && originalPrice > price && (
             <span className="text-gray-400 line-through text-sm">
-              {currency} {originalPrice.toLocaleString()}
+              {currency} {(originalPrice / 100).toLocaleString("en-IN")}
             </span>
           )}
 
           <span className="text-[18px] font-medium text-[#1e2023]" itemProp="price">
-            {currency} {price.toLocaleString()}
+            {currency} {(price / 100).toLocaleString("en-IN")}
           </span>
 
           {discount && <span className="text-xs text-black/60">-{discount}%</span>}

@@ -10,7 +10,6 @@ const supabase = createClient(url, key, { auth: { persistSession: false } });
 async function main() {
   console.log("=== LIVE DATABASE PROBE ===\n");
 
-  // 1. Check products table — select * limit 1 to see column names
   const { data: products, error: prodErr } = await supabase
     .from("products")
     .select("*")
@@ -30,7 +29,6 @@ async function main() {
 
   console.log();
 
-  // 2. Check categories table
   const { data: cats, error: catErr } = await supabase
     .from("categories")
     .select("*")
@@ -41,41 +39,24 @@ async function main() {
   } else {
     console.log("categories count:", cats?.length);
     if (cats?.length) {
-      console.log("categories:", cats.map((c: any) => `${c.slug} (${c.id})`).join(", "));
+      console.log("categories:", cats.map((c: { slug: string; id: string }) => `${c.slug} (${c.id})`).join(", "));
     }
   }
 
   console.log();
 
-  // 3. Check product_categories junction
-  const { data: pc, error: pcErr } = await supabase
-    .from("product_categories")
+  const { data: variants, error: varErr } = await supabase
+    .from("product_variants")
     .select("*")
     .limit(5);
 
-  if (pcErr) {
-    console.error("product_categories error:", pcErr.message);
+  if (varErr) {
+    console.error("product_variants error:", varErr.message);
   } else {
-    console.log("product_categories rows (sample):", pc?.length);
-    if (pc?.[0]) console.log("sample:", JSON.stringify(pc[0]));
+    console.log("product_variants rows (sample):", variants?.length);
+    if (variants?.[0]) console.log("sample:", JSON.stringify(variants[0]));
   }
 
-  console.log();
-
-  // 4. Check product_sizes
-  const { data: sizes, error: szErr } = await supabase
-    .from("product_sizes")
-    .select("*")
-    .limit(5);
-
-  if (szErr) {
-    console.error("product_sizes error:", szErr.message);
-  } else {
-    console.log("product_sizes rows (sample):", sizes?.length);
-    if (sizes?.[0]) console.log("sample:", JSON.stringify(sizes[0]));
-  }
-
-  // 5. Specifically test the columns the fetcher needs
   console.log("\n=== FETCHER COLUMN TEST ===");
   const { error: fetcherTest } = await supabase
     .from("products")

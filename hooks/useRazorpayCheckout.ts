@@ -12,9 +12,8 @@ declare global {
 }
 
 type CheckoutItem = {
-  productId: string;
-  size_ml: number;
-  qty: number;
+  variant_id: string;
+  quantity: number;
 };
 
 type CheckoutResult = {
@@ -46,6 +45,8 @@ function loadScript(): Promise<boolean> {
 export function useRazorpayCheckout(opts?: {
   onSuccess?: () => void;
   onFailure?: (msg: string) => void;
+  /** When cart checkout requires guest details (e.g. redirect to checkout page) */
+  onGuestRequired?: () => void;
 }): UseRazorpayCheckoutReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,21 +60,27 @@ export function useRazorpayCheckout(opts?: {
 
       try {
         // Cart-based checkout goes through /api/orders (cart endpoint),
-        // which expects { items: [{ productId, size_ml, qty }, ...] }.
-        // This keeps the cart flow separate from the guest /checkout page
-        // which uses /api/orders/create.
+        // which expects { items: [{ variant_id, quantity }, ...] }.
+        // Guest checkout uses /api/orders/create with variant_id + quantity.
         const res = await fetch("/api/orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items }),
         });
 
+        const data = await res.json();
+
         if (res.status === 401) {
           setError("Please log in to checkout.");
+          opts?.onGuestRequired?.();
           return false;
         }
 
-        const data = await res.json();
+        if (res.status === 400 && typeof data.error === "string" && (data.error.includes("name") || data.error.includes("email") || data.error.includes("phone"))) {
+          opts?.onGuestRequired?.();
+          return false;
+        }
+
         if (!res.ok) {
           const msg = data.error ?? "Order creation failed";
           setError(msg);

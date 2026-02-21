@@ -20,9 +20,9 @@ type CartContextValue = ReturnType<typeof useLocalCart> &
     updateQuantity: (id: string, qty: number) => void;
     /** Alias: empty the cart */
     clearCart: () => void;
-    /** Checkout-ready payload for Razorpay / backend */
+    /** Checkout-ready payload for Razorpay / backend (variant_id required per line) */
     getCheckoutPayload: () => {
-      items: { product_id: string; quantity: number; price: number }[];
+      items: { variant_id: string; quantity: number }[];
       total: number;
     };
   };
@@ -35,8 +35,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (item: CartItem) => {
+      if (!item.variantId) {
+        console.error("[Cart] Rejected: variantId required for checkout");
+        return;
+      }
       cart.add({
         id: item.id,
+        variantId: item.variantId,
+        slug: item.slug ?? item.id,
         name: item.title,
         price: item.price,
         imageUrl: item.image,
@@ -60,11 +66,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCheckoutPayload = useCallback(
     () => ({
-      items: cart.lines.map((l) => ({
-        product_id: l.id,
-        quantity: l.qty,
-        price: l.price,
-      })),
+      items: cart.lines
+        .filter((l) => l.variantId)
+        .map((l) => ({
+          variant_id: l.variantId!,
+          quantity: l.qty,
+        })),
       total: cart.total,
     }),
     [cart.lines, cart.total],

@@ -1,9 +1,17 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
   compress: true,
+  turbopack: {
+    root: __dirname,
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },

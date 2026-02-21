@@ -41,18 +41,20 @@ export type BlogPost = {
 
 // Database-backed types
 export type ProductImage = {
-  id: number;
+  id: string;
   product_id: string;
-  url: string;
-  alt: string | null;
-  position: number;
+  image_url: string;
+  is_primary: boolean;
+  sort_order: number;
 };
 
-export type ProductSize = {
-  id: number;
+export type ProductVariant = {
+  id: string;
   product_id: string;
   size_ml: number;
   price: number;
+  sku: string | null;
+  stock: number;
 };
 
 export type Product = {
@@ -60,33 +62,27 @@ export type Product = {
   slug: string;
   name: string;
   description: string | null;
-  origin: string | null;
-  notes: Record<string, string[]> | null;
-  zodiac: string[];
-  planet: string | null;
-  longevity: string | null;
-  spiritual_benefits: string[];
-  badges: string[];
+  short_description: string | null;
+  category_id: string | null;
   price: number;
-  currency: string;
+  original_price: number | null;
   meta_title: string | null;
   meta_description: string | null;
   product_images?: ProductImage[];
-  product_sizes?: ProductSize[];
+  product_variants?: ProductVariant[];
 };
 
 export type OrderItem = {
-  productId: string;
-  size_ml: number;
-  qty: number;
+  variant_id: string;
+  quantity: number;
 };
 
 export type Order = {
   id: string;
   user_id: string | null;
   status: string;
-  total_amount: number;
+  amount: number;
   currency: string;
   razorpay_order_id: string | null;
-  order_items?: Array<OrderItem & { unit_price: number }>;
+  order_items?: Array<OrderItem & { price: number; product_id: string }>;
 };

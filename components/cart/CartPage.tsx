@@ -111,7 +111,7 @@ export default function CartPage() {
                             <button
                               aria-label={`Decrease quantity for ${l.name}`}
                               className="px-3 py-2 text-sm hover:bg-gray-50"
-                              onClick={() => setQty(l.id, l.ml, Math.max(1, (l.qty ?? 1) - 1))}
+                              onClick={() => setQty(l.variantId ?? l.id, l.ml, Math.max(1, (l.qty ?? 1) - 1))}
                               type="button"
                             >
                               −
@@ -123,14 +123,14 @@ export default function CartPage() {
                               value={String(l.qty ?? 1)}
                               onChange={(e) => {
                                 const n = Math.max(1, Number(e.target.value || 1));
-                                setQty(l.id, l.ml, Number.isFinite(n) ? n : 1);
+                                setQty(l.variantId ?? l.id, l.ml, Number.isFinite(n) ? n : 1);
                               }}
                               className="h-10 w-20 px-3 text-center text-sm appearance-none bg-transparent"
                             />
                             <button
                               aria-label={`Increase quantity for ${l.name}`}
                               className="px-3 py-2 text-sm hover:bg-gray-50"
-                              onClick={() => setQty(l.id, l.ml, (l.qty ?? 1) + 1)}
+                              onClick={() => setQty(l.variantId ?? l.id, l.ml, (l.qty ?? 1) + 1)}
                               type="button"
                             >
                               +
@@ -139,7 +139,7 @@ export default function CartPage() {
 
                           <button
                             type="button"
-                            onClick={() => remove(l.id, l.ml)}
+                            onClick={() => remove(l.variantId ?? l.id, l.ml)}
                             className="text-sm font-medium text-gray-700 underline decoration-gray-300 underline-offset-4"
                           >
                             Remove

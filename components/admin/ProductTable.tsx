@@ -10,11 +10,13 @@ import { EmptyState } from "./EmptyState";
 import { Package, Trash2 } from "lucide-react";
 
 type Props = {
-  products: ProductRow[];
-  categories: CategoryRow[];
+  products?: ProductRow[] | null;
+  categories?: CategoryRow[] | null;
 };
 
-export function ProductTable({ products, categories }: Props) {
+export function ProductTable({ products: productsProp, categories: categoriesProp }: Props) {
+  const products = productsProp ?? [];
+  const categories = categoriesProp ?? [];
   const [updating, setUpdating] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
 

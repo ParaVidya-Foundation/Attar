@@ -1,6 +1,6 @@
 /**
  * POST /api/webhooks/razorpay — Razorpay payment webhook
- * Verifies signature, updates order status, inserts payment record, decrements inventory.
+ * Verifies signature, updates order status, decrements variant stock.
  * This is the AUTHORITATIVE path — never trust the client-side payment result.
  */
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -25,22 +25,8 @@ function extractOrderEntity(payload: Record<string, unknown>) {
 async function markOrderPaid(
   razorpayOrderId: string,
   razorpayPaymentId: string,
-  amount: number,
-  currency: string,
 ) {
   const admin = createAdminClient();
-
-  // IDEMPOTENCY CHECK: If payment already exists, return success immediately
-  const { data: existingPayment } = await admin
-    .from("payments")
-    .select("id")
-    .eq("razorpay_payment_id", razorpayPaymentId)
-    .single();
-
-  if (existingPayment) {
-    console.info("[webhook] Payment already processed (idempotent):", razorpayPaymentId);
-    return { ok: true, alreadyProcessed: true };
-  }
 
   const { data: order, error: orderErr } = await admin
     .from("orders")
@@ -86,49 +72,26 @@ async function markOrderPaid(
     return { ok: false, status: 500 };
   }
 
-  // Insert payment record (with idempotency protection via UNIQUE constraint)
-  const { error: paymentErr } = await admin.from("payments").insert({
-    order_id: order.id,
-    razorpay_payment_id: razorpayPaymentId,
-    razorpay_order_id: razorpayOrderId,
-    status: "captured",
-    amount: Math.round(amount / 100),
-    currency,
-    method: "razorpay",
-  });
-
-  if (paymentErr) {
-    // If payment insert fails due to duplicate, that's okay (idempotent)
-    if (paymentErr.code === "23505") {
-      console.info("[webhook] Payment record already exists (idempotent):", razorpayPaymentId);
-    } else {
-      console.error("[webhook] Payment insert failed:", paymentErr);
-      // Don't fail the webhook - order is already updated
-    }
-  }
-
-  // Decrement inventory
+  // Decrement variant stock
   const { data: orderItems } = await admin
     .from("order_items")
-    .select("product_id, size_ml, qty")
+    .select("variant_id, quantity")
     .eq("order_id", order.id);
 
   if (orderItems) {
     for (const item of orderItems) {
-      const { error: invErr } = await admin.rpc("decrement_inventory", {
-        p_product_id: item.product_id,
-        p_size_ml: item.size_ml,
-        p_qty: item.qty,
+      const { error: invErr } = await admin.rpc("decrement_variant_stock", {
+        p_variant_id: item.variant_id,
+        p_qty: item.quantity,
       });
 
       if (invErr) {
         console.error(
-          "[webhook] Inventory decrement failed:",
-          item.product_id,
-          item.size_ml,
+          "[webhook] Stock decrement failed:",
+          item.variant_id,
           invErr,
         );
-        // Log but don't fail - inventory can be manually adjusted
+        // Log but don't fail - stock can be manually adjusted
       }
     }
   }
@@ -137,7 +100,6 @@ async function markOrderPaid(
     orderId: order.id,
     razorpayOrderId,
     razorpayPaymentId,
-    amount,
   });
 
   return { ok: true };
@@ -208,7 +170,7 @@ export async function POST(req: Request) {
       webhookId,
     });
 
-    const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId, amount, currency);
+    const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId);
 
     if (result.alreadyProcessed) {
       return NextResponse.json({ ok: true, message: "Already processed" });
@@ -251,7 +213,7 @@ export async function POST(req: Request) {
       webhookId,
     });
 
-    const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId, amount, currency);
+    const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId);
 
     if (result.alreadyProcessed) {
       return NextResponse.json({ ok: true, message: "Already processed" });

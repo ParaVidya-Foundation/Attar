@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +13,7 @@ type ProductData = {
   price: number;
   original_price: number | null;
   image: string;
+  variantId?: string;
 };
 
 type FormErrors = {
@@ -44,15 +45,23 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-function formatINR(v: number) {
+function formatINR(paise: number) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(v);
+  }).format(paise / 100);
 }
 
 const INDIA_PHONE = /^[6-9]\d{9}$/;
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function sanitizeVariantId(raw: string | null): string {
+  if (raw == null || typeof raw !== "string") return "";
+  const trimmed = raw.trim();
+  return trimmed.startsWith("=") ? trimmed.slice(1).trim() : trimmed;
+}
 
 function validate(name: string, email: string, phone: string): FormErrors {
   const e: FormErrors = {};
@@ -62,12 +71,24 @@ function validate(name: string, email: string, phone: string): FormErrors {
   return e;
 }
 
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+      <p className="text-sm text-neutral-500">{message}</p>
+      <Link href="/shop" className="text-sm font-medium text-neutral-900 underline">
+        Browse products
+      </Link>
+    </div>
+  );
+}
+
 function CheckoutForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const productId = searchParams.get("productId") ?? "";
-  const qtyParam = parseInt(searchParams.get("qty") ?? "1", 10);
+  const rawVariantId = searchParams.get("variant_id");
+  const variantId = sanitizeVariantId(rawVariantId);
+  const qtyParam = parseInt(searchParams.get("qty") ?? searchParams.get("quantity") ?? "1", 10);
   const qty = Math.max(1, Math.min(99, qtyParam));
 
   const [product, setProduct] = useState<ProductData | null>(null);
@@ -80,26 +101,32 @@ function CheckoutForm() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
 
   useEffect(() => {
-    // Debug log to trace real-world issues with bad URLs / params
-    console.log("[Checkout] Incoming params", { productId, qty });
-
-    if (!productId) {
-      setError("No product selected.");
+    if (!variantId) {
       setLoading(false);
+      setError("Invalid checkout request");
       return;
     }
-
-    async function fetchProduct() {
+    async function fetchData() {
       try {
-        const res = await fetch(`/api/products/${productId}`);
+        const res = await fetch(`/api/variants/${variantId}`);
         if (!res.ok) {
-          setError("Product not found.");
+          setError("Product not available.");
+          setLoading(false);
           return;
         }
         const data = await res.json();
-        setProduct(data);
+        setProduct({
+          id: data.product.id,
+          name: data.product.name,
+          slug: data.product.slug,
+          price: data.variant.price,
+          original_price: null,
+          image: data.product.image,
+          variantId: data.variant.id,
+        });
       } catch {
         setError("Could not load product.");
       } finally {
@@ -107,8 +134,20 @@ function CheckoutForm() {
       }
     }
 
-    fetchProduct();
-  }, [productId]);
+    fetchData();
+  }, [variantId]);
+
+  if (!variantId) {
+    console.error("Checkout accessed without variant_id");
+    return <EmptyState message="Invalid checkout request" />;
+  }
+
+  if (!UUID_REGEX.test(variantId)) {
+    console.error("[CHECKOUT] Invalid variant_id:", variantId);
+    return <EmptyState message="Product not available." />;
+  }
+
+  console.log("[CHECKOUT] cleaned variant_id:", variantId);
 
   const total = product ? product.price * qty : 0;
 
@@ -116,11 +155,13 @@ function CheckoutForm() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (!product) return;
+      if (submitLockRef.current) return;
 
       const errs = validate(name, email, phone);
       setFormErrors(errs);
       if (Object.keys(errs).length > 0) return;
 
+      submitLockRef.current = true;
       setSubmitting(true);
       setSubmitError(null);
 
@@ -132,8 +173,8 @@ function CheckoutForm() {
             name: name.trim(),
             email: email.trim(),
             phone: phone.replace(/\s/g, ""),
-            productId: product.id,
-            qty,
+            variant_id: product.variantId ?? variantId,
+            quantity: qty,
           }),
         });
 
@@ -143,8 +184,13 @@ function CheckoutForm() {
           return;
         }
 
+        if (!data.keyId) {
+          setSubmitError("Payment configuration error. Please try again later.");
+          return;
+        }
+
         const loaded = await loadRazorpayScript();
-        if (!loaded) {
+        if (!loaded || typeof window === "undefined" || !window.Razorpay) {
           setSubmitError("Payment system could not load. Please try again.");
           return;
         }
@@ -193,10 +239,11 @@ function CheckoutForm() {
       } catch {
         setSubmitError("Something went wrong. Please try again.");
       } finally {
+        submitLockRef.current = false;
         setSubmitting(false);
       }
     },
-    [product, name, email, phone, qty, router],
+    [product, name, email, phone, qty, variantId, router],
   );
 
   if (loading) {
@@ -229,11 +276,12 @@ function CheckoutForm() {
             <div className="flex gap-4">
               <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-neutral-50">
                 <Image
-                  src={product.image}
+                  src={product.image?.trim() || "/products/placeholder.webp"}
                   alt={product.name}
                   fill
                   className="object-cover"
                   sizes="96px"
+                  unoptimized={product.image?.startsWith("http") === true}
                 />
               </div>
               <div className="min-w-0 flex-1">

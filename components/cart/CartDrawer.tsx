@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/Button";
 import { useCart } from "./CartProvider";
 import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 
-function formatINR(v: number) {
+function formatINR(paise: number) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     maximumFractionDigits: 0,
-  }).format(v);
+  }).format(paise / 100);
 }
 
 export function CartDrawer(): JSX.Element | null {
@@ -37,19 +37,27 @@ export function CartDrawer(): JSX.Element | null {
       router.push("/account/orders");
       router.refresh();
     },
+    onGuestRequired: () => {
+      const first = lines.find((l) => l.variantId);
+      if (first) {
+        setOpen(false);
+        router.push(`/checkout?variant_id=${encodeURIComponent(first.variantId ?? "")}&quantity=${first.qty}`);
+      }
+    },
   });
 
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const handleCheckout = useCallback(async () => {
-    if (lines.length === 0) return;
-
-    const items = lines.map((l) => ({
-      productId: l.id,
-      size_ml: l.ml || 3,
-      qty: l.qty,
+    const items = lines.filter((l) => l.variantId).map((l) => ({
+      variant_id: l.variantId!,
+      quantity: l.qty,
     }));
+    if (items.length === 0) {
+      console.error("[Cart] Checkout skipped: no lines with variantId");
+      return;
+    }
 
     await startCheckout(items);
   }, [lines, startCheckout]);
@@ -171,7 +179,7 @@ export function CartDrawer(): JSX.Element | null {
                             <button
                               type="button"
                               aria-label={`Decrease quantity for ${l.name}`}
-                              onClick={() => setQty(l.id, l.ml, Math.max(1, (l.qty ?? 1) - 1))}
+                              onClick={() => setQty(l.variantId ?? l.id, l.ml, Math.max(1, (l.qty ?? 1) - 1))}
                               className="px-3 py-2 text-sm hover:bg-white/70 transition"
                             >
                               −
@@ -184,7 +192,7 @@ export function CartDrawer(): JSX.Element | null {
                               value={String(l.qty ?? 1)}
                               onChange={(e) => {
                                 const n = Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1);
-                                setQty(l.id, l.ml, n);
+                                setQty(l.variantId ?? l.id, l.ml, n);
                               }}
                               className="h-9 w-16 bg-transparent text-center text-sm appearance-none px-2"
                             />
@@ -192,7 +200,7 @@ export function CartDrawer(): JSX.Element | null {
                             <button
                               type="button"
                               aria-label={`Increase quantity for ${l.name}`}
-                              onClick={() => setQty(l.id, l.ml, (l.qty ?? 1) + 1)}
+                              onClick={() => setQty(l.variantId ?? l.id, l.ml, (l.qty ?? 1) + 1)}
                               className="px-3 py-2 text-sm hover:bg-white/70 transition"
                             >
                               +
@@ -201,7 +209,7 @@ export function CartDrawer(): JSX.Element | null {
 
                           <button
                             type="button"
-                            onClick={() => remove(l.id, l.ml)}
+                            onClick={() => remove(l.variantId ?? l.id, l.ml)}
                             className="text-sm text-gray-700 underline decoration-gray-200 underline-offset-4"
                           >
                             Remove

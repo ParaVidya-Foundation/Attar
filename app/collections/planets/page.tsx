@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import ProductCard from "@/components/shop/ProductCard";
-import { getProductsByCategorySlug } from "@/lib/fetchers";
+import { getProductsByCategory } from "@/lib/api/products";
+import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Planet Attars",
@@ -12,7 +13,12 @@ export const metadata: Metadata = {
 };
 
 export default async function PlanetsPage() {
-  const products = await getProductsByCategorySlug("planets");
+  let products: Awaited<ReturnType<typeof getProductsByCategory>> = [];
+  try {
+    products = await getProductsByCategory(COLLECTION_SLUGS.planets);
+  } catch {
+    products = [];
+  }
   const mappedProducts = products.map(mapToCardProduct);
 
   return (
@@ -36,9 +42,13 @@ export default async function PlanetsPage() {
         </header>
 
         <div className="grid gap-y-14 gap-x-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {mappedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {mappedProducts.length === 0 ? (
+            <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
+          ) : (
+            mappedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </div>
       </section>
     </section>

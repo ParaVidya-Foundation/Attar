@@ -3,39 +3,24 @@
  * Returns orders with filters, pagination, and statistics
  */
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/auth";
+import { assertAdminEnv } from "@/lib/admin/envCheck";
+import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 import { NextResponse } from "next/server";
 
-// Note: requireAdmin uses redirect() which doesn't work in API routes
-// We'll check admin status directly here
-async function checkAdmin() {
-  const { createServerClient } = await import("@/lib/supabase/server");
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  
-  if (!user) {
-    throw new Error("Unauthorized");
+function adminErrorStatus(err: unknown): { status: number; body: { error: string } } {
+  if (err instanceof NotAuthenticatedError) {
+    return { status: 401, body: { error: "Not authenticated" } };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Unauthorized");
+  if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+    return { status: 403, body: { error: "Forbidden" } };
   }
-
-  return user;
+  return { status: 500, body: { error: "Internal server error" } };
 }
 
 export async function GET(req: Request) {
   try {
-    // Verify admin access
-    await checkAdmin();
+    assertAdminEnv();
+    await assertAdmin();
 
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") ?? "1", 10);
@@ -49,10 +34,9 @@ export async function GET(req: Request) {
     let query = admin
       .from("orders")
       .select(
-        "id,user_id,name,email,phone,status,total_amount,currency,razorpay_order_id,razorpay_payment_id,created_at,updated_at",
+        "id,user_id,name,email,phone,status,amount,currency,razorpay_order_id,razorpay_payment_id,created_at,updated_at",
         { count: "exact" }
       )
-      .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -77,29 +61,25 @@ export async function GET(req: Request) {
         .from("orders")
         .select("id", { count: "exact", head: true })
         .gte("created_at", todayStart)
-        .lt("created_at", todayEnd)
-        .is("deleted_at", null),
+        .lt("created_at", todayEnd),
       admin
         .from("orders")
-        .select("total_amount")
+        .select("amount")
         .eq("status", "paid")
         .gte("created_at", todayStart)
-        .lt("created_at", todayEnd)
-        .is("deleted_at", null),
+        .lt("created_at", todayEnd),
       admin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("status", "pending")
-        .is("deleted_at", null),
+        .eq("status", "pending"),
       admin
         .from("orders")
         .select("id", { count: "exact", head: true })
-        .eq("status", "failed")
-        .is("deleted_at", null),
+        .eq("status", "failed"),
     ]);
 
     const ordersToday = ordersTodayRes.count ?? 0;
-    const revenueToday = (revenueTodayRes.data ?? []).reduce((s, o) => s + (o.total_amount ?? 0), 0);
+    const revenueToday = (revenueTodayRes.data ?? []).reduce((s, o) => s + (o.amount ?? 0), 0);
     const pendingOrders = pendingRes.count ?? 0;
     const failedOrders = failedRes.count ?? 0;
 
@@ -119,8 +99,9 @@ export async function GET(req: Request) {
       },
     });
   } catch (err) {
-    if (err instanceof Error && err.message.includes("Unauthorized")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (err instanceof NotAuthenticatedError || err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+      const { status, body } = adminErrorStatus(err);
+      return NextResponse.json(body, { status });
     }
     console.error("[ADMIN ORDERS API ERROR]", {
       error: err instanceof Error ? err.message : String(err),

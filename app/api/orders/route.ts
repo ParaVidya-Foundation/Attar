@@ -1,7 +1,6 @@
 /**
- * POST /api/orders — Create order and return Razorpay checkout info
- * Validates cart server-side, looks up prices from DB, creates Razorpay order.
- * Never trusts client-supplied prices.
+ * POST /api/orders — Create order and return Razorpay checkout info (cart flow).
+ * Supports authenticated and guest checkout. Validates cart server-side; never trusts client prices.
  */
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,15 +9,24 @@ import { getServerEnv } from "@/lib/env";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
+const INDIA_PHONE = /^[6-9]\d{9}$/;
+
 const cartItemSchema = z.object({
-  productId: z.string().uuid(),
-  size_ml: z.number().int().positive(),
-  qty: z.number().int().min(1).max(99),
+  variant_id: z.string().uuid(),
+  quantity: z.number().int().min(1).max(99),
 });
 
 const cartSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(50),
 });
+
+const guestCartSchema = cartSchema.and(
+  z.object({
+    name: z.string().min(2).max(100),
+    email: z.string().email(),
+    phone: z.string().regex(INDIA_PHONE, "Valid 10-digit Indian phone number required"),
+  }),
+);
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -28,21 +36,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = cartSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid cart payload", details: parsed.error.flatten() },
-      { status: 400 },
-    );
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const isGuest = !user;
+  const parsed = isGuest ? guestCartSchema.safeParse(body) : cartSchema.safeParse(body);
+
+  if (!parsed.success) {
+    if (isGuest) {
+      return NextResponse.json(
+        { error: "Guest checkout requires name, email, and phone. Log in or use the checkout page." },
+        { status: 401 },
+      );
+    }
+    return NextResponse.json(
+      { error: "Invalid cart payload", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   try {
@@ -50,50 +62,43 @@ export async function POST(req: Request) {
     const items = parsed.data.items;
 
     const resolved: Array<{
-      productId: string;
-      size_ml: number;
-      qty: number;
-      unit_price: number;
+      product_id: string;
+      variant_id: string;
+      quantity: number;
+      price: number;
     }> = [];
-    let total = 0;
+    let totalPaise = 0;
 
     for (const item of items) {
-      const { data: sizeRow } = await admin
-        .from("product_sizes")
-        .select("price")
-        .eq("product_id", item.productId)
-        .eq("size_ml", item.size_ml)
+      const { data: variant } = await admin
+        .from("product_variants")
+        .select("id, product_id, price, stock")
+        .eq("id", item.variant_id)
         .single();
 
-      const { data: invRow } = await admin
-        .from("inventory")
-        .select("stock")
-        .eq("product_id", item.productId)
-        .eq("size_ml", item.size_ml)
-        .single();
-
-      if (!sizeRow) {
+      if (!variant) {
         return NextResponse.json(
-          { error: `Product size not found: ${item.productId}/${item.size_ml}ml` },
+          { error: `Variant not found: ${item.variant_id}` },
           { status: 400 },
         );
       }
 
-      const stock = invRow?.stock ?? 0;
-      if (stock < item.qty) {
+      const stock = variant.stock ?? 0;
+      if (stock < item.quantity) {
         return NextResponse.json(
-          { error: `Insufficient stock for product ${item.productId} size ${item.size_ml}ml` },
+          { error: `Insufficient stock for variant ${item.variant_id}` },
           { status: 400 },
         );
       }
 
+      const lineTotal = variant.price * item.quantity;
       resolved.push({
-        productId: item.productId,
-        size_ml: item.size_ml,
-        qty: item.qty,
-        unit_price: sizeRow.price,
+        product_id: variant.product_id,
+        variant_id: variant.id,
+        quantity: item.quantity,
+        price: variant.price,
       });
-      total += sizeRow.price * item.qty;
+      totalPaise += lineTotal;
     }
 
     if (resolved.length === 0) {
@@ -102,20 +107,25 @@ export async function POST(req: Request) {
 
     const receipt = `ord_${Date.now()}`;
     const razorpayOrder = await createRazorpayOrder({
-      amount: total * 100,
+      amount: totalPaise,
       currency: "INR",
       receipt,
     });
 
+    const orderPayload = {
+      user_id: user?.id ?? null,
+      email: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).email : (user?.email ?? ""),
+      name: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).name : null,
+      phone: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).phone : null,
+      status: "pending",
+      amount: totalPaise,
+      currency: "INR",
+      razorpay_order_id: razorpayOrder.id,
+    };
+
     const { data: order, error: orderErr } = await admin
       .from("orders")
-      .insert({
-        user_id: user.id,
-        status: "pending",
-        total_amount: total,
-        currency: "INR",
-        razorpay_order_id: razorpayOrder.id,
-      })
+      .insert(orderPayload)
       .select("id")
       .single();
 
@@ -126,10 +136,10 @@ export async function POST(req: Request) {
 
     const orderItems = resolved.map((r) => ({
       order_id: order.id,
-      product_id: r.productId,
-      size_ml: r.size_ml,
-      qty: r.qty,
-      unit_price: r.unit_price,
+      product_id: r.product_id,
+      variant_id: r.variant_id,
+      quantity: r.quantity,
+      price: r.price,
     }));
 
     const { error: itemsErr } = await admin.from("order_items").insert(orderItems);
@@ -138,7 +148,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
-    // Use safe env access
     const env = getServerEnv();
     const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -146,7 +155,7 @@ export async function POST(req: Request) {
       console.error("[orders] NEXT_PUBLIC_RAZORPAY_KEY_ID not configured");
       return NextResponse.json(
         { error: "Payment configuration error" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 

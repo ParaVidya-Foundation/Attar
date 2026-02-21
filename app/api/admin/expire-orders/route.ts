@@ -3,35 +3,24 @@
  * Can be called manually or via cron job
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { assertAdminEnv } from "@/lib/admin/envCheck";
+import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 import { NextResponse } from "next/server";
 
-async function checkAdmin() {
-  const { createServerClient } = await import("@/lib/supabase/server");
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  
-  if (!user) {
-    throw new Error("Unauthorized");
+function adminErrorStatus(err: unknown): { status: number; body: { error: string } } {
+  if (err instanceof NotAuthenticatedError) {
+    return { status: 401, body: { error: "Not authenticated" } };
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (profile?.role !== "admin") {
-    throw new Error("Unauthorized");
+  if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+    return { status: 403, body: { error: "Forbidden" } };
   }
-
-  return user;
+  return { status: 500, body: { error: "Internal server error" } };
 }
 
 export async function POST() {
   try {
-    await checkAdmin();
+    assertAdminEnv();
+    await assertAdmin();
     const admin = createAdminClient();
 
     const { data, error } = await admin.rpc("expire_pending_orders");
@@ -54,8 +43,9 @@ export async function POST() {
       message: `Expired ${expiredCount} pending orders`,
     });
   } catch (err) {
-    if (err instanceof Error && err.message.includes("Unauthorized")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (err instanceof NotAuthenticatedError || err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+      const { status, body } = adminErrorStatus(err);
+      return NextResponse.json(body, { status });
     }
     console.error("[EXPIRE ORDERS ERROR]", {
       error: err instanceof Error ? err.message : String(err),

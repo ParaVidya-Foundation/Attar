@@ -19,10 +19,10 @@ export default async function OrdersPage() {
       `
       id,
       status,
-      total_amount,
+      amount,
       currency,
       created_at,
-      order_items (id, qty, unit_price, size_ml)
+      order_items (id, quantity, price)
     `,
     )
     .eq("user_id", user.id)
@@ -35,9 +35,9 @@ export default async function OrdersPage() {
       year: "numeric",
     });
 
-  const formatAmount = (amount: number, currency: string) => {
-    if (currency === "INR") return `₹${amount.toLocaleString("en-IN")}`;
-    return `${currency} ${amount.toFixed(2)}`;
+  const formatAmount = (amountPaise: number, currency: string) => {
+    if (currency === "INR") return `₹${(amountPaise / 100).toLocaleString("en-IN")}`;
+    return `${currency} ${(amountPaise / 100).toFixed(2)}`;
   };
 
   const statusColor: Record<string, string> = {
@@ -65,8 +65,8 @@ export default async function OrdersPage() {
         ) : (
           <div className="mt-8 space-y-4">
             {orders.map((order) => {
-              const items = (order.order_items as { id: number; qty: number; unit_price: number; size_ml: number }[]) ?? [];
-              const itemCount = items.reduce((sum, i) => sum + i.qty, 0);
+              const items = (order.order_items as { id: string; quantity: number; price: number }[]) ?? [];
+              const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
               return (
                 <Link
@@ -97,7 +97,7 @@ export default async function OrdersPage() {
                     <div>
                       <span className="text-charcoal/50">Amount: </span>
                       <span className="font-medium text-ink">
-                        {formatAmount(order.total_amount, order.currency)}
+                        {formatAmount(order.amount, order.currency)}
                       </span>
                     </div>
                     <div>

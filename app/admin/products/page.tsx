@@ -13,7 +13,7 @@ export default async function AdminProductsPage({ searchParams }: Props) {
   const search = params.search ?? "";
   const page = parseInt(params.page ?? "1", 10);
 
-  const [{ data: products, total }, categories] = await Promise.all([
+  const [{ data: products = [], total = 0 }, categories = []] = await Promise.all([
     getProducts(page, search || undefined),
     getCategories(),
   ]);

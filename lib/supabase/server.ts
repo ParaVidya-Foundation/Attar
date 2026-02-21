@@ -54,16 +54,34 @@ export async function createServerClient() {
   });
 }
 
+const SUPABASE_ENV_MSG =
+  "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set. Product/catalog fetches will fail.";
+
+/**
+ * Runtime guard: in development throws if Supabase env is missing; in production logs only.
+ * Call before using createStaticClient() for catalog/product data to avoid silent empty results.
+ */
+export function assertSupabaseEnv(): void {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const missing = !url.trim() || !anonKey.trim();
+  if (!missing) return;
+  if (process.env.NODE_ENV === "development") {
+    throw new Error(`[supabase/server] ${SUPABASE_ENV_MSG}`);
+  }
+  console.error("[supabase/server] PRODUCTION: Supabase env missing.", SUPABASE_ENV_MSG);
+}
+
 /**
  * Lightweight Supabase client for data fetching in server components / ISR.
- * Returns null if env vars are missing (build-time safety).
+ * Throws if env vars are missing (no silent empty responses).
  */
 export function createStaticClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-  if (!url || !anonKey) {
-    return null;
+  if (!url.trim() || !anonKey.trim()) {
+    throw new Error(`[supabase/server] ${SUPABASE_ENV_MSG}`);
   }
 
   return createSupabaseClient(url, anonKey, {

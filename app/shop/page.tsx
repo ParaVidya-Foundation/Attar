@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import ProductCard from "@/components/shop/ProductCard";
-import { getCategories, getProductsByCategorySlug, type ProductRow } from "@/lib/fetchers";
+import { getCategories } from "@/lib/fetchers";
+import { getAllProducts, getProductsByCategory } from "@/lib/api/products";
 import { mapToCardProduct } from "@/lib/productMapper";
+import type { ProductDisplay } from "@/types/product";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Shop",
@@ -11,11 +13,10 @@ export const metadata: Metadata = {
     "Shop luxury perfumes crafted with heritage discipline. Minimal design, premium quality, long lasting fragrances.",
 };
 
-function sortProducts(products: ProductRow[], sort: string): ProductRow[] {
+function sortProducts(products: ProductDisplay[], sort: string): ProductDisplay[] {
   if (sort === "price") {
     return [...products].sort((a, b) => a.price - b.price);
   }
-
   if (sort === "new" || sort === "rating") {
     return [...products].sort((a, b) => {
       const first = a.created_at ? Date.parse(a.created_at) : 0;
@@ -23,7 +24,6 @@ function sortProducts(products: ProductRow[], sort: string): ProductRow[] {
       return second - first;
     });
   }
-
   return products;
 }
 
@@ -38,19 +38,21 @@ export default async function ShopPage({
 
   const dbCategories = await getCategories();
 
-  let rawProducts: ProductRow[] = [];
-  if (category === "all") {
-    const categoryProducts = await Promise.all(dbCategories.map((item) => getProductsByCategorySlug(item.slug)));
-    const deduped = new Map<string, ProductRow>();
-    categoryProducts.flat().forEach((item) => {
-      deduped.set(item.slug, item);
-    });
-    rawProducts = Array.from(deduped.values());
-  } else {
-    rawProducts = await getProductsByCategorySlug(category);
+  let rawProducts: ProductDisplay[] = [];
+  try {
+    if (category === "all") {
+      rawProducts = await getAllProducts();
+    } else {
+      rawProducts = await getProductsByCategory(category);
+    }
+  } catch {
+    rawProducts = [];
   }
 
-  const products = sortProducts(rawProducts, sort).map(mapToCardProduct);
+  const sorted = sortProducts(rawProducts, sort);
+  const products = sorted.map(mapToCardProduct);
+
+  console.log("[PAGE] shop products received:", products?.length ?? "null/undefined");
 
   const categories = [{ id: "all", label: "All" }, ...dbCategories.map((item) => ({ id: item.slug, label: item.name }))];
 
@@ -104,9 +106,13 @@ export default async function ShopPage({
         </div>
 
         <section className="grid gap-y-14 gap-x-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {products.length === 0 ? (
+            <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
+          ) : (
+            products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </section>
       </div>
     </main>

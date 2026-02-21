@@ -1,13 +1,12 @@
 /**
  * POST /api/orders/create — Guest + authenticated order creation.
- * Validates input, looks up prices from DB (never trusts client), creates Razorpay order.
+ * Validates input, looks up price/stock from product_variants (never trusts client), creates Razorpay order.
  */
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { getServerEnv } from "@/lib/env";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
-import type { OrderPayload } from "@/types/cart";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -17,12 +16,11 @@ const guestSchema = z.object({
   name: z.string().min(2).max(100),
   email: z.string().email(),
   phone: z.string().regex(INDIA_PHONE, "Valid 10-digit Indian phone number required"),
-  productId: z.string().uuid(),
-  qty: z.number().int().min(1).max(99).default(1),
+  variant_id: z.string().uuid(),
+  quantity: z.number().int().min(1).max(99).default(1),
 });
 
 export async function POST(req: Request) {
-  // Rate limiting: 5 order attempts per minute per IP
   const identifier = getClientIdentifier(req);
   const limit = rateLimit(identifier, 5, 60 * 1000);
 
@@ -49,7 +47,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const parsed = guestSchema.safeParse(body as OrderPayload);
+  const b = body as Record<string, unknown>;
+  if (b && typeof b === "object" && (b.variant_id == null || b.variant_id === "")) {
+    return NextResponse.json({ error: "variant_id is required" }, { status: 400 });
+  }
+
+  const parsed = guestSchema.safeParse(body);
   if (!parsed.success) {
     console.warn("[ORDER CREATE] Validation failed", {
       issues: parsed.error.flatten(),
@@ -60,9 +63,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const { name, email, phone, productId, qty } = parsed.data;
+  const { name, email, phone, variant_id, quantity } = parsed.data;
 
-  // Optional: attach user_id if logged in
   let userId: string | null = null;
   try {
     const supabase = await createClient();
@@ -71,62 +73,56 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     userId = user?.id ?? null;
   } catch {
-    // Guest checkout — no user is fine
+    // Guest checkout
   }
 
   try {
     const admin = createAdminClient();
 
+    const { data: variant } = await admin
+      .from("product_variants")
+      .select("id, product_id, price, stock")
+      .eq("id", variant_id)
+      .single();
+
+    if (!variant) {
+      return NextResponse.json({ error: "Variant not found" }, { status: 400 });
+    }
+
     const { data: product } = await admin
       .from("products")
-      .select("id, name, price, is_active")
-      .eq("id", productId)
+      .select("id, name, is_active")
+      .eq("id", variant.product_id)
       .single();
 
     if (!product || !product.is_active) {
-      console.warn("[orders/create] Product not found or inactive:", productId);
       return NextResponse.json({ error: "Product not found or unavailable" }, { status: 400 });
     }
 
-    // INVENTORY CHECK: Verify stock availability before creating order
-    const { data: inventory } = await admin
-      .from("inventory")
-      .select("stock")
-      .eq("product_id", productId)
-      .eq("size_ml", 3) // Default size for guest checkout
-      .single();
-
-    const availableStock = inventory?.stock ?? 0;
-    if (availableStock < qty) {
-      console.warn("[orders/create] Insufficient inventory:", {
-        productId,
-        requested: qty,
-        available: availableStock,
-      });
+    const availableStock = variant.stock ?? 0;
+    if (availableStock < quantity) {
       return NextResponse.json(
         { error: `Only ${availableStock} items available in stock` },
         { status: 400 }
       );
     }
 
-    const unitPrice: number = product.price;
-    const total = unitPrice * qty;
-
-    if (total <= 0) {
+    const totalPaise = variant.price * quantity;
+    if (totalPaise <= 0) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
     }
 
     console.info("[ORDER CREATED]", {
-      productId,
-      qty,
-      total,
+      variant_id,
+      quantity,
+      totalPaise,
       email: email.trim().toLowerCase(),
       userId: userId || "guest",
     });
 
     const receipt = `ord_${Date.now()}`;
     const razorpayOrder = await createRazorpayOrder({
-      amount: total * 100,
+      amount: totalPaise,
       currency: "INR",
       receipt,
     });
@@ -139,7 +135,7 @@ export async function POST(req: Request) {
         email,
         phone,
         status: "pending",
-        total_amount: total,
+        amount: totalPaise,
         currency: "INR",
         razorpay_order_id: razorpayOrder.id,
       })
@@ -149,7 +145,7 @@ export async function POST(req: Request) {
     if (orderErr || !order) {
       console.error("[ORDER CREATION FAILED]", {
         error: orderErr,
-        productId,
+        variant_id,
         email: email.trim().toLowerCase(),
       });
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
@@ -157,10 +153,10 @@ export async function POST(req: Request) {
 
     const { error: itemsErr } = await admin.from("order_items").insert({
       order_id: order.id,
-      product_id: productId,
-      size_ml: 3,
-      qty,
-      unit_price: unitPrice,
+      product_id: variant.product_id,
+      variant_id: variant.id,
+      quantity,
+      price: variant.price,
     });
 
     if (itemsErr) {
@@ -171,7 +167,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
-    // Use safe env access
     const env = getServerEnv();
     const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -193,7 +188,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[ORDER CREATION ERROR]", {
       error: err instanceof Error ? err.message : String(err),
-      productId,
+      variant_id,
       email: email.trim().toLowerCase(),
     });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

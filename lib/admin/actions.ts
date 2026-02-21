@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/auth";
+import { assertAdminEnv } from "@/lib/admin/envCheck";
+import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 
 export type ProductFormData = {
   name: string;
@@ -25,38 +26,27 @@ function slugify(text: string): string {
     .replace(/-+/g, "-");
 }
 
-export async function createProduct(data: ProductFormData) {
-  await requireAdmin();
-  const supabase = createAdminClient();
-  const slug = data.slug || slugify(data.name);
-
-  const { error } = await supabase.from("products").insert({
-    name: data.name,
-    slug,
-    description: data.description || null,
-    short_description: null,
-    category_id: data.category_id || null,
-    price: data.price,
-    original_price: data.original_price ?? null,
-    stock: data.stock ?? 0,
-    is_active: data.is_active ?? true,
-    image_url: data.image_url || null,
-  });
-
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  return { ok: true };
+async function guardAdmin(): Promise<{ ok: false; error: string } | null> {
+  try {
+    assertAdminEnv();
+    await assertAdmin();
+    return null;
+  } catch (err) {
+    if (err instanceof NotAuthenticatedError) return { ok: false, error: "Not authenticated" };
+    if (err instanceof ForbiddenError || err instanceof ProfileMissingError) return { ok: false, error: "Forbidden" };
+    console.error("[admin actions] guardAdmin failed:", err);
+    throw err;
+  }
 }
 
-export async function updateProduct(id: string, data: ProductFormData) {
-  await requireAdmin();
+export async function createProduct(data: ProductFormData) {
+  const guard = await guardAdmin();
+  if (guard) return guard;
   const supabase = createAdminClient();
   const slug = data.slug || slugify(data.name);
 
-  const { error } = await supabase
-    .from("products")
-    .update({
+  try {
+    const { error } = await supabase.from("products").insert({
       name: data.name,
       slug,
       description: data.description || null,
@@ -64,65 +54,122 @@ export async function updateProduct(id: string, data: ProductFormData) {
       category_id: data.category_id || null,
       price: data.price,
       original_price: data.original_price ?? null,
-      stock: data.stock ?? 0,
       is_active: data.is_active ?? true,
-      image_url: data.image_url || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
+    });
 
-  if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  revalidatePath(`/admin/products/${id}`);
-  return { ok: true };
+    if (error) {
+      console.error("[admin actions] createProduct Supabase error", { error, slug });
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin actions] createProduct failed", { error: err, slug: data.slug || slugify(data.name) });
+    throw err;
+  }
+}
+
+export async function updateProduct(id: string, data: ProductFormData) {
+  const guard = await guardAdmin();
+  if (guard) return guard;
+  const supabase = createAdminClient();
+  const slug = data.slug || slugify(data.name);
+
+  try {
+    const { error } = await supabase
+      .from("products")
+      .update({
+        name: data.name,
+        slug,
+        description: data.description || null,
+        short_description: null,
+        category_id: data.category_id || null,
+        price: data.price,
+        original_price: data.original_price ?? null,
+        is_active: data.is_active ?? true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("[admin actions] updateProduct Supabase error", { error, id });
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    revalidatePath(`/admin/products/${id}`);
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin actions] updateProduct failed", { error: err, id });
+    throw err;
+  }
 }
 
 export async function toggleProductActive(id: string, isActive: boolean) {
-  await requireAdmin();
+  const guard = await guardAdmin();
+  if (guard) return guard;
   const supabase = createAdminClient();
-  const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", id);
+  try {
+    const { error } = await supabase.from("products").update({ is_active: isActive }).eq("id", id);
 
-  if (error) {
-    return { ok: false, error: error.message };
+    if (error) {
+      console.error("[admin actions] toggleProductActive Supabase error", { error, id, isActive });
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin actions] toggleProductActive failed", { error: err, id });
+    throw err;
   }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  return { ok: true };
 }
 
 export async function deleteProduct(id: string) {
-  await requireAdmin();
+  const guard = await guardAdmin();
+  if (guard) return guard;
   const supabase = createAdminClient();
-  const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", id);
 
-  if (error) {
-    return { ok: false, error: error.message };
+  try {
+    const { error } = await supabase.from("products").update({ is_active: false }).eq("id", id);
+
+    if (error) {
+      console.error("[admin actions] deleteProduct Supabase error", { error, id });
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin");
+    revalidatePath("/admin/products");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin actions] deleteProduct failed", { error: err, id });
+    throw err;
   }
-
-  revalidatePath("/admin");
-  revalidatePath("/admin/products");
-  return { ok: true };
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
-  await requireAdmin();
+  const guard = await guardAdmin();
+  if (guard) return guard;
   const valid = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled"];
   if (!valid.includes(status)) {
     return { ok: false, error: "Invalid status" };
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("orders")
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq("id", orderId);
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", orderId);
 
-  if (error) {
-    return { ok: false, error: error.message };
+    if (error) {
+      console.error("[admin actions] updateOrderStatus Supabase error", { error, orderId, status });
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin/orders");
+    return { ok: true };
+  } catch (err) {
+    console.error("[admin actions] updateOrderStatus failed", { error: err, orderId, status });
+    throw err;
   }
-
-  revalidatePath("/admin/orders");
-  return { ok: true };
 }

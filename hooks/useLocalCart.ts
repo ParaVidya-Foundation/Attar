@@ -5,6 +5,8 @@ import type { Attar } from "@/lib/types";
 
 export type CartLine = {
   id: string;
+  /** When set, used as variant_id for checkout */
+  variantId?: string;
   slug: string;
   name: string;
   imageUrl: string;
@@ -22,6 +24,7 @@ const STORAGE_KEY = "sm_cart_v1";
 
 type SimpleAddPayload = {
   id: string;
+  variantId?: string;
   slug?: string;
   name: string;
   imageUrl: string;
@@ -93,20 +96,27 @@ export function useLocalCart() {
         return;
       }
 
-      // Path 2: simplified product payload from grid cards (no ml granularity yet)
+      // Path 2: simplified product payload (variantId required for checkout)
       const payload = item as SimpleAddPayload;
+      if (!payload.variantId) {
+        console.error("[Cart] Cannot add: variantId required");
+        return;
+      }
       const qtyValue = Math.max(1, payload.qty ?? 1);
-      const lineMl = 0; // unknown size for now
+      const lineMl = 0;
       const slug = payload.slug ?? payload.id;
 
       setLines((prev) => {
-        const key = `${payload.id}:${lineMl}`;
-        const existing = prev.find((l) => `${l.id}:${l.ml}` === key);
+        const key = payload.variantId ?? `${payload.id}:${lineMl}`;
+        const existing = prev.find(
+          (l) => (payload.variantId ? l.variantId === payload.variantId : `${l.id}:${l.ml}` === `${payload.id}:${lineMl}`),
+        );
         if (!existing) {
           return [
             ...prev,
             {
               id: payload.id,
+              variantId: payload.variantId,
               slug,
               name: payload.name,
               imageUrl: payload.imageUrl,
@@ -117,7 +127,9 @@ export function useLocalCart() {
           ];
         }
         return prev.map((l) =>
-          l.id === payload.id && l.ml === lineMl ? { ...l, qty: l.qty + qtyValue } : l,
+          (payload.variantId ? l.variantId === payload.variantId : l.id === payload.id && l.ml === lineMl)
+            ? { ...l, qty: l.qty + qtyValue }
+            : l,
         );
       });
     },
@@ -125,13 +137,19 @@ export function useLocalCart() {
   );
 
   const remove = useCallback((id: string, ml: number) => {
-    setLines((prev) => prev.filter((l) => !(l.id === id && l.ml === ml)));
+    setLines((prev) =>
+      prev.filter((l) => !(l.variantId ? l.variantId === id : l.id === id && l.ml === ml)),
+    );
   }, []);
 
   const setQty = useCallback((id: string, ml: number, qty: number) => {
     setLines((prev) =>
       prev
-        .map((l) => (l.id === id && l.ml === ml ? { ...l, qty: Math.max(1, qty) } : l))
+        .map((l) =>
+          (l.variantId ? l.variantId === id : l.id === id && l.ml === ml)
+            ? { ...l, qty: Math.max(1, qty) }
+            : l,
+        )
         .filter((l) => l.qty > 0),
     );
   }, []);

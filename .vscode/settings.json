@@ -3,5 +3,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "files.eol": "\n",
-  "cSpell.words": ["supabase"]
+  "cSpell.words": ["supabase", "apikey", "paise"],
+  "deno.enable": false,
+  "deno.enablePaths": ["supabase/functions"]
 }

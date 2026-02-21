@@ -6,6 +6,14 @@ export type CategoryRow = {
   slug: string;
 };
 
+export type ProductVariantRow = {
+  id: string;
+  product_id: string;
+  size_ml: number;
+  price: number;
+  stock: number;
+};
+
 export type ProductRow = {
   id: string;
   name: string;
@@ -17,6 +25,7 @@ export type ProductRow = {
   original_price: number | null;
   is_active: boolean;
   created_at: string | null;
+  variants?: ProductVariantRow[];
 };
 
 const PRODUCT_COLUMNS =
@@ -122,7 +131,14 @@ export async function getProductBySlug(slug: string): Promise<ProductRow | null>
     }
 
     if (!data) return null;
-    return data as ProductRow;
+
+    const product = data as ProductRow;
+    const { data: variants } = await supabase
+      .from("product_variants")
+      .select("id, product_id, size_ml, price, stock")
+      .eq("product_id", product.id);
+    product.variants = (variants ?? []) as ProductVariantRow[];
+    return product;
   } catch (error) {
     console.error("[Supabase] getProductBySlug exception:", error);
     return null;

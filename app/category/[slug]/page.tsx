@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import ProductCard from "@/components/shop/ProductCard";
-import { getCategories, getProductsByCategorySlug } from "@/lib/fetchers";
+import ProductCard, { type Product as CardProduct } from "@/components/shop/ProductCard";
+import { getCategories } from "@/lib/fetchers";
+import { getProductsByCategory } from "@/lib/api/products";
 import { mapToCardProduct } from "@/lib/productMapper";
 
-export const revalidate = 3600;
+export const revalidate = 60;
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -37,7 +38,12 @@ export default async function CategoryPage({ params }: PageProps) {
     notFound();
   }
 
-  const products = (await getProductsByCategorySlug(slug)).map(mapToCardProduct);
+  let products: CardProduct[] = [];
+  try {
+    products = (await getProductsByCategory(slug)).map(mapToCardProduct);
+  } catch {
+    products = [];
+  }
 
   return (
     <main className="w-full bg-white">
@@ -48,9 +54,13 @@ export default async function CategoryPage({ params }: PageProps) {
         </header>
 
         <section className="grid gap-y-14 gap-x-8 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {products.length === 0 ? (
+            <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
+          ) : (
+            products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </section>
       </div>
     </main>

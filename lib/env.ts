@@ -25,7 +25,7 @@ let _clientEnv: ClientEnv | null = null;
 
 /**
  * Validates and returns server-side environment variables.
- * Server-only: Throws error in production if required vars are missing.
+ * Throws at first use (startup) if required vars are missing — no silent failure.
  * Lazy — only runs when first called at runtime, never during build.
  */
 export function getServerEnv(): ServerEnv {
@@ -34,14 +34,7 @@ export function getServerEnv(): ServerEnv {
   const parsed = serverSchema.safeParse(process.env);
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
-    const errorMsg = `Missing or invalid server environment variables: ${missing}`;
-    
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(errorMsg);
-    }
-    
-    console.warn(`[env] ${errorMsg}`);
-    return {} as ServerEnv;
+    throw new Error(`[env] Missing or invalid server environment variables: ${missing}`);
   }
   _serverEnv = parsed.data;
   return _serverEnv;

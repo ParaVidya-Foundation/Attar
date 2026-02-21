@@ -4,11 +4,12 @@ import { useRef } from "react";
 import ProductCard, { Product } from "@/components/shop/ProductCard";
 
 type Props = {
-  products: Product[];
+  products?: Product[] | null;
   title?: string;
 };
 
-export default function ProductSlider({ products, title }: Props) {
+export default function ProductSlider({ products: productsProp, title }: Props) {
+  const products = productsProp ?? [];
   const containerRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
