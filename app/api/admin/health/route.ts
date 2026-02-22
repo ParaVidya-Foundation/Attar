@@ -17,7 +17,7 @@ function adminErrorStatus(err: unknown): { status: number; body: { error: string
 
 export async function GET(req: Request) {
   const identifier = getClientIdentifier(req);
-  const limit = rateLimit(identifier, 30, 60 * 1000);
+  const limit = await rateLimit(identifier, 30, 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }

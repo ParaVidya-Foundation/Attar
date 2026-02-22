@@ -38,7 +38,7 @@ const guestSchema = z.object({
 
 export async function POST(req: Request) {
   const identifier = getClientIdentifier(req);
-  const limit = rateLimit(identifier, 5, 60 * 1000);
+  const limit = await rateLimit(identifier, 5, 60 * 1000);
 
   if (!limit.allowed) {
     serverWarn("orders/create", "Rate limit exceeded");
@@ -96,6 +96,23 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Resolve keyId first — fail before creating any order or Razorpay order
+    let keyId: string;
+    try {
+      const env = getServerEnv();
+      keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    } catch (envErr) {
+      serverWarn("orders/create", envErr instanceof Error ? envErr.message : "getServerEnv failed");
+      return NextResponse.json({ error: "Payment configuration error" }, { status: 500 });
+    }
+    if (!keyId?.trim()) {
+      return NextResponse.json({ error: "Payment configuration error" }, { status: 500 });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      serverWarn("orders/create", `Payload: variant_id=${rawVariantId} quantity=${quantity} email=${String(email).slice(0, 3)}***`);
+    }
+
     const admin = createAdminClient();
 
     // 1. Variant must exist (product_variants has no is_active; product drives visibility)
@@ -108,6 +125,10 @@ export async function POST(req: Request) {
     if (variantErr || !variant) {
       serverWarn("orders/create", "Variant not found: " + variant_id);
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      serverWarn("orders/create", `Variant found: id=${variant.id} product_id=${variant.product_id} price=${variant.price} stock=${variant.stock}`);
     }
 
     const pricePaise = variant.price;
@@ -137,17 +158,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Minimum order amount ₹1" }, { status: 400 });
     }
 
+    const stock = typeof variant.stock === "number" ? variant.stock : 0;
+    if (stock < quantity) {
+      serverWarn("orders/create", `Insufficient stock: variant=${variant_id} stock=${stock} quantity=${quantity}`);
+      return NextResponse.json({ error: "Insufficient stock" }, { status: 400 });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      serverWarn("orders/create", `Amount calculated: ${totalPaise} paise`);
+    }
+
     serverWarn(
       "ORDER CREATE",
       `variant_id=${variant_id} quantity=${quantity} amount=${totalPaise} user_email=${email ?? "guest"}`,
     );
 
     const receipt = `ord_${Date.now()}`;
-    const razorpayOrder = await createRazorpayOrder({
-      amount: totalPaise,
-      currency: "INR",
-      receipt,
-    });
+    let razorpayOrder: { id: string; amount: number | string; currency: string };
+    try {
+      razorpayOrder = await createRazorpayOrder({
+        amount: totalPaise,
+        currency: "INR",
+        receipt,
+      });
+    } catch (rzErr) {
+      serverWarn("orders/create", "Razorpay order create failed: " + (rzErr instanceof Error ? rzErr.message : String(rzErr)));
+      return NextResponse.json({ error: "Payment provider error. Please try again." }, { status: 502 });
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
+    }
 
     const { data: order, error: orderErr } = await admin
       .from("orders")
@@ -188,20 +229,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
-    const env = getServerEnv();
-    const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-
-    if (!keyId) {
-      return NextResponse.json(
-        { error: "Payment configuration error" },
-        { status: 500 },
-      );
+    if (process.env.NODE_ENV !== "production") {
+      serverWarn("orders/create", `DB insert success: order_id=${order.id}`);
     }
 
+    const amountPaise = typeof razorpayOrder.amount === "number" ? razorpayOrder.amount : Number(razorpayOrder.amount);
     return NextResponse.json({
       orderId: order.id,
       razorpayOrderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
+      amount: amountPaise,
       currency: razorpayOrder.currency,
       keyId,
     });

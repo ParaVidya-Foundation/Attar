@@ -1,20 +1,28 @@
 /**
- * robots.txt generation for Next.js App Router
+ * robots.txt — crawl rules and sitemap location.
+ * Production: https://anandrasafragnance.com/sitemap.xml
  */
 import { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl =
-    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SITE_URL) ||
-    "https://anandras.example";
-
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/_next/"],
+        disallow: [
+          "/api/",
+          "/admin/",
+          "/_next/",
+          "/account",
+          "/checkout",
+          "/cart",
+          "/login",
+          "/signup",
+          "/order-success",
+          "/scripts/",
+        ],
       },
     ],
     sitemap: `${absoluteUrl("/sitemap.xml")}`,

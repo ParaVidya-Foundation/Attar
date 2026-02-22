@@ -1,9 +1,9 @@
 /**
  * GET /api/health — Health check endpoint for Vercel monitoring.
- * Returns status of environment variables and Supabase connectivity.
+ * Returns status of environment variables, site URL, Supabase, and Razorpay.
  */
 import { NextResponse } from "next/server";
-import { getServerEnv, getClientEnv, hasClientEnv } from "@/lib/env";
+import { getServerEnv, getClientEnv, getSiteUrl } from "@/lib/env";
 import { createStaticClient } from "@/lib/supabase/server";
 
 // Track last webhook received time
@@ -35,7 +35,7 @@ export async function GET() {
       status: "active" | "stale" | "never";
     };
   } & {
-    // Simple boolean flags for quick checks (/api/health)
+    siteUrl: string | null;
     supabaseEnv: boolean;
     anonEnv: boolean;
     razorpayEnv: boolean;
@@ -44,18 +44,25 @@ export async function GET() {
     status: "ok",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV === "production" ? "production" : "development",
+    siteUrl: null,
     env: {
       supabase: false,
       razorpay: false,
       allRequired: false,
     },
-    // default simple flags (updated below)
     supabaseEnv: false,
     anonEnv: false,
     razorpayEnv: false,
   };
 
   try {
+    // Site URL (production must have NEXT_PUBLIC_SITE_URL)
+    try {
+      health.siteUrl = getSiteUrl();
+    } catch {
+      health.siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? null;
+    }
+
     // Simple env booleans for quick smoke tests
     const supabaseUrlPresent = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonPresent = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -117,7 +124,7 @@ export async function GET() {
       health.status = "degraded";
     }
 
-    // Razorpay keys check
+    // Razorpay keys check (production should use live keys)
     health.razorpay = {
       keysPresent: !!(
         process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID &&

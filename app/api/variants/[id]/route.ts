@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function sanitizeVariantId(raw: string): string {
   const trimmed = (raw ?? "").trim();
   return trimmed.startsWith("=") ? trimmed.slice(1).trim() : trimmed;
@@ -11,9 +13,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id: rawId } = await params;
   const variantId = sanitizeVariantId(rawId);
 
-
   if (!variantId) {
     return NextResponse.json({ error: "Missing variant id" }, { status: 400 });
+  }
+  if (!UUID_REGEX.test(variantId)) {
+    return NextResponse.json({ error: "Invalid variant id" }, { status: 400 });
   }
 
   try {

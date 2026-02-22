@@ -132,6 +132,14 @@ export function CheckoutForm() {
     };
   }, []);
 
+  // Redirect to shop when variant_id is missing (invalid checkout URL)
+  useEffect(() => {
+    if (!rawVariantId?.trim() || !sanitizeVariantId(rawVariantId)) {
+      router.replace("/shop");
+      return;
+    }
+  }, [rawVariantId, router]);
+
   // Fetch product
   useEffect(() => {
     if (!variantId) {
@@ -194,7 +202,7 @@ export function CheckoutForm() {
   }, [variantId]);
 
   if (!variantId) {
-    return <EmptyState message="Invalid checkout request" />;
+    return null;
   }
 
   if (!UUID_REGEX.test(variantId)) {
@@ -263,7 +271,7 @@ export function CheckoutForm() {
           return;
         }
 
-        if (!data.keyId || !data.razorpayOrderId || data.amount == null) {
+        if (!data.keyId || !data.razorpayOrderId || data.amount == null || Number(data.amount) < 100) {
           setSubmitError("Payment configuration error. Please try again later.");
           return;
         }

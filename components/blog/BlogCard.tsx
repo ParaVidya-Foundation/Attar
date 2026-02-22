@@ -35,11 +35,11 @@ export default function BlogCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="group flex flex-col h-full border-t border-black/10 pt-6"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="group flex flex-col h-full border-t border-neutral-200 pt-6"
       itemScope
       itemType="https://schema.org/BlogPosting"
     >
@@ -62,7 +62,7 @@ export default function BlogCard({
       {/* Content */}
       <div className="mt-5 flex flex-col flex-grow">
         {/* Meta */}
-        <div className="text-xs tracking-wide text-black/50 uppercase">
+        <div className="text-xs tracking-wide text-neutral-500 uppercase">
           {category && <span>{category}</span>}
           {category && <span className="mx-2">•</span>}
           <time
@@ -75,15 +75,7 @@ export default function BlogCard({
 
         {/* Title */}
         <h2
-          className="
-            mt-2
-            text-[20px]
-            leading-snug
-            font-heading
-            text-[#1e2023]
-            group-hover:text-black
-            transition-colors
-          "
+          className="mt-2 text-xl leading-snug font-heading text-neutral-900 group-hover:text-neutral-700 transition-colors sm:text-2xl"
           itemProp="headline"
         >
           <Link href={blogUrl}>{title}</Link>
@@ -92,7 +84,7 @@ export default function BlogCard({
         {/* Author */}
         {author && (
           <p
-            className="mt-2 text-sm text-black/60"
+            className="mt-2 text-sm text-neutral-600"
             itemProp="author"
             itemScope
             itemType="https://schema.org/Person"
@@ -103,7 +95,7 @@ export default function BlogCard({
 
         {/* Excerpt */}
         {excerpt && (
-          <p className="mt-3 text-[15px] leading-relaxed text-black/60 line-clamp-3" itemProp="description">
+          <p className="mt-3 text-base leading-relaxed text-neutral-600 line-clamp-3" itemProp="description">
             {excerpt}
           </p>
         )}
@@ -112,16 +104,7 @@ export default function BlogCard({
         <div className="mt-5">
           <Link
             href={blogUrl}
-            className="
-              inline-flex items-center
-              text-sm
-              tracking-wide
-              text-[#1e2023]
-              border-b border-black/20
-              pb-1
-              hover:border-black
-              transition-colors
-            "
+            className="inline-flex items-center text-sm font-medium text-neutral-800 border-b border-neutral-300 pb-1 hover:border-neutral-900 transition-colors"
           >
             Read article →
           </Link>

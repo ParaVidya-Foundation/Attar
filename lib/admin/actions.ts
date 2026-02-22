@@ -357,3 +357,173 @@ export async function updateVariantStock(variantId: string, stock: number) {
     throw err;
   }
 }
+
+// ——— Blog (admin only) ———
+
+export type BlogPostFormData = {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  cover_image: string;
+  category_id: string | null;
+  author_name: string;
+  reading_time: number | null;
+  status: "draft" | "published";
+  tag_ids: string[];
+};
+
+function slugifyBlog(text: string): string {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+export async function blogPostFormAction(
+  _prev: { ok: boolean; error?: string } | null,
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const postId = (formData.get("postId") as string)?.trim() || null;
+  const tagIdsRaw = (formData.get("tag_ids") as string) ?? "[]";
+  let tagIds: string[] = [];
+  try {
+    tagIds = JSON.parse(tagIdsRaw) as string[];
+  } catch {
+    tagIds = [];
+  }
+  const data: BlogPostFormData = {
+    title: (formData.get("title") as string) ?? "",
+    slug: (formData.get("slug") as string) ?? "",
+    excerpt: (formData.get("excerpt") as string) ?? "",
+    content: (formData.get("content") as string) ?? "",
+    cover_image: (formData.get("cover_image") as string) ?? "",
+    category_id: (formData.get("category_id") as string) || null,
+    author_name: (formData.get("author_name") as string) ?? "",
+    reading_time: formData.get("reading_time") ? Number(formData.get("reading_time")) : null,
+    status: (formData.get("status") as string) === "published" ? "published" : "draft",
+    tag_ids: Array.isArray(tagIds) ? tagIds : [],
+  };
+  if (postId) return updateBlogPost(postId, data);
+  return createBlogPost(data);
+}
+
+export async function createBlogPost(data: BlogPostFormData) {
+  const guard = await guardAdmin();
+  if (guard) return guard;
+  const supabase = createAdminClient();
+  const slug = data.slug?.trim() || slugifyBlog(data.title);
+  const now = new Date().toISOString();
+  const publishedAt = data.status === "published" ? now : null;
+
+  try {
+    const { data: inserted, error } = await supabase
+      .from("blog_posts")
+      .insert({
+        slug,
+        title: data.title.trim(),
+        excerpt: data.excerpt.trim() || null,
+        content: data.content.trim() || null,
+        cover_image: data.cover_image.trim() || null,
+        category_id: data.category_id || null,
+        author_name: data.author_name.trim() || null,
+        reading_time: data.reading_time ?? null,
+        status: data.status,
+        published_at: publishedAt,
+        updated_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (error || !inserted) {
+      serverError("admin actions createBlogPost", error);
+      return { ok: false, error: error?.message ?? "Insert failed" };
+    }
+
+    if (data.tag_ids.length > 0) {
+      await supabase.from("blog_post_tags").insert(
+        data.tag_ids.map((tag_id) => ({ post_id: inserted.id, tag_id })),
+      );
+    }
+
+    revalidatePath("/admin/blog");
+    revalidatePath("/blog");
+    revalidatePath("/blog/[slug]", "page");
+    return { ok: true, postId: inserted.id };
+  } catch (err) {
+    serverError("admin actions createBlogPost", err);
+    throw err;
+  }
+}
+
+export async function updateBlogPost(id: string, data: BlogPostFormData) {
+  const guard = await guardAdmin();
+  if (guard) return guard;
+  const supabase = createAdminClient();
+  const slug = data.slug?.trim() || slugifyBlog(data.title);
+  const now = new Date().toISOString();
+  const { data: existing } = await supabase.from("blog_posts").select("published_at").eq("id", id).single();
+  const publishedAt =
+    data.status === "published"
+      ? existing?.published_at ?? now
+      : null;
+
+  try {
+    const { error } = await supabase
+      .from("blog_posts")
+      .update({
+        slug,
+        title: data.title.trim(),
+        excerpt: data.excerpt.trim() || null,
+        content: data.content.trim() || null,
+        cover_image: data.cover_image.trim() || null,
+        category_id: data.category_id || null,
+        author_name: data.author_name.trim() || null,
+        reading_time: data.reading_time ?? null,
+        status: data.status,
+        published_at: publishedAt,
+        updated_at: now,
+      })
+      .eq("id", id);
+
+    if (error) {
+      serverError("admin actions updateBlogPost", error);
+      return { ok: false, error: error.message };
+    }
+
+    await supabase.from("blog_post_tags").delete().eq("post_id", id);
+    if (data.tag_ids.length > 0) {
+      await supabase.from("blog_post_tags").insert(data.tag_ids.map((tag_id) => ({ post_id: id, tag_id })));
+    }
+
+    revalidatePath("/admin/blog");
+    revalidatePath("/blog");
+    revalidatePath("/blog/[slug]", "page");
+    return { ok: true };
+  } catch (err) {
+    serverError("admin actions updateBlogPost", err);
+    throw err;
+  }
+}
+
+export async function deleteBlogPost(id: string) {
+  const guard = await guardAdmin();
+  if (guard) return guard;
+  const supabase = createAdminClient();
+  try {
+    const { error } = await supabase.from("blog_posts").delete().eq("id", id);
+    if (error) {
+      serverError("admin actions deleteBlogPost", error);
+      return { ok: false, error: error.message };
+    }
+    revalidatePath("/admin/blog");
+    revalidatePath("/blog");
+    revalidatePath("/blog/[slug]", "page");
+    return { ok: true };
+  } catch (err) {
+    serverError("admin actions deleteBlogPost", err);
+    throw err;
+  }
+}

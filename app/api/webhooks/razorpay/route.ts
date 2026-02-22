@@ -5,10 +5,17 @@
  */
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { recordWebhookReceived } from "@/app/api/health/route";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
+import { webhookSeen } from "@/lib/redis";
 import { serverError, serverWarn } from "@/lib/security/logger";
 import crypto from "crypto";
+
+const webhookPayloadSchema = z.object({
+  event: z.string().min(1),
+  payload: z.record(z.string(), z.unknown()).optional(),
+});
 
 function extractPaymentEntity(payload: Record<string, unknown>) {
   const paymentEntity = (payload.payload as Record<string, unknown>)?.payment as
@@ -73,7 +80,7 @@ async function markOrderPaid(
 
 export async function POST(req: Request) {
   const identifier = getClientIdentifier(req);
-  const limit = rateLimit(identifier, 100, 60 * 1000);
+  const limit = await rateLimit(identifier, 100, 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
@@ -97,32 +104,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  let payload: Record<string, unknown>;
+  let payload: unknown;
   try {
     payload = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Record webhook received for health monitoring
+  const parsed = webhookPayloadSchema.safeParse(payload);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
+  const payloadObj = parsed.data as unknown as Record<string, unknown>;
+
   recordWebhookReceived();
 
-  const event = payload.event as string | undefined;
+  const event = payloadObj.event as string;
 
   // ── payment.captured ──────────────────────────────────────────────
   if (event === "payment.captured") {
-    const entity = extractPaymentEntity(payload);
+    const entity = extractPaymentEntity(payloadObj);
     if (!entity) {
       return NextResponse.json({ error: "Invalid payload structure" }, { status: 400 });
     }
 
     const razorpayPaymentId = entity.id as string;
     const razorpayOrderId = entity.order_id as string;
-    const amount = entity.amount as number;
-    const currency = (entity.currency as string) ?? "INR";
 
     if (!razorpayOrderId || !razorpayPaymentId) {
       return NextResponse.json({ error: "Missing order_id or payment_id" }, { status: 400 });
+    }
+
+    const idempotencyKey = `payment.captured:${razorpayOrderId}`;
+    if (await webhookSeen(idempotencyKey, 86400)) {
+      return NextResponse.json({ ok: true, message: "Already processed" });
     }
 
     const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId);
@@ -142,14 +160,12 @@ export async function POST(req: Request) {
 
   // ── order.paid ────────────────────────────────────────────────────
   if (event === "order.paid") {
-    const orderEntity = extractOrderEntity(payload);
+    const orderEntity = extractOrderEntity(payloadObj);
     if (!orderEntity) {
       return NextResponse.json({ error: "Invalid payload structure" }, { status: 400 });
     }
 
     const razorpayOrderId = orderEntity.id as string;
-    const amount = orderEntity.amount_paid as number;
-    const currency = (orderEntity.currency as string) ?? "INR";
 
     const payments = (orderEntity.payments as Record<string, unknown>)?.items as
       | Array<Record<string, unknown>>
@@ -158,6 +174,11 @@ export async function POST(req: Request) {
 
     if (!razorpayOrderId) {
       return NextResponse.json({ error: "Missing order_id" }, { status: 400 });
+    }
+
+    const idempotencyKey = `order.paid:${razorpayOrderId}`;
+    if (await webhookSeen(idempotencyKey, 86400)) {
+      return NextResponse.json({ ok: true, message: "Already processed" });
     }
 
     const result = await markOrderPaid(razorpayOrderId, razorpayPaymentId);
@@ -177,7 +198,7 @@ export async function POST(req: Request) {
 
   // ── payment.failed ────────────────────────────────────────────────
   if (event === "payment.failed") {
-    const entity = extractPaymentEntity(payload);
+    const entity = extractPaymentEntity(payloadObj);
     const razorpayOrderId = entity?.order_id as string | undefined;
 
     if (razorpayOrderId) {

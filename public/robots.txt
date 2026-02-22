@@ -1,5 +1,15 @@
+# *
 User-agent: *
 Allow: /
 
-Sitemap: https://anandras.example/sitemap.xml
+# *
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Disallow: /account/
 
+# Host
+Host: https://anandrasafragnance.com
+
+# Sitemaps
+Sitemap: https://anandrasafragnance.com/sitemap.xml

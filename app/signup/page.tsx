@@ -55,7 +55,8 @@ export default function SignupPage() {
 
     try {
       const supabase = createBrowserClient();
-      const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`;
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+      const redirectTo = `${origin.replace(/\/+$/, "")}/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -104,7 +105,7 @@ export default function SignupPage() {
             className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99] mb-3"
           >
             <img
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              src="/google-icon-logo-svgrepo-com.svg"
               alt="Google"
               className="h-5 w-5"
             />
@@ -117,7 +118,7 @@ export default function SignupPage() {
             className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99]"
           >
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
+              src="/facebook-2-logo-svgrepo-com.svg"
               alt="Meta"
               className="h-5 w-5"
             />

@@ -65,7 +65,8 @@ async function main() {
   const publicDir = path.join(process.cwd(), "public");
   await writeFile(path.join(publicDir, "sitemap.xml"), sitemapXml, "utf8");
 
-  const robots = `User-agent: *\nAllow: /\n\nSitemap: ${BRAND.url.replace(/\/+$/, "")}/sitemap.xml\n`;
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? BRAND.url;
+  const robots = `User-agent: *\nAllow: /\n\nSitemap: ${base.replace(/\/+$/, "")}/sitemap.xml\n`;
   await writeFile(path.join(publicDir, "robots.txt"), robots, "utf8");
 }
 

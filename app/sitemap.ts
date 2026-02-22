@@ -1,10 +1,12 @@
 /**
  * Dynamic sitemap generation for Next.js App Router
- * Fetches products from Supabase and generates sitemap.xml
+ * Fetches products and blog posts from Supabase and generates sitemap.xml
+ * Uses getSiteUrl() — production: https://anandrasafragnance.com
  */
 import { MetadataRoute } from "next";
 import { createStaticClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/seo";
+import { getBlogSlugsWithUpdated } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -26,9 +28,7 @@ async function getProducts() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl =
-    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_SITE_URL) ||
-    "https://anandras.example";
+  // absoluteUrl() uses getSiteUrl() internally
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -91,5 +91,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  return [...staticPages, ...productPages];
+  // Blog post pages (/blog already in staticPages)
+  const blogPosts = await getBlogSlugsWithUpdated();
+  const blogPostPages: MetadataRoute.Sitemap = blogPosts.map((p) => ({
+    url: absoluteUrl(`/blog/${p.slug}`),
+    lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...productPages, ...blogPostPages];
 }

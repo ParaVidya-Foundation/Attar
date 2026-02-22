@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Boxes,
+  FileText,
 } from "lucide-react";
 import { LOGO_PATH } from "@/lib/seo";
 
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/inventory", label: "Inventory", icon: Boxes },
+  { href: "/admin/blog", label: "Blog", icon: FileText },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
 ];

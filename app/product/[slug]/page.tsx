@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title,
       description,
+      type: "website",
       images: [
         {
           url: product.images[0]?.url
@@ -43,7 +44,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             : absoluteUrl(`/products/${product.slug}.webp`),
         },
       ],
-      type: "website",
     },
   };
 }

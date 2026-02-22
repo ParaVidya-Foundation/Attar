@@ -4,8 +4,19 @@ import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError
 import { serverError } from "@/lib/security/logger";
 
 const PROTECTED_PREFIXES = ["/account", "/admin"];
+const CANONICAL_HOST = "anandrasafragnance.com";
+const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
 
 export async function middleware(request: NextRequest) {
+  const url = request.nextUrl;
+  const host = url.hostname.toLowerCase();
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction && host !== CANONICAL_HOST) {
+    const canonicalUrl = new URL(url.pathname + url.search, CANONICAL_ORIGIN);
+    return NextResponse.redirect(canonicalUrl.toString(), 301);
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
