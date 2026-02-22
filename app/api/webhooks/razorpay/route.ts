@@ -49,13 +49,15 @@ async function markOrderPaid(
     return { ok: true, alreadyProcessed: true };
   }
 
+  const now = new Date().toISOString();
   // Update order status atomically
   const { error: updateErr } = await admin
     .from("orders")
     .update({
       status: "paid",
       razorpay_payment_id: razorpayPaymentId,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
+      paid_at: now,
     })
     .eq("id", order.id)
     .eq("status", order.status); // Optimistic locking: only update if status hasn't changed
@@ -65,23 +67,7 @@ async function markOrderPaid(
     return { ok: false, status: 500 };
   }
 
-  // Decrement variant stock
-  const { data: orderItems } = await admin
-    .from("order_items")
-    .select("variant_id, quantity")
-    .eq("order_id", order.id);
-
-  if (orderItems) {
-    for (const item of orderItems) {
-      const { error: invErr } = await admin.rpc("decrement_variant_stock", {
-        p_variant_id: item.variant_id,
-        p_qty: item.quantity,
-      });
-
-      if (invErr) serverError("webhook stock decrement", invErr);
-    }
-  }
-
+  // Inventory not enforced (unlimited mode) — stock decrement skipped
   return { ok: true };
 }
 

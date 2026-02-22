@@ -94,7 +94,10 @@ export default async function ProductPage({ params }: PageProps) {
   const images =
     product.images?.length > 0
       ? product.images.map((img) => ({ src: img.url, alt: product.name }))
-      : [{ src: `/products/${product.slug}.webp`, alt: product.name }];
+      : [
+          { src: "/products/placeholder.webp", alt: product.name },
+          { src: "/products/placeholder.webp", alt: product.name },
+        ];
 
   const showcaseProduct = {
     id: product.id,
@@ -117,7 +120,7 @@ export default async function ProductPage({ params }: PageProps) {
     longDescription: product.description ?? undefined,
     images,
     sizes: (variants ?? []).map((v) => ({ id: v.id, label: `${v.size_ml}ml`, priceValue: v.price })),
-    inStock: (variants ?? []).some((v) => v.stock > 0),
+    inStock: true,
   };
 
   const jsonLd = buildProductJsonLd(product);

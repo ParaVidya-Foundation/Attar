@@ -69,7 +69,7 @@ export default function PerfumePlanetGrid() {
       {/* Intro Block */}
       <div className="relative flex h-[40vh] w-full items-center justify-center bg-white overflow-hidden border-b-[2px] border-[#1e2023]">
         <div className="mx-auto flex max-w-2xl flex-col items-center text-center px-6 animate-fadeUp">
-          <h2 className="font-serif text-3xl sm:text-4xl tracking-tight text-[#1e2023]">Navagraha Attars</h2>
+          <h2 className="font-heading text-3xl sm:text-4xl tracking-tight text-[#1e2023]">Navagraha Attars</h2>
 
           <p className="mt-4 text-sm sm:text-base leading-7 text-gray-600">
             Inspired by the nine celestial forces, each fragrance is crafted to harmonize your presence with

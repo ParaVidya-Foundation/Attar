@@ -21,7 +21,10 @@ export default async function PlanetsProductPage() {
   const images =
     product.images?.length > 0
       ? product.images.map((img) => ({ src: img.url, alt: product.name }))
-      : [{ src: `/products/${product.slug}.webp`, alt: product.name }];
+      : [
+          { src: "/products/placeholder.webp", alt: product.name },
+          { src: "/products/placeholder.webp", alt: product.name },
+        ];
   const viewProduct = {
     id: product.id,
     slug: product.slug,
@@ -34,7 +37,7 @@ export default async function PlanetsProductPage() {
     longDescription: product.description ?? undefined,
     images,
     sizes: (product.variants ?? []).map((v) => ({ id: v.id, label: `${v.size_ml}ml`, priceValue: v.price })),
-    inStock: (product.variants ?? []).some((v) => v.stock > 0),
+    inStock: true,
   };
 
   const relatedProducts = products.slice(1).map(mapToCardProduct);

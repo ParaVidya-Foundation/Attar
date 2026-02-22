@@ -38,7 +38,7 @@ export default async function PlanetsPage() {
       {/* Grid */}
       <section className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14">
         <header className="mb-10 text-center">
-          <h2 className="font-serif text-3xl sm:text-4xl text-[#1e2023]">Planet Attars</h2>
+          <h2 className="font-heading text-3xl sm:text-4xl text-[#1e2023]">Planet Attars</h2>
         </header>
 
         <div className="grid gap-y-14 gap-x-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">

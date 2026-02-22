@@ -30,7 +30,7 @@ export default function BlogCardHome({ blog }: { blog: Blog }) {
         <p className="mt-5 text-[11px] uppercase tracking-widest text-gray-500">{blog.date}</p>
 
         {/* Title */}
-        <h3 className="mt-2 font-serif text-lg text-[#1e2023] transition group-hover:opacity-80">
+        <h3 className="mt-2 font-heading text-lg text-[#1e2023] transition group-hover:opacity-80">
           {blog.title}
         </h3>
 

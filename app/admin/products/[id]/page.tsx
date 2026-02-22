@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProductById } from "@/lib/admin/productQueries";
 import { getCategories } from "@/lib/admin/queries";
-import { updateProduct } from "@/lib/admin/actions";
 import { ProductForm } from "@/components/admin/ProductForm";
 
 type Props = { params: Promise<{ id: string }> };
@@ -33,7 +32,7 @@ export default async function EditProductPage({ params }: Props) {
       </Link>
       <h2 className="mt-4 text-lg font-semibold text-neutral-900">Edit Product</h2>
       <div className="mt-6">
-        <ProductForm categories={categories} initialData={initialData} action={(d) => updateProduct(id, d)} />
+        <ProductForm categories={categories} initialData={initialData} productId={id} />
       </div>
     </div>
   );

@@ -87,7 +87,7 @@ export function AccountMain({ profile }: { profile: ProfileData }) {
   return (
     <div className="min-h-[70vh] flex-1 bg-white">
       <div className="px-4 py-10 sm:px-6 lg:px-10">
-        <h1 className="font-serif text-3xl font-semibold tracking-tight text-ink sm:text-4xl">My account</h1>
+        <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">My account</h1>
 
         {message && (
           <div

@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     for (const item of items) {
       const { data: variant } = await admin
         .from("product_variants")
-        .select("id, product_id, price, stock")
+        .select("id, product_id, price")
         .eq("id", item.variant_id)
         .single();
 
@@ -83,14 +83,19 @@ export async function POST(req: Request) {
         );
       }
 
-      const stock = variant.stock ?? 0;
-      if (stock < item.quantity) {
+      const { data: product } = await admin
+        .from("products")
+        .select("id, is_active")
+        .eq("id", variant.product_id)
+        .single();
+      if (!product?.is_active) {
         return NextResponse.json(
-          { error: `Insufficient stock for variant ${item.variant_id}` },
+          { error: `Product not available: ${item.variant_id}` },
           { status: 400 },
         );
       }
 
+      // Inventory not enforced (unlimited mode)
       const lineTotal = variant.price * item.quantity;
       resolved.push({
         product_id: variant.product_id,
@@ -103,6 +108,14 @@ export async function POST(req: Request) {
 
     if (resolved.length === 0) {
       return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
+    }
+
+    const MIN_ORDER_PAISE = 100;
+    if (totalPaise < MIN_ORDER_PAISE) {
+      return NextResponse.json(
+        { error: "Minimum order amount is ₹1" },
+        { status: 400 },
+      );
     }
 
     const receipt = `ord_${Date.now()}`;

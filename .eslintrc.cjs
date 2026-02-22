@@ -9,5 +9,5 @@ module.exports = {
     // Keep console for now; prefer using it sparingly in UI code.
     "no-console": "off",
   },
-  ignorePatterns: [".next/", "node_modules/", "out/", "build/"],
+  ignorePatterns: [".next/", "node_modules/", "chunks/", "out/", "build/", ".vercel/"],
 };

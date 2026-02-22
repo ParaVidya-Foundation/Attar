@@ -55,7 +55,7 @@ export default function BlogLayout({ post }: BlogLayoutProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
           className="
-            font-serif
+            font-heading
             text-3xl
             sm:text-4xl
             lg:text-5xl
@@ -125,7 +125,7 @@ export default function BlogLayout({ post }: BlogLayoutProps) {
               {/* Section Heading */}
               <h2
                 className="
-                  font-serif
+                  font-heading
                   text-2xl
                   sm:text-3xl
                   tracking-tight

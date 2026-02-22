@@ -61,10 +61,15 @@ Open `http://localhost:3000` and you’ll be redirected to `/home`.
 
 ## Deployment
 
-### Vercel
+### Vercel (recommended)
 
-- Set `NEXT_PUBLIC_SITE_URL` in project env vars.
-- Deploy normally; `next.config.mjs` includes strict headers and image remote patterns.
+1. Push to GitHub and import the repo in [Vercel](https://vercel.com).
+2. Set **Environment Variables** (Settings → Environment Variables) from `.env.example`:
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `NEXT_PUBLIC_RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `RAZORPAY_WEBHOOK_URL`
+   - `NEXT_PUBLIC_SITE_URL` = your production URL (e.g. `https://your-app.vercel.app`)
+3. Build command: `pnpm run build` (or leave default). Install command: `pnpm install`.
+4. Deploy; `next.config.mjs` includes security headers and image remote patterns.
 
 ### AWS Amplify
 

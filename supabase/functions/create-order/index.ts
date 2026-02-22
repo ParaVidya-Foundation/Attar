@@ -90,14 +90,7 @@ serve(async (req) => {
         });
       }
 
-      const stock = variant.stock ?? 0;
-      if (stock < qty) {
-        return new Response(
-          JSON.stringify({ error: `Insufficient stock for variant ${variantId}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
+      // Inventory not enforced (unlimited mode)
       const price = variant.price;
       resolved.push({
         product_id: variant.product_id,

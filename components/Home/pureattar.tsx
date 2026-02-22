@@ -26,7 +26,7 @@ export default function PureAttar() {
       <div className="relative z-10 flex h-full w-full items-center justify-center px-6 text-center">
         <div className="max-w-2xl animate-fadeUp">
           {/* Heading */}
-          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1e2023]">
+          <h2 className="font-heading text-3xl sm:text-4xl lg:text-5xl tracking-tight text-[#1e2023]">
             More than fragrance
           </h2>
 

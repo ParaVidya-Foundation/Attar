@@ -14,7 +14,7 @@ export default function NotFoundPage() {
   return (
     <Container className="py-16">
       <p className="text-xs font-semibold tracking-[0.26em] text-charcoal/70">404</p>
-      <h1 className="mt-4 font-serif text-4xl tracking-tight text-ink">Page not found</h1>
+      <h1 className="mt-4 font-heading text-4xl tracking-tight text-ink">Page not found</h1>
       <p className="mt-4 text-sm leading-7 text-charcoal/85">
         The page you requested does not exist. Return to the shop or the home page.
       </p>

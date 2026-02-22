@@ -34,7 +34,7 @@ export default async function IncensePage() {
         className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14 md:py-16"
       >
         <header className="mb-10 text-center">
-          <h2 id="best-sellers" className="font-serif text-3xl sm:text-4xl text-[#1e2023]">
+          <h2 id="best-sellers" className="font-heading text-3xl sm:text-4xl text-[#1e2023]">
             Best Sellers
           </h2>
         </header>
@@ -80,7 +80,7 @@ export default async function IncensePage() {
         className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14 md:py-16"
       >
         <header className="mb-10 text-center">
-          <h2 id="premium-incense" className="font-serif text-3xl sm:text-4xl text-[#1e2023]">
+          <h2 id="premium-incense" className="font-heading text-3xl sm:text-4xl text-[#1e2023]">
             Premium Incense
           </h2>
         </header>

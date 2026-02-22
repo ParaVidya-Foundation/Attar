@@ -121,7 +121,7 @@ export default function PerfumeZodiac() {
           <p className="text-[10px] sm:text-xs tracking-[0.28em] text-gray-500">COLLECTION</p>
 
           {/* Title */}
-          <h2 className="mt-3 font-serif text-3xl sm:text-4xl md:text-5xl text-[#1e2023] tracking-tight">
+          <h2 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl text-[#1e2023] tracking-tight">
             Zodiac Attars
           </h2>
 

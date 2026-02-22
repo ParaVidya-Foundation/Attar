@@ -131,7 +131,7 @@ export default function AddressList({ addresses }: { addresses: Address[] }) {
     <div className="min-h-[70vh] flex-1 bg-white">
       <div className="px-4 py-10 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between">
-          <h1 className="font-serif text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
             My addresses
           </h1>
           {!showForm && (

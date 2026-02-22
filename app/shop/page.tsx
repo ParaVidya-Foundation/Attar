@@ -58,7 +58,7 @@ export default async function ShopPage({
     <main className="w-full bg-white">
       <div className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-12 md:py-16">
         <header className="text-center mb-12">
-          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#1e2023]">All Products</h1>
+          <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl text-[#1e2023]">All Products</h1>
           <div className="mx-auto mt-4 h-[2px] w-16 bg-[#d4b07a]" />
         </header>
 

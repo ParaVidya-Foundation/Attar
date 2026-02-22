@@ -23,7 +23,7 @@ export default function ComboSet() {
 
         {/* RIGHT — Content */}
         <div className="animate-fadeUp text-center md:text-left">
-          <h2 className="font-serif text-3xl tracking-wide text-[#1e2023] sm:text-4xl">Discovery Kit</h2>
+          <h2 className="font-heading text-3xl tracking-wide text-[#1e2023] sm:text-4xl">Discovery Kit</h2>
 
           <p className="mt-5 max-w-md text-sm leading-7 text-gray-600 md:text-base">
             The Discovery Kit is your personal journey through scent. A curated collection crafted to match

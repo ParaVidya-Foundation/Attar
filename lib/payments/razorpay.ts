@@ -4,6 +4,7 @@
  */
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import { serverWarn } from "@/lib/security/logger";
 
 export function getRazorpayClient(): Razorpay {
   const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -35,7 +36,7 @@ export function verifyWebhookSignature(
 ): boolean {
   const secretToUse = secret ?? process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secretToUse) {
-    console.warn("RAZORPAY_WEBHOOK_SECRET not set — cannot verify webhook");
+    serverWarn("razorpay", "RAZORPAY_WEBHOOK_SECRET not set — cannot verify webhook");
     return false;
   }
   const expected = crypto.createHmac("sha256", secretToUse).update(body).digest("hex");

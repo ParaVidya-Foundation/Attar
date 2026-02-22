@@ -40,7 +40,7 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
     <section className="bg-white py-16 sm:py-20 border-b-[2px] border-[#1e2023]">
       {/* Heading */}
       <header className="mx-auto max-w-4xl px-6 text-center">
-        <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl tracking-wide text-ink">BestSellers</h2>
+        <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl tracking-wide text-ink">BestSellers</h2>
         <p className="mt-3 text-sm text-charcoal/70">Explore our best sellers.</p>
       </header>
 
@@ -123,7 +123,7 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
                 </div>
 
                 {/* Content */}
-                <h3 className="mt-5 font-serif text-base sm:text-lg tracking-wide text-ink transition-opacity duration-300 group-hover:opacity-80">
+                <h3 className="mt-5 font-heading text-base sm:text-lg tracking-wide text-ink transition-opacity duration-300 group-hover:opacity-80">
                   {product.name}
                 </h3>
 

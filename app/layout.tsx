@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
-import { Inter, Playfair_Display } from "next/font/google";
+import { poppins, caudex } from "@/app/fonts";
 import "@/styles/globals.css";
-import { BRAND } from "@/lib/seo";
+import { BRAND, LOGO_PATH } from "@/lib/seo";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { SkipToContent } from "@/components/ui/SkipToContent";
 import Header from "@/components/header/Header";
@@ -12,14 +12,15 @@ const CartDrawer = dynamic(() => import("@/components/cart/CartDrawer").then((m)
   loading: () => null,
 });
 
-const inter = Inter({ variable: "--font-body", subsets: ["latin"], display: "swap" });
-const playfair = Playfair_Display({ variable: "--font-serif", subsets: ["latin"], display: "swap" });
-
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND.url),
   title: { default: `${BRAND.name} — Luxury Attars`, template: `%s — ${BRAND.name}` },
   description: BRAND.description,
   applicationName: BRAND.name,
+  icons: {
+    icon: LOGO_PATH,
+    apple: LOGO_PATH,
+  },
   openGraph: {
     type: "website",
     siteName: BRAND.name,
@@ -40,11 +41,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN">
+    <html lang="en-IN" className={`${poppins.variable} ${caudex.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} bg-cream text-ink antialiased`}>
+      <body className="font-body bg-cream text-ink antialiased">
         <CartProvider>
           <SkipToContent />
           <Header />

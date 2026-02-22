@@ -96,7 +96,7 @@ export default function ProductCard({ product }: { product: Product }) {
       {/* CONTENT */}
       <div className="pt-6 pb-3 text-center px-3">
         {/* Title */}
-        <h3 className="font-serif text-base sm:text-[18px] leading-snug text-[#1e2023] line-clamp-2" itemProp="name">
+        <h3 className="font-heading text-base sm:text-[18px] leading-snug text-[#1e2023] line-clamp-2" itemProp="name">
           {title}
         </h3>
 

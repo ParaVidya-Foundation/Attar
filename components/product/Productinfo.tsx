@@ -77,7 +77,7 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   return (
     <aside className="w-full lg:w-1/2 p-4 sm:p-6 md:p-10 flex flex-col justify-start border-[2px] border-[#1e2023]">
       <div className="max-w-xl">
-        <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl leading-tight">{product.title}</h1>
+        <h1 className="font-heading text-2xl sm:text-3xl md:text-4xl leading-tight">{product.title}</h1>
 
         <p className="mt-3 text-2xl font-semibold">{product.price}</p>
 

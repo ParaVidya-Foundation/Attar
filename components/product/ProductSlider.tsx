@@ -31,7 +31,7 @@ export default function ProductSlider({ products: productsProp, title }: Props) 
         {/* Header */}
         {title && (
           <div className="mb-10 flex items-center justify-between">
-            <h2 className="font-serif text-2xl md:text-3xl text-[#1e2023]">{title}</h2>
+            <h2 className="font-heading text-2xl md:text-3xl text-[#1e2023]">{title}</h2>
 
             {/* Arrows (desktop only) */}
             <div className="hidden md:flex items-center gap-3">

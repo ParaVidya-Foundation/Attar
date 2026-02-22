@@ -79,7 +79,7 @@ export default function BlogCard({
             mt-2
             text-[20px]
             leading-snug
-            font-serif
+            font-heading
             text-[#1e2023]
             group-hover:text-black
             transition-colors

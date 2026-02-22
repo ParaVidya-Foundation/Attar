@@ -47,6 +47,37 @@ async function guardAdmin(): Promise<{ ok: false; error: string } | null> {
   }
 }
 
+/** FormData-based action for ProductForm — use as form action with useFormState (no function passed to client). */
+export async function productFormAction(
+  _prev: { ok: boolean; error?: string } | null,
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const productId = (formData.get("productId") as string)?.trim() || null;
+  const variantsRaw = formData.get("variants") as string | null;
+  let variants: ProductVariantInput[] = [];
+  if (variantsRaw) {
+    try {
+      variants = JSON.parse(variantsRaw) as ProductVariantInput[];
+    } catch {
+      variants = [];
+    }
+  }
+  const data: ProductFormData = {
+    name: (formData.get("name") as string) ?? "",
+    slug: (formData.get("slug") as string) ?? "",
+    description: (formData.get("description") as string) ?? "",
+    category_id: (formData.get("category_id") as string) || null,
+    price: Number(formData.get("price")) || 0,
+    original_price: formData.get("original_price") ? Number(formData.get("original_price")) : null,
+    stock: Number(formData.get("stock")) || 0,
+    is_active: formData.get("is_active") === "on",
+    image_url: (formData.get("image_url") as string) ?? "",
+    variants: variants.filter((v) => v.size_ml > 0),
+  };
+  if (productId) return updateProduct(productId, data);
+  return createProduct(data);
+}
+
 export async function createProduct(data: ProductFormData) {
   const guard = await guardAdmin();
   if (guard) return guard;
@@ -99,6 +130,9 @@ export async function createProduct(data: ProductFormData) {
         sort_order: 0,
       });
       if (imgErr) serverError("admin actions createProduct image", imgErr);
+      if (typeof console !== "undefined" && console.warn) {
+        console.warn("[admin] Minimum 2 product images recommended; only 1 provided.");
+      }
     }
 
     revalidatePath("/admin");
@@ -138,6 +172,14 @@ export async function updateProduct(id: string, data: ProductFormData) {
     if (error) {
       serverError("admin actions updateProduct", error);
       return { ok: false, error: error.message };
+    }
+
+    const { data: existingImages } = await supabase
+      .from("product_images")
+      .select("id")
+      .eq("product_id", id);
+    if (existingImages && existingImages.length < 2 && typeof console !== "undefined" && console.warn) {
+      console.warn("[admin] Minimum 2 product images recommended; product has fewer than 2.");
     }
 
     const { error: delErr } = await supabase.from("product_variants").delete().eq("product_id", id);
@@ -200,6 +242,28 @@ export async function toggleProductActive(id: string, isActive: boolean) {
     serverError("admin actions toggleProductActive", err);
     throw err;
   }
+}
+
+/** FormData-based action for toggle (use as form action with useFormState for refresh). */
+export async function toggleProductActiveForm(
+  _prev: { done?: boolean } | null,
+  formData: FormData,
+): Promise<{ done: boolean }> {
+  const id = (formData.get("id") as string)?.trim();
+  const current = formData.get("current") === "true";
+  if (!id) return { done: false };
+  await toggleProductActive(id, !current);
+  return { done: true };
+}
+
+/** FormData-based action for delete (use as form action; for useFormState). */
+export async function deleteProductForm(
+  _prev: { ok: boolean; error?: string } | null,
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const id = (formData.get("id") as string)?.trim();
+  if (!id) return { ok: false, error: "Missing id" };
+  return deleteProduct(id);
 }
 
 export async function deleteProduct(id: string) {

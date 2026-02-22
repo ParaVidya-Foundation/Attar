@@ -94,7 +94,7 @@ export default function TrustBar() {
               <p
                 className="
                   max-w-[200px]
-                  font-serif
+                  font-heading
                   text-[14px] leading-6
                   text-charcoal/80
                   sm:text-[15px]

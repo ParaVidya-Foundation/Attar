@@ -100,7 +100,7 @@ export default function BlogSection() {
     <section className="w-full bg-white py-16 sm:py-20 border-t-[2px] border-[#1e2023]">
       {/* Header */}
       <header className="mx-auto max-w-3xl px-6 text-center">
-        <h2 className="font-serif text-3xl tracking-wide text-[#1e2023] sm:text-4xl">OUR JOURNAL</h2>
+        <h2 className="font-heading text-3xl tracking-wide text-[#1e2023] sm:text-4xl">OUR JOURNAL</h2>
         <div className="mx-auto mt-3 h-[2px] w-12 bg-black/60" />
       </header>
 
@@ -142,7 +142,7 @@ export default function BlogSection() {
                 <p className="mt-4 text-[11px] uppercase tracking-widest text-gray-500">{blog.date}</p>
 
                 {/* Title */}
-                <h3 className="mt-2 font-serif text-lg text-[#1e2023] group-hover:opacity-80 transition">
+                <h3 className="mt-2 font-heading text-lg text-[#1e2023] group-hover:opacity-80 transition">
                   {blog.title}
                 </h3>
 

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { LOGO_PATH } from "@/lib/seo";
 
 export function Footer() {
   const [visible, setVisible] = useState(false);
@@ -43,7 +45,15 @@ export function Footer() {
         <div className="grid gap-14 md:grid-cols-12">
           {/* Brand Section */}
           <div className="md:col-span-5">
-            <p className="font-serif text-2xl tracking-[0.08em] text-ink">Anand Ras</p>
+            <Link href="/" className="inline-block" aria-label="Anand Ras – Home">
+              <Image
+                src={LOGO_PATH}
+                alt="Anand Ras"
+                width={300}
+                height={80}
+                className="h-20 w-auto object-contain text-ink sm:h-11 md:h-12"
+              />
+            </Link>
 
             <p className="mt-4 max-w-sm text-sm leading-7 text-charcoal/80">
               Heritage Indian attars crafted through timeless distillation. Minimal. Pure. Designed for calm

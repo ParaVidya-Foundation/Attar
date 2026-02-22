@@ -24,7 +24,7 @@ export default function IncenseHero() {
         >
           <p className="text-xs font-semibold tracking-[0.28em] text-charcoal/60">ANAND RAS</p>
 
-          <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
+          <h1 className="mt-4 font-heading text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
             Perfume for your soul
           </h1>
 

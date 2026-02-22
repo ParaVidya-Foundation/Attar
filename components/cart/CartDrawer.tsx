@@ -120,7 +120,7 @@ export function CartDrawer(): JSX.Element | null {
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/12">
             <div>
               <p className="text-xs font-semibold tracking-[0.26em] text-gray-500">CART</p>
-              <div className="mt-1 font-serif text-lg text-gray-900">Your cart</div>
+              <div className="mt-1 font-heading text-lg text-gray-900">Your cart</div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export function CartDrawer(): JSX.Element | null {
 
                       <div className="min-w-0 flex-1 w-full">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="truncate font-serif text-sm sm:text-base text-gray-900">{l.name}</p>
+                          <p className="truncate font-heading text-sm sm:text-base text-gray-900">{l.name}</p>
                           <p className="text-sm font-medium text-gray-900 shrink-0">
                             {formatINR((l.price ?? 0) * (l.qty ?? 1))}
                           </p>
@@ -225,7 +225,7 @@ export function CartDrawer(): JSX.Element | null {
             <div className="border-t border-white/12 px-6 py-5">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-600">Subtotal</p>
-                <p className="font-serif text-lg text-gray-900">{formatINR(total)}</p>
+                <p className="font-heading text-lg text-gray-900">{formatINR(total)}</p>
               </div>
 
               <div className="mt-4 grid gap-3">

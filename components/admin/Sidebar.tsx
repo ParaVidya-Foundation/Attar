@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -13,6 +14,7 @@ import {
   ChevronRight,
   Boxes,
 } from "lucide-react";
+import { LOGO_PATH } from "@/lib/seo";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +35,23 @@ export function Sidebar() {
         collapsed ? "w-[4.5rem]" : "w-60"
       }`}
     >
+      <div
+        className={`flex shrink-0 items-center justify-center border-b border-neutral-200/80 py-4 ${collapsed ? "px-2" : "px-3"}`}
+      >
+        <Link
+          href="/admin"
+          className="flex items-center justify-center overflow-hidden"
+          aria-label="Anand Ras Admin – Home"
+        >
+          <Image
+            src={LOGO_PATH}
+            alt="Anand Ras"
+            width={300}
+            height={80}
+            className="h-9 w-auto max-w-full object-contain sm:h-10"
+          />
+        </Link>
+      </div>
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/admin" && pathname.startsWith(href));

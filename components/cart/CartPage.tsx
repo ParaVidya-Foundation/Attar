@@ -36,7 +36,7 @@ export default function CartPage() {
       <div className="mx-auto max-w-5xl">
         <header className="mb-8">
           <p className="text-xs font-semibold tracking-[0.26em] text-gray-500">CART</p>
-          <h1 className="mt-4 font-serif text-3xl sm:text-4xl tracking-tight text-gray-900">Your cart</h1>
+          <h1 className="mt-4 font-heading text-3xl sm:text-4xl tracking-tight text-gray-900">Your cart</h1>
           <p className="mt-3 text-sm text-gray-600">
             Frontend demo cart — stored client-side. Integrate with your checkout backend (Stripe / Razorpay)
             for production.
@@ -96,7 +96,7 @@ export default function CartPage() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-serif text-lg text-gray-900">{l.name}</p>
+                        <p className="truncate font-heading text-lg text-gray-900">{l.name}</p>
                         <p className="mt-1 text-xs font-semibold tracking-[0.18em] text-gray-500">
                           {l.ml} ml • {formatINR(l.price)}
                         </p>
@@ -148,7 +148,7 @@ export default function CartPage() {
                       </div>
 
                       <div className="flex-shrink-0 text-right">
-                        <p className="font-serif text-lg text-gray-900">
+                        <p className="font-heading text-lg text-gray-900">
                           {formatINR((l.price ?? 0) * (l.qty ?? 1))}
                         </p>
                       </div>
@@ -167,7 +167,7 @@ export default function CartPage() {
 
                 <div className="mt-4 flex items-center justify-between">
                   <p className="text-sm text-gray-700">Subtotal</p>
-                  <p className="font-serif text-2xl text-gray-900">{formatINR(total)}</p>
+                  <p className="font-heading text-2xl text-gray-900">{formatINR(total)}</p>
                 </div>
 
                 <div className="mt-6 grid gap-3">

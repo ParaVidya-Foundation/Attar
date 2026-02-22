@@ -29,7 +29,7 @@ export default function BulkOrder() {
           <div className="animate-fadeUp">
             <p className="text-xs tracking-[0.28em] text-gray-500">WHOLESALE</p>
 
-            <h2 className="mt-3 font-serif text-3xl sm:text-4xl text-[#1e2023]">Bulk Incense Orders</h2>
+            <h2 className="mt-3 font-heading text-3xl sm:text-4xl text-[#1e2023]">Bulk Incense Orders</h2>
 
             <p className="mt-6 text-sm leading-7 text-gray-600 max-w-md">
               Partner with us for bulk incense supply for temples, retailers, events, or corporate gifting.

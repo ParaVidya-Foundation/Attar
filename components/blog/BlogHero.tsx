@@ -29,7 +29,7 @@ export default function BlogHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
           className="
-            font-serif
+            font-heading
             text-4xl
             sm:text-5xl
             lg:text-6xl

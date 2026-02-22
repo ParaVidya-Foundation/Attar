@@ -16,7 +16,7 @@ function SuccessContent() {
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
 
-        <h1 className="mt-6 font-serif text-3xl tracking-tight text-neutral-900">
+        <h1 className="mt-6 font-heading text-3xl tracking-tight text-neutral-900">
           Order Confirmed
         </h1>
 

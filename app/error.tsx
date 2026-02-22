@@ -44,7 +44,7 @@ export default function Error({
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
       <Container className="text-center">
         <ErrorIcon className="mx-auto h-16 w-16 text-ink/60" />
-        <h1 className="mt-6 font-serif text-3xl font-semibold text-ink">Something Went Wrong</h1>
+        <h1 className="mt-6 font-heading text-3xl font-semibold text-ink">Something Went Wrong</h1>
         <p className="mt-4 text-lg text-charcoal/70">
           {isEnvError
             ? "Configuration error detected. Please check environment variables."

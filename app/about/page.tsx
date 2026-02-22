@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { pageMetadata } from "@/lib/seo";
+import Image from "next/image";
+import { pageMetadata, LOGO_PATH } from "@/lib/seo";
 import { Container } from "@/components/ui/Container";
 
 export const revalidate = 3600;
@@ -16,7 +17,10 @@ export default function AboutPage() {
   return (
     <Container className="py-12 sm:py-16">
       <p className="text-xs font-semibold tracking-[0.26em] text-charcoal/70">ABOUT</p>
-      <h1 className="mt-4 font-serif text-4xl tracking-tight text-ink sm:text-5xl">Anand Ras</h1>
+      <div className="mt-4">
+        <Image src={LOGO_PATH} alt="" width={240} height={64} className="h-14 w-auto object-contain text-ink sm:h-16 md:h-[4.5rem]" aria-hidden />
+        <h1 className="sr-only">Anand Ras</h1>
+      </div>
       <div className="mt-6 grid gap-4 text-sm leading-7 text-charcoal/85 sm:text-base">
         <p>
           Anand Ras is a frontend-only, production-ready template for a luxury attar brand. It is

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { ShoppingCart } from "lucide-react";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useCart } from "@/components/cart/CartProvider";
+import { LOGO_PATH } from "@/lib/seo";
 
 const COLLECTIONS = [
   {
@@ -153,14 +154,15 @@ export default function Header() {
 
           {/* center brand */}
           <div className="mx-auto flex items-center justify-center">
-            <Link href="/" className="inline-flex items-center gap-3">
-              {/* If you have a logo file, replace with Image */}
-              <span
-                className="font-serif text-lg tracking-wide text-slate-900"
-                style={{ letterSpacing: "0.06em" }}
-              >
-                Anand Ras
-              </span>
+            <Link href="/" className="inline-flex items-center" aria-label="Anand Ras – Home">
+              <Image
+                src={LOGO_PATH}
+                alt="Anand Ras"
+                width={300}
+                height={80}
+                className="h-9 w-auto object-contain sm:h-10 md:h-11"
+                priority
+              />
             </Link>
           </div>
 

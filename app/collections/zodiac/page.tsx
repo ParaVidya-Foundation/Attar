@@ -32,7 +32,7 @@ export default async function ZodiacPage() {
       {/* Editorial Section */}
       <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <header className="text-center">
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl text-[#1e2023]">
+          <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl text-[#1e2023]">
             Find Your Signature Zodiac Scent
           </h2>
 

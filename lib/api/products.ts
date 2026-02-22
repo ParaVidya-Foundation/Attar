@@ -26,10 +26,12 @@ const PRODUCT_COLUMNS =
 const PRODUCT_IMAGE_COLUMNS = "id,product_id,image_url,is_primary,sort_order";
 const PRODUCT_VARIANT_COLUMNS = "id,product_id,size_ml,price,stock,sku";
 
+const PLACEHOLDER_IMAGE_URL = "/products/placeholder.webp";
+
 function sortImages(
   images: { image_url: string; is_primary?: boolean; sort_order?: number }[],
 ): { url: string }[] {
-  return [...images]
+  const sorted = [...images]
     .sort((a, b) => {
       const aPrimary = a.is_primary ?? false;
       const bPrimary = b.is_primary ?? false;
@@ -38,6 +40,11 @@ function sortImages(
       return (a.sort_order ?? 0) - (b.sort_order ?? 0);
     })
     .map((img) => ({ url: img.image_url }));
+  // Enforce minimum 2 images for gallery/slider
+  while (sorted.length < 2) {
+    sorted.push({ url: PLACEHOLDER_IMAGE_URL });
+  }
+  return sorted;
 }
 
 function pickPrice(productPrice: number, variants: ProductVariant[]): number {

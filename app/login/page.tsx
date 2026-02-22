@@ -26,19 +26,17 @@ function LoginForm() {
         setError(
           authError.message === "Invalid login credentials"
             ? "Invalid email or password."
-            : authError.message
+            : authError.message,
         );
         setLoading(false);
         return;
       }
 
       if (data.user) {
-        console.log("[login] Success, user id:", data.user.id);
         router.push("/");
         router.refresh();
       }
-    } catch (err) {
-      console.error("[login] Error:", err);
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -52,20 +50,32 @@ function LoginForm() {
     try {
       const supabase = createBrowserClient();
       const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`;
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       });
 
-      if (oauthError) {
-        console.error("[login] Google OAuth error:", oauthError);
-        setError(oauthError.message);
-      }
-    } catch (err) {
-      console.error("[login] Google error:", err);
-      setError("Could not connect to Google. Please try again.");
+      if (oauthError) setError(oauthError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleMetaLogin() {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const supabase = createBrowserClient();
+      const redirectTo = `${typeof window !== "undefined" ? window.location.origin : ""}/auth/callback`;
+
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: "facebook",
+        options: { redirectTo },
+      });
+
+      if (oauthError) setError(oauthError.message);
     } finally {
       setLoading(false);
     }
@@ -78,56 +88,48 @@ function LoginForm() {
     (urlError ? decodeURIComponent(urlError) : null);
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="w-full max-w-[420px]">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Sign in</h1>
-          <p className="mt-2 text-sm text-neutral-500">
-            Enter your credentials or continue with Google
-          </p>
+        {/* Card */}
+        <div className="border border-neutral-200 bg-white p-10 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">Sign in</h1>
+            <p className="mt-2 text-sm text-neutral-500">Access your account securely</p>
+          </div>
 
-          <form onSubmit={handleEmailLogin} className="mt-6 space-y-4">
+          {/* Email Login */}
+          <form onSubmit={handleEmailLogin} className="space-y-5">
             <div>
-              <label
-                htmlFor="login-email"
-                className="mb-1.5 block text-sm font-medium text-neutral-700"
-              >
-                Email
-              </label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Email</label>
               <input
-                id="login-email"
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-70 transition-colors"
                 placeholder="you@example.com"
+                className="w-full border border-neutral-300 px-4 py-3 text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-150 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
               />
             </div>
+
             <div>
-              <label
-                htmlFor="login-password"
-                className="mb-1.5 block text-sm font-medium text-neutral-700"
-              >
-                Password
-              </label>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">Password</label>
               <input
-                id="login-password"
                 type="password"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-70 transition-colors"
                 placeholder="••••••••"
+                className="w-full border border-neutral-300 px-4 py-3 text-neutral-900 placeholder:text-neutral-400 outline-none transition-all duration-150 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
               />
             </div>
 
             {displayError && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
                 {displayError}
               </div>
             )}
@@ -135,31 +137,54 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-neutral-900 text-white py-3 text-sm font-medium transition-all duration-150 hover:bg-black active:scale-[0.99] disabled:opacity-50"
             >
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
 
-          <div className="relative my-6">
-            <span className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-neutral-200" />
-            </span>
-            <span className="relative flex justify-center text-xs text-neutral-500">or</span>
+          {/* Divider */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-neutral-200" />
+            </div>
+            <div className="relative text-center text-xs text-neutral-500 bg-white px-2 w-fit mx-auto">
+              OR CONTINUE WITH
+            </div>
           </div>
 
+          {/* Google */}
           <button
-            type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99] mb-3"
           >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              className="h-5 w-5"
+            />
             Continue with Google
           </button>
 
-          <p className="mt-6 text-center text-sm text-neutral-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-medium text-neutral-900 underline hover:no-underline">
+          {/* Meta / Facebook */}
+          <button
+            onClick={handleMetaLogin}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99]"
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
+              alt="Meta"
+              className="h-5 w-5"
+            />
+            Continue with Meta
+          </button>
+
+          {/* Footer */}
+          <p className="mt-8 text-center text-sm text-neutral-500">
+            Don’t have an account?{" "}
+            <Link href="/signup" className="text-neutral-900 font-medium hover:underline">
               Sign up
             </Link>
           </p>
@@ -173,8 +198,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[80vh] items-center justify-center">
-          <div className="h-8 w-8 animate-pulse rounded-full bg-neutral-200" />
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="h-6 w-6 animate-pulse bg-neutral-300" />
         </div>
       }
     >

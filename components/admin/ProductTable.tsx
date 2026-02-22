@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useFormState } from "react-dom";
 import Link from "next/link";
-import { toggleProductActive, deleteProduct } from "@/lib/admin/actions";
+import { toggleProductActiveForm, deleteProductForm } from "@/lib/admin/actions";
 import { Badge } from "@/components/ui/badge";
 import type { ProductRow } from "@/lib/admin/queries";
 import type { CategoryRow } from "@/lib/admin/queries";
@@ -17,22 +19,21 @@ type Props = {
 export function ProductTable({ products: productsProp, categories: categoriesProp }: Props) {
   const products = productsProp ?? [];
   const categories = categoriesProp ?? [];
-  const [updating, setUpdating] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteState, deleteFormAction] = useFormState(deleteProductForm, null);
+  const [toggleState, toggleFormAction] = useFormState(toggleProductActiveForm, null);
+  const router = useRouter();
 
-  async function handleToggle(id: string, current: boolean) {
-    setUpdating(id);
-    await toggleProductActive(id, !current);
-    setUpdating(null);
-  }
+  useEffect(() => {
+    if (deleteState?.ok) {
+      setConfirmDelete(null);
+      router.refresh();
+    }
+  }, [deleteState, router]);
 
-  async function handleDelete(id: string) {
-    setUpdating(id);
-    await deleteProduct(id);
-    setConfirmDelete(null);
-    setUpdating(null);
-    window.location.reload();
-  }
+  useEffect(() => {
+    if (toggleState?.done) router.refresh();
+  }, [toggleState, router]);
 
   if (products.length === 0) {
     return (
@@ -63,16 +64,19 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
                 <p className="font-medium text-neutral-900 truncate">{p.name}</p>
                 <p className="mt-1 text-sm text-neutral-600">{getCategoryName(p.category_id)}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleToggle(p.id, p.is_active)}
-                disabled={updating === p.id}
-                className="shrink-0 focus:outline-none disabled:opacity-50"
-              >
-                <Badge variant={p.is_active ? "success" : "secondary"}>
-                  {p.is_active ? "Active" : "Inactive"}
-                </Badge>
-              </button>
+              <form action={toggleFormAction} className="shrink-0">
+                <input type="hidden" name="id" value={p.id} />
+                <input type="hidden" name="current" value={p.is_active ? "true" : "false"} />
+                <button
+                  type="submit"
+                  className="focus:outline-none"
+                  aria-label={p.is_active ? "Deactivate" : "Activate"}
+                >
+                  <Badge variant={p.is_active ? "success" : "secondary"}>
+                    {p.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </button>
+              </form>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -141,16 +145,19 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
                 <td className="px-4 py-3 text-neutral-700">{p.total_stock ?? 0}</td>
                 <td className="px-4 py-3 text-neutral-600">{getCategoryName(p.category_id)}</td>
                 <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(p.id, p.is_active)}
-                    disabled={updating === p.id}
-                    className="focus:outline-none disabled:opacity-50"
-                  >
-                    <Badge variant={p.is_active ? "success" : "secondary"}>
-                      {p.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </button>
+                  <form action={toggleFormAction}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <input type="hidden" name="current" value={p.is_active ? "true" : "false"} />
+                    <button
+                      type="submit"
+                      className="focus:outline-none"
+                      aria-label={p.is_active ? "Deactivate" : "Activate"}
+                    >
+                      <Badge variant={p.is_active ? "success" : "secondary"}>
+                        {p.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </button>
+                  </form>
                 </td>
                 <td className="px-4 py-3 text-neutral-600">
                   {new Date(p.created_at).toLocaleDateString("en-IN")}
@@ -194,14 +201,15 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
               >
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(confirmDelete.id)}
-                disabled={updating === confirmDelete.id}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                Delete
-              </button>
+              <form action={deleteFormAction}>
+                <input type="hidden" name="id" value={confirmDelete.id} />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </form>
             </div>
           </div>
         </div>

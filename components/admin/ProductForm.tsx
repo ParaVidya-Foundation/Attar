@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useFormState } from "react-dom";
 import type { ProductFormData, ProductVariantInput } from "@/lib/admin/actions";
+import { productFormAction } from "@/lib/admin/actions";
 import type { CategoryRow } from "@/lib/admin/queries";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -10,41 +12,36 @@ const defaultVariant = (): ProductVariantInput => ({ size_ml: 5, price: 0, stock
 type Props = {
   categories: CategoryRow[];
   initialData?: Partial<ProductFormData> & { variants?: ProductVariantInput[] };
-  action: (data: ProductFormData) => Promise<{ ok: boolean; error?: string }>;
+  /** When set, form submits as update; otherwise create. */
+  productId?: string;
 };
 
-export function ProductForm({ categories, initialData, action }: Props) {
-  const [loading, setLoading] = useState(false);
+export function ProductForm({ categories, initialData, productId }: Props) {
+  const [state, formAction] = useFormState(productFormAction, null);
   const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [variants, setVariants] = useState<ProductVariantInput[]>(
     initialData?.variants?.length ? [...initialData.variants] : [defaultVariant()],
   );
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (state?.ok) window.location.href = "/admin/products";
+    if (state && !state.ok && state.error) setError(state.error);
+  }, [state]);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    const data: ProductFormData = {
-      name: (fd.get("name") as string) ?? "",
-      slug: (fd.get("slug") as string) ?? "",
-      description: (fd.get("description") as string) ?? "",
-      category_id: (fd.get("category_id") as string) || null,
-      price: Number(fd.get("price")) || 0,
-      original_price: fd.get("original_price") ? Number(fd.get("original_price")) : null,
-      stock: Number(fd.get("stock")) || 0,
-      is_active: fd.get("is_active") === "on",
-      image_url: (fd.get("image_url") as string) ?? "",
-      variants: variants.filter((v) => v.size_ml > 0),
-    };
-
-    const result = await action(data);
-    setLoading(false);
-    if (result.ok) {
-      window.location.href = "/admin/products";
-    } else {
-      setError(result.error ?? "Failed to save");
+    const form = e.currentTarget;
+    let hidden = form.querySelector<HTMLInputElement>('input[name="variants"]');
+    if (!hidden) {
+      hidden = document.createElement("input");
+      hidden.name = "variants";
+      hidden.type = "hidden";
+      form.appendChild(hidden);
     }
+    hidden.value = JSON.stringify(variants.filter((v) => v.size_ml > 0));
+    form.requestSubmit();
   }
 
   function addVariant() {
@@ -62,7 +59,8 @@ export function ProductForm({ categories, initialData, action }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl space-y-4">
+    <form ref={formRef} action={formAction} onSubmit={handleSubmit} className="max-w-xl space-y-4">
+      {productId != null && <input type="hidden" name="productId" value={productId} />}
       {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -245,10 +243,9 @@ export function ProductForm({ categories, initialData, action }: Props) {
       <div className="flex gap-3 pt-4">
         <button
           type="submit"
-          disabled={loading}
           className="rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white hover:bg-neutral-800 disabled:opacity-50"
         >
-          {loading ? "Saving…" : "Save"}
+          Save
         </button>
         <a
           href="/admin/products"

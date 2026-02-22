@@ -44,7 +44,7 @@ export default function OtherInfo({ items = [] }: Props) {
           `}
             style={{ animationDelay: `${index * 80}ms` }}
           >
-            <h3 className="font-serif text-[15px] tracking-normal font-medium text-[#121212] uppercase">
+            <h3 className="font-heading text-[15px] tracking-normal font-medium text-[#121212] uppercase">
               {item.title}
             </h3>
 

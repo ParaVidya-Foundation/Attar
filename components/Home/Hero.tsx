@@ -25,7 +25,7 @@ export default function Hero() {
           >
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gray-500">ANAND RAS</p>
 
-            <h1 className="mt-3 font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-gray-900">
+            <h1 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-gray-900">
               Perfume for your soul
             </h1>
 

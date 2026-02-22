@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { Attar, BlogPost } from "./types";
 
+/** Logo and favicon path (place anand-rasa-logo-black.png in public/) */
+export const LOGO_PATH = "/anand-rasa-logo-black.png";
+
 export const BRAND = {
   name: "Anand Ras",
   description:
@@ -73,7 +76,7 @@ export function productJsonLd(attar: Attar) {
       lowPrice,
       highPrice,
       offerCount: attar.sizes.length,
-      availability: attar.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: "https://schema.org/InStock",
       url,
     },
   };
