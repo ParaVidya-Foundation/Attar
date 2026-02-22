@@ -99,7 +99,6 @@ export function useLocalCart() {
       // Path 2: simplified product payload (variantId required for checkout)
       const payload = item as SimpleAddPayload;
       if (!payload.variantId) {
-        console.error("[Cart] Cannot add: variantId required");
         return;
       }
       const qtyValue = Math.max(1, payload.qty ?? 1);

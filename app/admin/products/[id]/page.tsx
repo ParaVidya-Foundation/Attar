@@ -20,9 +20,10 @@ export default async function EditProductPage({ params }: Props) {
     category_id: product.category_id ?? null,
     price: product.price,
     original_price: product.original_price ?? null,
-    stock: product.stock ?? 0,
+    stock: product.variants?.reduce((s, v) => s + (v.stock ?? 0), 0) ?? 0,
     is_active: product.is_active ?? true,
     image_url: product.image_url ?? "",
+    variants: product.variants?.length ? product.variants : undefined,
   };
 
   return (

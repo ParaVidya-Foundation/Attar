@@ -39,6 +39,7 @@ export async function GET() {
     supabaseEnv: boolean;
     anonEnv: boolean;
     razorpayEnv: boolean;
+    activeProductCount?: number;
   } = {
     status: "ok",
     timestamp: new Date().toISOString(),
@@ -82,22 +83,24 @@ export async function GET() {
           serverEnv.RAZORPAY_KEY_SECRET &&
           serverEnv.RAZORPAY_WEBHOOK_SECRET
         );
-    } catch (err) {
+    } catch {
       // Server env might not be available in edge runtime
-      console.warn("[health] Server env check failed:", err);
     }
 
-    // Test Supabase connectivity
+    // Test Supabase connectivity and active product count
     try {
       const supabase = createStaticClient();
       if (supabase) {
         const { error } = await supabase.from("products").select("id").limit(1);
         health.supabase = {
           connected: !error,
-          error: error?.message,
+          error: error ? "Connection failed" : undefined,
         };
         if (error) {
           health.status = "degraded";
+        } else {
+          const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("is_active", true);
+          health.activeProductCount = count ?? 0;
         }
       } else {
         health.supabase = {
@@ -106,10 +109,10 @@ export async function GET() {
         };
         health.status = "degraded";
       }
-    } catch (err) {
+    } catch {
       health.supabase = {
         connected: false,
-        error: err instanceof Error ? err.message : "Unknown error",
+        error: "Connection failed",
       };
       health.status = "degraded";
     }
@@ -149,12 +152,12 @@ export async function GET() {
     const statusCode = health.status === "error" ? 503 : health.status === "degraded" ? 200 : 200;
 
     return NextResponse.json(health, { status: statusCode });
-  } catch (err) {
+  } catch {
     health.status = "error";
     health.env.allRequired = false;
     health.supabase = {
       connected: false,
-      error: err instanceof Error ? err.message : "Unknown error",
+      error: "Check failed",
     };
 
     return NextResponse.json(health, { status: 503 });

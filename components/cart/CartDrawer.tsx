@@ -55,7 +55,6 @@ export function CartDrawer(): JSX.Element | null {
       quantity: l.qty,
     }));
     if (items.length === 0) {
-      console.error("[Cart] Checkout skipped: no lines with variantId");
       return;
     }
 

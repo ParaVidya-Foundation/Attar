@@ -8,6 +8,8 @@ type Props = {
   searchParams: Promise<{ search?: string; page?: string }>;
 };
 
+export const revalidate = 60;
+
 export default async function AdminProductsPage({ searchParams }: Props) {
   const params = await searchParams;
   const search = params.search ?? "";

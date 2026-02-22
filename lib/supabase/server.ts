@@ -1,6 +1,7 @@
 import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { serverWarn, serverError } from "@/lib/security/logger";
 
 /**
  * Cookie-based Supabase client for server components, server actions, and route handlers.
@@ -21,10 +22,7 @@ export async function createServerClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn(
-      "[supabase/server] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set. " +
-        "Returning no-op client — auth calls will resolve to null.",
-    );
+    serverWarn("supabase/server", "Supabase env not set; returning no-op client");
     // Return a real SSR-shaped client with a placeholder URL.
     // auth.getUser() will return { user: null } because there is no valid
     // session, which causes requireUser() to redirect to /login.
@@ -69,7 +67,7 @@ export function assertSupabaseEnv(): void {
   if (process.env.NODE_ENV === "development") {
     throw new Error(`[supabase/server] ${SUPABASE_ENV_MSG}`);
   }
-  console.error("[supabase/server] PRODUCTION: Supabase env missing.", SUPABASE_ENV_MSG);
+  serverError("supabase/server", SUPABASE_ENV_MSG);
 }
 
 /**

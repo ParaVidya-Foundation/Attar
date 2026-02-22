@@ -52,8 +52,6 @@ export default async function ShopPage({
   const sorted = sortProducts(rawProducts, sort);
   const products = sorted.map(mapToCardProduct);
 
-  console.log("[PAGE] shop products received:", products?.length ?? "null/undefined");
-
   const categories = [{ id: "all", label: "All" }, ...dbCategories.map((item) => ({ id: item.slug, label: item.name }))];
 
   return (

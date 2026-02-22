@@ -1,15 +1,17 @@
 /**
  * Production Product API layer — server-side only.
- * Supabase as single source of truth. Safe query path: products first, then images/variants by product IDs, merge in memory (avoids schema-cache relational failures).
+ * Supabase as single source of truth. Safe query path: products first, then images/variants by product IDs, merge in memory.
  */
+import { cache } from "react";
 import { createStaticClient } from "@/lib/supabase/server";
+import { serverError, serverWarn } from "@/lib/security/logger";
 import type { Product, ProductVariant, ProductImage, ProductDisplay } from "@/types/product";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 export const revalidate = 60;
 
 function logError(context: string, err: unknown) {
-  console.error(`[api/products] ${context}:`, err);
+  serverError(`api/products ${context}`, err);
 }
 
 /** Relational row from Supabase (products + nested images, variants) */
@@ -156,7 +158,6 @@ async function fetchProductRows(
 export async function getAllProducts(): Promise<ProductDisplay[]> {
   const supabase = createStaticClient();
   if (!supabase) {
-    console.error("[PRODUCT_FETCH] Supabase not initialized");
     if (IS_DEV) throw new Error("[api/products] Supabase client not initialized — cannot return empty list in dev");
     return [];
   }
@@ -190,7 +191,6 @@ export async function getAllProducts(): Promise<ProductDisplay[]> {
 export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
   const supabase = createStaticClient();
   if (!supabase) {
-    console.error("[PRODUCT_FETCH] Supabase not initialized (getFeaturedProducts)");
     if (IS_DEV) throw new Error("[api/products] Supabase client not initialized — cannot return empty list in dev");
     return [];
   }
@@ -220,11 +220,11 @@ export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
 
 /**
  * Fetch single product by slug (safe path). Returns null if not found or inactive.
+ * Cached per-request so generateMetadata and page share one fetch.
  */
-export async function getProductBySlug(slug: string): Promise<ProductDisplay | null> {
+export const getProductBySlug = cache(async function getProductBySlug(slug: string): Promise<ProductDisplay | null> {
   const supabase = createStaticClient();
   if (!supabase) {
-    console.error("[PRODUCT_FETCH] Supabase not initialized (getProductBySlug)");
     if (IS_DEV) throw new Error("[api/products] Supabase client not initialized");
     return null;
   }
@@ -248,7 +248,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDisplay | n
     logError("getProductBySlug exception", e);
     return null;
   }
-}
+});
 
 /**
  * Fetch products by category slug. Returns [] if category not found; logs slug mismatch.
@@ -256,7 +256,6 @@ export async function getProductBySlug(slug: string): Promise<ProductDisplay | n
 export async function getProductsByCategory(categorySlug: string): Promise<ProductDisplay[]> {
   const supabase = createStaticClient();
   if (!supabase) {
-    console.error("[PRODUCT_FETCH] Supabase not initialized (getProductsByCategory)");
     if (IS_DEV) throw new Error("[api/products] Supabase client not initialized");
     return [];
   }
@@ -273,8 +272,7 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
       return [];
     }
     if (!category?.id) {
-      console.warn("[api/products] category not found:", categorySlug);
-      console.warn("[products] Category slug mismatch");
+      serverWarn("api/products", "category not found: " + categorySlug);
       return [];
     }
 

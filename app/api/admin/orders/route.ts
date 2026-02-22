@@ -5,6 +5,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertAdminEnv } from "@/lib/admin/envCheck";
 import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
+import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
 function adminErrorStatus(err: unknown): { status: number; body: { error: string } } {
@@ -18,6 +20,12 @@ function adminErrorStatus(err: unknown): { status: number; body: { error: string
 }
 
 export async function GET(req: Request) {
+  const identifier = getClientIdentifier(req);
+  const limit = rateLimit(identifier, 60, 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     assertAdminEnv();
     await assertAdmin();
@@ -47,7 +55,7 @@ export async function GET(req: Request) {
     const { data: orders, error, count } = await query;
 
     if (error) {
-      console.error("[ADMIN ORDERS API ERROR]", { error });
+      serverError("admin orders API", error);
       return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
     }
 
@@ -103,9 +111,7 @@ export async function GET(req: Request) {
       const { status, body } = adminErrorStatus(err);
       return NextResponse.json(body, { status });
     }
-    console.error("[ADMIN ORDERS API ERROR]", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    serverError("admin orders API", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

@@ -25,33 +25,10 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log to error tracking service in production
-    const errorInfo = {
-      message: error.message,
-      stack: error.stack,
-      digest: error.digest,
-      name: error.name,
-      timestamp: new Date().toISOString(),
-    };
-
-    if (process.env.NODE_ENV === "production") {
-      // Log to console for now - can be extended to send to error tracking service
-      console.error("[Error Boundary] Production error:", errorInfo);
-      
-      // Check if it's an environment-related error
-      if (
-        error.message.includes("environment") ||
-        error.message.includes("NEXT_PUBLIC") ||
-        error.message.includes("Supabase") ||
-        error.message.includes("Razorpay")
-      ) {
-        console.error(
-          "[Error Boundary] Environment configuration error detected. " +
-            "Please check Vercel environment variables."
-        );
-      }
-    } else {
-      console.error("[Error Boundary] Development error:", errorInfo);
+    if (process.env.NODE_ENV !== "production") {
+      // Development only: do not expose in production
+      // eslint-disable-next-line no-console
+      console.error("[Error Boundary]", error.message);
     }
   }, [error]);
 

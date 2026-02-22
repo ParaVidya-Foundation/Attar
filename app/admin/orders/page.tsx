@@ -10,6 +10,8 @@ type Props = {
   searchParams: Promise<{ page?: string; status?: string }>;
 };
 
+export const revalidate = 60;
+
 export default async function AdminOrdersPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = parseInt(params.page ?? "1", 10);

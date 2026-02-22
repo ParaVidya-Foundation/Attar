@@ -1,8 +1,5 @@
 /**
- * GET /api/debug/products — Server-side health check for product visibility.
- * Query: select id from products where is_active = true limit 5
- * Return: { count, error }. If count = 0 but DB has data → RLS or env failure.
- * Call during build/start and log result to server console.
+ * GET /api/debug/products — Disabled in production. Dev-only product visibility check.
  */
 import { NextResponse } from "next/server";
 import { createStaticClient } from "@/lib/supabase/server";
@@ -11,18 +8,17 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   let supabase: ReturnType<typeof createStaticClient>;
   try {
     supabase = createStaticClient();
-  } catch (e) {
-    const err = e instanceof Error ? e.message : "Supabase client not initialized";
-    console.error("[api/debug/products]", err);
-    return NextResponse.json({ count: 0, error: err });
+  } catch {
+    return NextResponse.json({ count: 0, error: "Client not initialized" });
   }
   if (!supabase) {
-    const err = "Supabase client not initialized (missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY)";
-    console.error("[api/debug/products]", err);
-    return NextResponse.json({ count: 0, error: err });
+    return NextResponse.json({ count: 0, error: "Client not initialized" });
   }
 
   const { data, error } = await supabase
@@ -32,14 +28,9 @@ export async function GET() {
     .limit(5);
 
   if (error) {
-    console.error("[api/debug/products] Supabase error:", error.message);
-    return NextResponse.json({ count: 0, error: error.message });
+    return NextResponse.json({ count: 0, error: "Query failed" });
   }
 
-  const list = data ?? [];
-  const count = list.length;
-  if (count === 0) {
-    console.warn("[api/debug/products] count=0 — if DB has active products, check RLS or env.");
-  }
+  const count = (data ?? []).length;
   return NextResponse.json({ count, error: null });
 }

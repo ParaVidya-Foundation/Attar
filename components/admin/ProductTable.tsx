@@ -78,13 +78,11 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-neutral-500">Price</p>
-                <p className="mt-0.5 font-medium text-neutral-900">₹{p.price.toLocaleString("en-IN")}</p>
+                <p className="mt-0.5 font-medium text-neutral-900">₹{((p.min_price ?? p.price) / 100).toLocaleString("en-IN")}</p>
               </div>
               <div>
-                <p className="text-xs text-neutral-500">Original</p>
-                <p className="mt-0.5 text-neutral-600">
-                  {p.original_price ? `₹${p.original_price.toLocaleString("en-IN")}` : "—"}
-                </p>
+                <p className="text-xs text-neutral-500">Stock</p>
+                <p className="mt-0.5 font-medium text-neutral-900">{p.total_stock ?? 0}</p>
               </div>
             </div>
 
@@ -118,9 +116,10 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-50">
+              <th className="px-4 py-3 text-left font-medium text-neutral-700">Image</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Name</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Price</th>
-              <th className="px-4 py-3 text-left font-medium text-neutral-700">Original</th>
+              <th className="px-4 py-3 text-left font-medium text-neutral-700">Stock</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Category</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Status</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Created</th>
@@ -129,12 +128,17 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
           </thead>
           <tbody>
             {products.map((p) => (
-              <tr key={p.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
-                <td className="px-4 py-3 font-medium text-neutral-900">{p.name}</td>
-                <td className="px-4 py-3 text-neutral-700">₹{p.price.toLocaleString("en-IN")}</td>
-                <td className="px-4 py-3 text-neutral-600">
-                  {p.original_price ? `₹${p.original_price.toLocaleString("en-IN")}` : "—"}
+              <tr key={p.id} className="border-b border-neutral-100 last:border-0 transition-colors hover:bg-neutral-50/50">
+                <td className="px-4 py-3">
+                  {p.image_url ? (
+                    <img src={p.image_url} alt="" className="h-10 w-10 rounded-lg object-cover" />
+                  ) : (
+                    <span className="text-neutral-400 text-xs">—</span>
+                  )}
                 </td>
+                <td className="px-4 py-3 font-medium text-neutral-900">{p.name}</td>
+                <td className="px-4 py-3 text-neutral-700">₹{((p.min_price ?? p.price) / 100).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3 text-neutral-700">{p.total_stock ?? 0}</td>
                 <td className="px-4 py-3 text-neutral-600">{getCategoryName(p.category_id)}</td>
                 <td className="px-4 py-3">
                   <button

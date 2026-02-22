@@ -130,7 +130,6 @@ export async function POST(req: Request) {
       .single();
 
     if (orderErr || !order) {
-      console.error("[orders/create] Order insert failed:", orderErr);
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -144,7 +143,6 @@ export async function POST(req: Request) {
 
     const { error: itemsErr } = await admin.from("order_items").insert(orderItems);
     if (itemsErr) {
-      console.error("[orders/create] Order items insert failed:", itemsErr);
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -152,7 +150,6 @@ export async function POST(req: Request) {
     const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
     if (!keyId) {
-      console.error("[orders] NEXT_PUBLIC_RAZORPAY_KEY_ID not configured");
       return NextResponse.json(
         { error: "Payment configuration error" },
         { status: 500 },
@@ -166,8 +163,7 @@ export async function POST(req: Request) {
       currency: razorpayOrder.currency,
       keyId,
     });
-  } catch (err) {
-    console.error("[orders/create] Unexpected error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

@@ -3,6 +3,8 @@ import { pageMetadata } from "@/lib/seo";
 import { Container } from "@/components/ui/Container";
 import CartPage from "@/components/cart/CartPage";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = pageMetadata({
   title: "Cart",
   description: "Review your cart. Frontend-only demo cart stored in your browser.",

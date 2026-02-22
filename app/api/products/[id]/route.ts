@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
 function isUuid(value: string): boolean {
@@ -12,8 +13,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Missing product id" }, { status: 400 });
   }
 
-  console.info("[PRODUCT API] Fetching product", { id, looksLikeUuid: isUuid(id) });
-
   try {
     const supabase = createAdminClient();
     const { data: product, error: productErr } = await supabase
@@ -23,7 +22,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       .single();
 
     if (productErr || !product || !product.is_active) {
-      console.warn("[PRODUCT API] Product not found or inactive", { id, error: productErr });
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
@@ -58,10 +56,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json(response);
   } catch (err) {
-    console.error("[PRODUCT API] Internal error", {
-      id,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    serverError("product API", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

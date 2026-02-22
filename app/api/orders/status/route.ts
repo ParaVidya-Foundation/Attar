@@ -3,6 +3,7 @@
  * Used by client to poll order status after payment
  */
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -38,11 +39,7 @@ export async function GET(req: Request) {
       createdAt: order.created_at,
     });
   } catch (err) {
-    console.error("[ORDER STATUS CHECK ERROR]", {
-      error: err instanceof Error ? err.message : String(err),
-      orderId,
-      razorpayOrderId,
-    });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    serverError("orders status", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
 function sanitizeVariantId(raw: string): string {
@@ -10,7 +11,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id: rawId } = await params;
   const variantId = sanitizeVariantId(rawId);
 
-  console.log("[VARIANT API] id:", variantId);
 
   if (!variantId) {
     return NextResponse.json({ error: "Missing variant id" }, { status: 400 });
@@ -62,7 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     });
   } catch (err) {
-    console.error("[VARIANTS API] Internal error", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    serverError("variants API", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

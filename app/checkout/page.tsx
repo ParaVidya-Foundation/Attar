@@ -138,16 +138,13 @@ function CheckoutForm() {
   }, [variantId]);
 
   if (!variantId) {
-    console.error("Checkout accessed without variant_id");
     return <EmptyState message="Invalid checkout request" />;
   }
 
   if (!UUID_REGEX.test(variantId)) {
-    console.error("[CHECKOUT] Invalid variant_id:", variantId);
     return <EmptyState message="Product not available." />;
   }
 
-  console.log("[CHECKOUT] cleaned variant_id:", variantId);
 
   const total = product ? product.price * qty : 0;
 

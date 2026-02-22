@@ -4,6 +4,7 @@
  * Throws on failure so callers can redirect or return 401/403.
  */
 import { createServerClient } from "@/lib/supabase/server";
+import { serverError } from "@/lib/security/logger";
 import type { User } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -63,7 +64,7 @@ export async function assertAdmin(
     .single();
 
   if (profileError) {
-    console.error("[assertAdmin] profiles fetch error:", profileError);
+    serverError("assertAdmin", profileError);
     throw new ProfileMissingError();
   }
 

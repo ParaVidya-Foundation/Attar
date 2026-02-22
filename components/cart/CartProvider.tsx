@@ -36,7 +36,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(
     (item: CartItem) => {
       if (!item.variantId) {
-        console.error("[Cart] Rejected: variantId required for checkout");
         return;
       }
       cart.add({

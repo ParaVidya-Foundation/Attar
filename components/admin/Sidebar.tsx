@@ -11,12 +11,14 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  Boxes,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/admin/inventory", label: "Inventory", icon: Boxes },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
 ];
@@ -27,18 +29,18 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col border-r border-neutral-200 bg-white transition-all duration-200 ${
-        collapsed ? "w-16" : "w-56"
+      className={`hidden md:flex flex-col fixed left-0 top-0 z-30 h-screen border-r border-neutral-200/80 bg-white/95 backdrop-blur-sm transition-[width] duration-300 ease-out ${
+        collapsed ? "w-[4.5rem]" : "w-60"
       }`}
     >
-      <nav className="flex flex-1 flex-col gap-0.5 p-3">
+      <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || (href !== "/admin" && pathname.startsWith(href));
           return (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-200 ${
                 isActive
                   ? "bg-neutral-100 text-neutral-900 font-medium"
                   : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
@@ -54,7 +56,7 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center border-t border-neutral-200 py-2 text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700"
+        className="flex items-center justify-center border-t border-neutral-200/80 py-3 text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-neutral-700"
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       >
         {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}

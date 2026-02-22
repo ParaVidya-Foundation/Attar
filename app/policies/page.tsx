@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 import { Container } from "@/components/ui/Container";
 
+export const revalidate = 3600;
+
 export const metadata: Metadata = pageMetadata({
   title: "Policies",
   description: "Shipping, returns, privacy, and terms. Template policies for a frontend-only demo.",

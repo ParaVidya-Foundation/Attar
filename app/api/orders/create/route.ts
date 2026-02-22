@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { getServerEnv } from "@/lib/env";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
+import { serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -25,7 +26,7 @@ export async function POST(req: Request) {
   const limit = rateLimit(identifier, 5, 60 * 1000);
 
   if (!limit.allowed) {
-    console.warn("[RATE LIMIT EXCEEDED]", { identifier });
+    serverWarn("orders/create", "Rate limit exceeded");
     return NextResponse.json(
       { error: "Too many requests. Please try again later." },
       {
@@ -54,9 +55,6 @@ export async function POST(req: Request) {
 
   const parsed = guestSchema.safeParse(body);
   if (!parsed.success) {
-    console.warn("[ORDER CREATE] Validation failed", {
-      issues: parsed.error.flatten(),
-    });
     return NextResponse.json(
       { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
       { status: 400 },
@@ -112,14 +110,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
     }
 
-    console.info("[ORDER CREATED]", {
-      variant_id,
-      quantity,
-      totalPaise,
-      email: email.trim().toLowerCase(),
-      userId: userId || "guest",
-    });
-
     const receipt = `ord_${Date.now()}`;
     const razorpayOrder = await createRazorpayOrder({
       amount: totalPaise,
@@ -143,11 +133,6 @@ export async function POST(req: Request) {
       .single();
 
     if (orderErr || !order) {
-      console.error("[ORDER CREATION FAILED]", {
-        error: orderErr,
-        variant_id,
-        email: email.trim().toLowerCase(),
-      });
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -160,10 +145,6 @@ export async function POST(req: Request) {
     });
 
     if (itemsErr) {
-      console.error("[ORDER ITEMS INSERT FAILED]", {
-        error: itemsErr,
-        orderId: order.id,
-      });
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
@@ -171,7 +152,6 @@ export async function POST(req: Request) {
     const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
     if (!keyId) {
-      console.error("[orders/create] NEXT_PUBLIC_RAZORPAY_KEY_ID not configured");
       return NextResponse.json(
         { error: "Payment configuration error" },
         { status: 500 },
@@ -185,12 +165,7 @@ export async function POST(req: Request) {
       currency: razorpayOrder.currency,
       keyId,
     });
-  } catch (err) {
-    console.error("[ORDER CREATION ERROR]", {
-      error: err instanceof Error ? err.message : String(err),
-      variant_id,
-      email: email.trim().toLowerCase(),
-    });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

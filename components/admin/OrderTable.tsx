@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { updateOrderStatus } from "@/lib/admin/actions";
 import type { OrderRow } from "@/lib/admin/queries";
 import { EmptyState } from "./EmptyState";
@@ -93,7 +94,11 @@ export function OrderTable({ orders }: Props) {
           <tbody>
             {orders.map((o) => (
               <tr key={o.id} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
-                <td className="px-4 py-3 font-mono text-xs text-neutral-600">{o.id.slice(0, 8)}…</td>
+                <td className="px-4 py-3">
+                  <Link href={`/admin/orders/${o.id}`} className="font-mono text-xs text-neutral-600 hover:text-neutral-900 hover:underline">
+                    {o.id.slice(0, 8)}…
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-neutral-700">{o.name || "—"}</td>
                 <td className="px-4 py-3">
                   <div className="text-sm text-neutral-700">{o.user_email || o.email || "—"}</div>

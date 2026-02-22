@@ -4,6 +4,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertAdminEnv } from "@/lib/admin/envCheck";
 import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
+import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
+import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
 
 function adminErrorStatus(err: unknown): { status: number; body: { error: string } } {
@@ -20,6 +22,12 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const identifier = getClientIdentifier(req);
+  const limit = rateLimit(identifier, 60, 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   try {
     assertAdminEnv();
     await assertAdmin();
@@ -81,9 +89,7 @@ export async function GET(
       const { status, body } = adminErrorStatus(err);
       return NextResponse.json(body, { status });
     }
-    console.error("[ADMIN ORDER DETAIL API ERROR]", {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    serverError("admin order detail API", err);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

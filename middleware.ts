@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
+import { serverError } from "@/lib/security/logger";
 
 const PROTECTED_PREFIXES = ["/account", "/admin"];
 
@@ -49,12 +50,12 @@ export async function middleware(request: NextRequest) {
         if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
           return NextResponse.redirect(new URL("/", request.url));
         }
-        console.error("[middleware] Admin check failed:", err);
+        serverError("middleware", err);
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
   } catch (error) {
-    console.error("[middleware] Error:", error);
+    serverError("middleware", error);
     return NextResponse.redirect(new URL("/", request.url));
   }
 

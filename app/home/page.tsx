@@ -47,8 +47,6 @@ export default async function HomePage() {
     getFeaturedProducts(),
     getProductsByCategory(COLLECTION_SLUGS.zodiac),
   ]);
-  console.log("[PAGE] home featured received:", featuredProducts?.length ?? "null/undefined");
-  console.log("[PAGE] home zodiac received:", zodiacProducts?.length ?? "null/undefined");
   const showcaseProducts = featuredProducts.length > 0 ? featuredProducts.map(toShowcaseProduct) : (await getProductsByCategory(COLLECTION_SLUGS.planets)).slice(0, 8).map(toShowcaseProduct);
   const zodiacShowcaseProducts = zodiacProducts.map(toShowcaseProduct) as ZodiacShowcaseProduct[];
 

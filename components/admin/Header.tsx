@@ -8,6 +8,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/admin": "Dashboard",
   "/admin/products": "Products",
   "/admin/orders": "Orders",
+  "/admin/inventory": "Inventory",
   "/admin/customers": "Customers",
   "/admin/analytics": "Analytics",
 };
@@ -20,7 +21,8 @@ type HeaderProps = {
 export function Header({ name, email }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const pageTitle = PAGE_TITLES[pathname] ?? "Admin";
+  const pageTitle =
+    pathname.match(/^\/admin\/orders\/[^/]+$/) ? "Order" : (PAGE_TITLES[pathname] ?? "Admin");
 
   async function handleLogout() {
     try {
@@ -28,8 +30,7 @@ export function Header({ name, email }: HeaderProps) {
       await supabase.auth.signOut();
       router.push("/");
       router.refresh();
-    } catch (err) {
-      console.error("[AdminHeader] Error during logout:", err);
+    } catch {
       // Still redirect even if logout fails
       router.push("/");
       router.refresh();

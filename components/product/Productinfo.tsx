@@ -50,7 +50,6 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   function addToCart() {
     const variantId = product.sizes?.length ? (selectedSize || product.sizes[0]?.id) : undefined;
     if (!variantId) {
-      console.error("[ProductInfo] Add to cart rejected: variantId required for checkout");
       return;
     }
     const price = product.sizes?.find((s) => s.id === selectedSize)?.priceValue ?? product.priceValue ?? 0;
@@ -70,7 +69,6 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   function buyNow() {
     const variantId = (selectedSize || product.sizes?.[0]?.id)?.trim();
     if (!variantId) {
-      console.error("Buy Now blocked: no variantId");
       return;
     }
     router.push(`/checkout?variant_id=${encodeURIComponent(variantId)}&quantity=${quantity}`);

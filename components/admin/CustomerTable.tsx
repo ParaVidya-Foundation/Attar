@@ -34,8 +34,13 @@ export function CustomerTable({ customers }: Props) {
               </div>
               <div>
                 <p className="text-xs text-neutral-500">Spent</p>
-                <p className="mt-0.5 font-medium text-neutral-900">₹{c.total_spent.toLocaleString("en-IN")}</p>
+                <p className="mt-0.5 font-medium text-neutral-900">₹{(c.total_spent / 100).toLocaleString("en-IN")}</p>
               </div>
+              {c.last_order_date && (
+                <p className="col-span-2 text-xs text-neutral-500">
+                  Last order: {new Date(c.last_order_date).toLocaleDateString("en-IN")}
+                </p>
+              )}
             </div>
           </div>
         ))}
@@ -49,14 +54,18 @@ export function CustomerTable({ customers }: Props) {
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Email</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Total Orders</th>
               <th className="px-4 py-3 text-left font-medium text-neutral-700">Total Spent</th>
+              <th className="px-4 py-3 text-left font-medium text-neutral-700">Last Order</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.user_email + i} className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50">
+              <tr key={c.user_email + i} className="border-b border-neutral-100 last:border-0 transition-colors hover:bg-neutral-50/50">
                 <td className="px-4 py-3 text-neutral-700">{c.user_email}</td>
                 <td className="px-4 py-3 text-neutral-700">{c.total_orders}</td>
-                <td className="px-4 py-3 text-neutral-700">₹{c.total_spent.toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3 text-neutral-700">₹{(c.total_spent / 100).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3 text-neutral-600">
+                  {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString("en-IN") : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
