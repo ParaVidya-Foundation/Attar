@@ -59,9 +59,9 @@ export default function ShopTrio() {
         {/* LEFT LARGE */}
         <div className="h-[420px] md:h-[600px]">
           <Card
-            src="/images/perfume-lifestyle.jpg"
+            src="/Incensehero.webp"
             alt="Luxury perfume portrait minimal white background"
-            href="/shop"
+            href="/collections/Incense"
           />
         </div>
 

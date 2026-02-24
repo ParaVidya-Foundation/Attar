@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
+  darkMode: false,
   theme: {
     extend: {
       colors: {
@@ -41,8 +42,6 @@ const config: Config = {
       },
     },
   },
-  // Dark mode is intentionally not enabled by default, but can be added later.
-  darkMode: "class",
   plugins: [],
 };
 

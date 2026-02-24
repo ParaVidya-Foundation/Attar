@@ -20,20 +20,6 @@ import type { ZodiacShowcaseProduct } from "@/components/Home/ZodiacShowcase";
 
 export const revalidate = 60;
 
-function toShowcaseProduct(p: ProductDisplay): ShowcaseProduct {
-  const firstVariant = p.variants?.[0];
-  return {
-    id: p.id,
-    name: p.name,
-    type: p.category_slug ? p.category_slug.charAt(0).toUpperCase() + p.category_slug.slice(1) : "Attar",
-    description: p.short_description ?? p.description ?? "",
-    price: `₹${(p.price / 100).toLocaleString("en-IN")}`,
-    size: firstVariant ? `${firstVariant.size_ml} ml` : undefined,
-    image: p.images?.[0]?.url ?? `/products/${p.slug}.webp`,
-    href: `/product/${p.slug}`,
-  };
-}
-
 export const metadata: Metadata = pageMetadata({
   title: "Home",
   description:
@@ -43,21 +29,14 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function HomePage() {
-  const [featuredProducts, zodiacProducts] = await Promise.all([
-    getFeaturedProducts(),
-    getProductsByCategory(COLLECTION_SLUGS.zodiac),
-  ]);
-  const showcaseProducts = featuredProducts.length > 0 ? featuredProducts.map(toShowcaseProduct) : (await getProductsByCategory(COLLECTION_SLUGS.planets)).slice(0, 8).map(toShowcaseProduct);
-  const zodiacShowcaseProducts = zodiacProducts.map(toShowcaseProduct) as ZodiacShowcaseProduct[];
-
   return (
     <div className="">
       <Hero />
-      <Showcase products={showcaseProducts} />
+      <Showcase />
       <ShopTrio />
       <PerfumePlanets />
       <ZodiacHero />
-      <ZodiacShowcase products={zodiacShowcaseProducts} />
+      <ZodiacShowcase />
       <Link
         href="/shop/incense"
         className="

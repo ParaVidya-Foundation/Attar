@@ -205,3 +205,45 @@ a {
     @apply bg-background text-foreground;
   }
 }
+
+/* Force light color scheme for the entire site */
+html {
+  color-scheme: light;
+}
+
+/* ==============================
+   GLOBAL BUTTON SYSTEM (Light Only)
+   ============================== */
+
+.btn-primary {
+  @apply bg-black text-white border border-black 
+         transition-colors duration-200 
+         hover:bg-neutral-900 hover:text-white 
+         focus:outline-none focus:ring-2 focus:ring-black/30;
+}
+
+.btn-secondary {
+  @apply bg-white text-black border border-black 
+         transition-colors duration-200 
+         hover:bg-black hover:text-white 
+         focus:outline-none focus:ring-2 focus:ring-black/20;
+}
+
+.btn-outline {
+  @apply bg-transparent text-black border border-black 
+         transition-colors duration-200 
+         hover:bg-black hover:text-white;
+}
+
+/* Force white text when background becomes dark */
+button:hover,
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-outline:hover {
+  color: white !important;
+}
+
+/* Prevent accidental dark-mode inheritance */
+button {
+  color: inherit;
+}

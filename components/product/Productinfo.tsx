@@ -154,12 +154,15 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
 
           <button
             onClick={addToCart}
-            className="flex-1 sm:flex-1 border border-[#1e2023] px-5 py-2.5 sm:py-2 text-sm tracking-wider hover:bg-black hover:text-white transition-all"
+            className="flex-1 sm:flex-1 px-5 py-2.5 sm:py-2 text-sm tracking-wider btn-secondary"
           >
             Add to cart
           </button>
 
-          <button onClick={buyNow} className="w-full sm:w-auto bg-[#1e2023] text-white px-4 py-2.5 sm:py-2 text-sm rounded-sm">
+          <button
+            onClick={buyNow}
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-sm rounded-sm btn-primary"
+          >
             Buy it now
           </button>
         </div>

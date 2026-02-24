@@ -19,15 +19,141 @@ type ZodiacShowcaseProps = {
   products?: ZodiacShowcaseProduct[];
 };
 
+const ZODIAC_DATA: ZodiacShowcaseProduct[] = [
+  {
+    id: "aries",
+    name: "Aries Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/aries.webp",
+    href: "/product/aries-attar",
+  },
+  {
+    id: "taurus",
+    name: "Taurus Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/taurus.webp",
+    href: "/product/taurus-attar",
+  },
+  {
+    id: "gemini",
+    name: "Gemini Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/gemini.webp",
+    href: "/product/gemini-attar",
+  },
+  {
+    id: "cancer",
+    name: "Cancer Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/cancer.webp",
+    href: "/product/cancer-attar",
+  },
+  {
+    id: "leo",
+    name: "Leo Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/leo.webp",
+    href: "/product/leo-attar",
+  },
+  {
+    id: "virgo",
+    name: "Virgo Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/virgo.webp",
+    href: "/product/virgo-attar",
+  },
+  {
+    id: "libra",
+    name: "Libra Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/libra.webp",
+    href: "/product/libra-attar",
+  },
+  {
+    id: "scorpio",
+    name: "Scorpio Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/scorpio.webp",
+    href: "/product/scorpio-attar",
+  },
+  {
+    id: "sagittarius",
+    name: "Sagittarius Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/sagittarius.webp",
+    href: "/product/sagittarius-attar",
+  },
+  {
+    id: "capricorn",
+    name: "Capricorn Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/capricorn.webp",
+    href: "/product/capricorn-attar",
+  },
+  {
+    id: "aquarius",
+    name: "Aquarius Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/aquarius.webp",
+    href: "/product/aquarius-attar",
+  },
+  {
+    id: "pisces",
+    name: "Pisces Attar",
+    type: "Rashi Rasa",
+    description: "Description here",
+    price: "₹1,499",
+    size: "6ml",
+    image: "/HomeAttar/pisces.webp",
+    href: "/product/pisces-attar",
+  },
+];
+
+/* ========================================================= */
+
 export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Use internal data if no props passed
+  const displayProducts = products.length > 0 ? products : ZODIAC_DATA;
 
   const scroll = (direction: "left" | "right") => {
     if (!containerRef.current) return;
 
     const width = containerRef.current.clientWidth;
-
-    // Smaller scroll distance on mobile for better control
     const distance = window.innerWidth < 640 ? width * 0.7 : width * 0.8;
 
     containerRef.current.scrollBy({
@@ -46,26 +172,13 @@ export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
 
       {/* Carousel */}
       <div className="relative mt-12 sm:mt-14">
-        {/* Edge fade (mobile UX hint) */}
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-white to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-white to-transparent" />
 
-        {/* Arrows — visible on all screens */}
         <button
           onClick={() => scroll("left")}
           aria-label="Scroll products left"
-          className="
-            absolute left-2 sm:left-4 top-1/2 z-20
-            -translate-y-1/2
-            flex items-center justify-center
-            h-8 w-8 sm:h-10 sm:w-10
-            rounded-full
-            border border-[#1e2023]/20
-            bg-white/90 backdrop-blur
-            text-sm sm:text-base
-            transition-colors duration-300
-            hover:bg-black hover:text-white
-          "
+          className="absolute left-2 sm:left-4 top-1/2 z-20 -translate-y-1/2 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full border border-[#1e2023]/20 bg-white/90 backdrop-blur text-sm sm:text-base transition-colors duration-300 hover:bg-black hover:text-white"
         >
           ‹
         </button>
@@ -73,18 +186,7 @@ export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
         <button
           onClick={() => scroll("right")}
           aria-label="Scroll products right"
-          className="
-            absolute right-2 sm:right-4 top-1/2 z-20
-            -translate-y-1/2
-            flex items-center justify-center
-            h-8 w-8 sm:h-10 sm:w-10
-            rounded-full
-            border border-[#1e2023]/20
-            bg-white/90 backdrop-blur
-            text-sm sm:text-base
-            transition-colors duration-300
-            hover:bg-black hover:text-white
-          "
+          className="absolute right-2 sm:right-4 top-1/2 z-20 -translate-y-1/2 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full border border-[#1e2023]/20 bg-white/90 backdrop-blur text-sm sm:text-base transition-colors duration-300 hover:bg-black hover:text-white"
         >
           ›
         </button>
@@ -92,26 +194,14 @@ export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
         {/* Products */}
         <div
           ref={containerRef}
-          className="
-            flex gap-8 sm:gap-10 lg:gap-12
-            overflow-x-auto px-6
-            scroll-smooth snap-x snap-mandatory
-            touch-pan-x
-            [scrollbar-width:none] [-ms-overflow-style:none]
-            [&::-webkit-scrollbar]:hidden
-          "
+          className="flex gap-8 sm:gap-10 lg:gap-12 overflow-x-auto px-6 scroll-smooth snap-x snap-mandatory touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
-          {products.map((product) => (
+          {displayProducts.map((product) => (
             <article
               key={product.id}
-              className="
-                min-w-[200px] sm:min-w-[220px] lg:min-w-[240px]
-                max-w-[240px] lg:max-w-[260px]
-                flex-shrink-0 snap-start text-center
-              "
+              className="min-w-[200px] sm:min-w-[220px] lg:min-w-[240px] max-w-[240px] lg:max-w-[260px] flex-shrink-0 snap-start text-center"
             >
               <Link href={product.href} className="group block">
-                {/* Image */}
                 <div className="relative mx-auto aspect-[3/4] w-[160px] sm:w-[180px] lg:w-[200px] overflow-hidden">
                   <Image
                     src={product.image}
@@ -122,7 +212,6 @@ export default function ZodiacShowcase({ products = [] }: ZodiacShowcaseProps) {
                   />
                 </div>
 
-                {/* Content */}
                 <h3 className="mt-5 font-heading text-base sm:text-lg tracking-wide text-ink transition-opacity duration-300 group-hover:opacity-80">
                   {product.name}
                 </h3>

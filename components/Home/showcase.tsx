@@ -19,15 +19,122 @@ type ShowcaseProps = {
   products?: ShowcaseProduct[];
 };
 
+const SHOWCASE_DATA: ShowcaseProduct[] = [
+  {
+    id: "surya",
+    name: "Surya Attar",
+    type: "Planet Attar",
+    description: "Energy and confidence fragrance.",
+    price: "₹1,499",
+    size: "10ml",
+    image: "/HomeAttar/surya.webp",
+    href: "/product/surya-attar",
+  },
+  {
+    id: "shani",
+    name: "shani Attar",
+    type: "Planet Attar",
+    description: "Calmness and emotional balance.",
+    price: "₹1,399",
+    size: "10ml",
+    image: "/HomeAttar/shani.webp",
+    href: "/product/chandra-attar",
+  },
+  {
+    id: "mangal",
+    name: "Mangal Attar",
+    type: "Planet Attar",
+    description: "Strength and motivation essence.",
+    price: "₹1,499",
+    size: "10ml",
+    image: "/products/mangal.webp",
+    href: "/product/mangal-attar",
+  },
+  {
+    id: "venus",
+    name: "Shukra Attar",
+    type: "Planet Attar",
+    description: "Luxury and attraction fragrance.",
+    price: "₹1,699",
+    size: "10ml",
+    image: "/products/shukra.webp",
+    href: "/product/shukra-attar",
+  },
+  {
+    id: "stress",
+    name: "Calm Mind",
+    type: "Stress Relief",
+    description: "Soothing aroma for relaxation.",
+    price: "₹1,299",
+    size: "10ml",
+    image: "/products/stress.webp",
+    href: "/product/calm-mind-attar",
+  },
+  {
+    id: "surya",
+    name: "Surya Attar",
+    type: "Planet Attar",
+    description: "Energy and confidence fragrance.",
+    price: "₹1,499",
+    size: "10ml",
+    image: "/products/surya.webp",
+    href: "/product/surya-attar",
+  },
+  {
+    id: "chandra",
+    name: "Chandra Attar",
+    type: "Planet Attar",
+    description: "Calmness and emotional balance.",
+    price: "₹1,399",
+    size: "10ml",
+    image: "/products/chandra.webp",
+    href: "/product/chandra-attar",
+  },
+  {
+    id: "mangal",
+    name: "Mangal Attar",
+    type: "Planet Attar",
+    description: "Strength and motivation essence.",
+    price: "₹1,499",
+    size: "10ml",
+    image: "/products/mangal.webp",
+    href: "/product/mangal-attar",
+  },
+  {
+    id: "venus",
+    name: "Shukra Attar",
+    type: "Planet Attar",
+    description: "Luxury and attraction fragrance.",
+    price: "₹1,699",
+    size: "10ml",
+    image: "/products/shukra.webp",
+    href: "/product/shukra-attar",
+  },
+  {
+    id: "stress",
+    name: "Calm Mind",
+    type: "Stress Relief",
+    description: "Soothing aroma for relaxation.",
+    price: "₹1,299",
+    size: "10ml",
+    image: "/products/stress.webp",
+    href: "/product/calm-mind-attar",
+  },
+];
+
+/* ========================================================= */
+
 export default function Showcase({ products = [] }: ShowcaseProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // If no products passed → use internal JSON
+  const displayProducts = products.length > 0 ? products : SHOWCASE_DATA;
 
   const scroll = (direction: "left" | "right") => {
     if (!containerRef.current) return;
 
     const width = containerRef.current.clientWidth;
 
-    // Smaller scroll distance on mobile for better control
     const distance = window.innerWidth < 640 ? width * 0.7 : width * 0.8;
 
     containerRef.current.scrollBy({
@@ -46,26 +153,15 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
 
       {/* Carousel */}
       <div className="relative mt-12 sm:mt-14">
-        {/* Edge fade (mobile UX hint) */}
+        {/* Edge fade */}
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-white to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-white to-transparent" />
 
-        {/* Arrows — visible on all screens */}
+        {/* Arrows */}
         <button
           onClick={() => scroll("left")}
           aria-label="Scroll products left"
-          className="
-            absolute left-2 sm:left-4 top-1/2 z-20
-            -translate-y-1/2
-            flex items-center justify-center
-            h-8 w-8 sm:h-10 sm:w-10
-            rounded-full
-            border border-[#1e2023]/20
-            bg-white/90 backdrop-blur
-            text-sm sm:text-base
-            transition-colors duration-300
-            hover:bg-black hover:text-white
-          "
+          className="absolute left-2 sm:left-4 top-1/2 z-20 -translate-y-1/2 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full border border-[#1e2023]/20 bg-white/90 backdrop-blur text-sm sm:text-base transition-colors duration-300 hover:bg-black hover:text-white"
         >
           ‹
         </button>
@@ -73,18 +169,7 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
         <button
           onClick={() => scroll("right")}
           aria-label="Scroll products right"
-          className="
-            absolute right-2 sm:right-4 top-1/2 z-20
-            -translate-y-1/2
-            flex items-center justify-center
-            h-8 w-8 sm:h-10 sm:w-10
-            rounded-full
-            border border-[#1e2023]/20
-            bg-white/90 backdrop-blur
-            text-sm sm:text-base
-            transition-colors duration-300
-            hover:bg-black hover:text-white
-          "
+          className="absolute right-2 sm:right-4 top-1/2 z-20 -translate-y-1/2 flex items-center justify-center h-8 w-8 sm:h-10 sm:w-10 rounded-full border border-[#1e2023]/20 bg-white/90 backdrop-blur text-sm sm:text-base transition-colors duration-300 hover:bg-black hover:text-white"
         >
           ›
         </button>
@@ -92,23 +177,12 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
         {/* Products */}
         <div
           ref={containerRef}
-          className="
-            flex gap-8 sm:gap-10 lg:gap-12
-            overflow-x-auto px-6
-            scroll-smooth snap-x snap-mandatory
-            touch-pan-x
-            [scrollbar-width:none] [-ms-overflow-style:none]
-            [&::-webkit-scrollbar]:hidden
-          "
+          className="flex gap-8 sm:gap-10 lg:gap-12 overflow-x-auto px-6 scroll-smooth snap-x snap-mandatory touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
-          {products.map((product) => (
+          {displayProducts.map((product) => (
             <article
               key={product.id}
-              className="
-                min-w-[200px] sm:min-w-[220px] lg:min-w-[240px]
-                max-w-[240px] lg:max-w-[260px]
-                flex-shrink-0 snap-start text-center
-              "
+              className="min-w-[200px] sm:min-w-[220px] lg:min-w-[240px] max-w-[240px] lg:max-w-[260px] flex-shrink-0 snap-start text-center"
             >
               <Link href={product.href} className="group block">
                 {/* Image */}

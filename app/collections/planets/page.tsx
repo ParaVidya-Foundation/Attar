@@ -4,6 +4,7 @@ import ProductCard from "@/components/shop/ProductCard";
 import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
+import PlanetHero from "@/components/Planets/PlanetHero";
 
 export const revalidate = 60;
 
@@ -22,19 +23,8 @@ export default async function PlanetsPage() {
   const mappedProducts = products.map(mapToCardProduct);
 
   return (
-    <section>
-      {/* Hero */}
-      <div className="relative w-full aspect-[16/9]">
-        <Image
-          src="/planets-hero.webp"
-          alt="Planet Attars"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-      </div>
-
+    <section className="w-full bg-white">
+      <PlanetHero />
       {/* Grid */}
       <section className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14">
         <header className="mb-10 text-center">
@@ -45,9 +35,7 @@ export default async function PlanetsPage() {
           {mappedProducts.length === 0 ? (
             <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
           ) : (
-            mappedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
+            mappedProducts.map((product) => <ProductCard key={product.id} product={product} />)
           )}
         </div>
       </section>
