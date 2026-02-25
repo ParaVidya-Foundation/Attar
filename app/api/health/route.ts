@@ -158,7 +158,14 @@ export async function GET() {
 
     const statusCode = health.status === "error" ? 503 : health.status === "degraded" ? 200 : 200;
 
-    return NextResponse.json(health, { status: statusCode });
+    return NextResponse.json(
+      {
+        supabase: !!health.supabase?.connected,
+        razorpay: !!health.razorpay?.keysPresent,
+        env: !!health.env.allRequired,
+      },
+      { status: statusCode },
+    );
   } catch {
     health.status = "error";
     health.env.allRequired = false;

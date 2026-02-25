@@ -33,7 +33,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           SUPABASE_SERVICE_ROLE_KEY: placeholder
-          NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_test_placeholder
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_live_placeholder
           RAZORPAY_KEY_SECRET: placeholder
           RAZORPAY_WEBHOOK_SECRET: placeholder
           RAZORPAY_WEBHOOK_URL: https://placeholder.vercel.app/api/webhooks/razorpay

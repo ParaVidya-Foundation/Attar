@@ -23,7 +23,12 @@ const nextConfig = {
     const canonical = "https://anandrasafragnance.com";
     if (process.env.NODE_ENV !== "production") return [];
     return [
-      { source: "/:path*", has: [{ type: "host", value: "www.anandrasafragnance.com" }], destination: `${canonical}/:path*`, permanent: true },
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.anandrasafragnance.com" }],
+        destination: `${canonical}/:path*`,
+        permanent: true,
+      },
     ];
   },
   images: {
@@ -50,6 +55,7 @@ img-src 'self' data: https: blob:;
 font-src 'self' data: https:;
 connect-src 'self'
   https://api.razorpay.com
+  https://lumberjack.razorpay.com
   https://*.supabase.co
   https://va.vercel-scripts.com;
 frame-src

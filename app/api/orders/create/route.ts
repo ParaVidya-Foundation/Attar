@@ -172,7 +172,7 @@ export async function POST(req: Request) {
     }
 
     const pricePaise = variant.price;
-    if (typeof pricePaise !== "number" || pricePaise < 0) {
+    if (typeof pricePaise !== "number" || pricePaise <= 0) {
       serverWarn("orders/create", "Invalid variant price: " + variant_id);
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
     }
@@ -194,7 +194,7 @@ export async function POST(req: Request) {
 
     // Step 6: Amount guard (>= ₹1, from DB only)
     const totalPaise = pricePaise * quantity;
-    if (totalPaise < 0) {
+    if (totalPaise <= 0) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
     }
 

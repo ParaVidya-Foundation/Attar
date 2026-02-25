@@ -1,2 +1,2 @@
-export const PLACEHOLDER_IMAGE_URL = "/products/placeholder.webp";
+export const PLACEHOLDER_IMAGE_URL = "/PlanetHero.webp";
 

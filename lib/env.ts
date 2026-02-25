@@ -11,7 +11,7 @@ const PRODUCTION_DOMAIN = "https://anandrasafragnance.com";
 let _serverEnv: ReturnType<typeof validateServerEnv> | null = null;
 
 function validateServerEnv() {
-  return cleanEnv(process.env, {
+  const env = cleanEnv(process.env, {
     NEXT_PUBLIC_SUPABASE_URL: url({ desc: "Supabase project URL" }),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: str({ desc: "Supabase anon key" }),
     SUPABASE_SERVICE_ROLE_KEY: str({ desc: "Supabase service role key (server only)" }),
@@ -23,6 +23,15 @@ function validateServerEnv() {
       default: process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined,
     }),
   });
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")
+  ) {
+    throw new Error("Live Razorpay key required in production");
+  }
+
+  return env;
 }
 
 export type ServerEnv = ReturnType<typeof validateServerEnv>;

@@ -31,33 +31,36 @@ const guestCartSchema = cartSchema.and(
 export async function POST(req: Request) {
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const isGuest = !user;
-  const parsed = isGuest ? guestCartSchema.safeParse(body) : cartSchema.safeParse(body);
+    const isGuest = !user;
+    const parsed = isGuest ? guestCartSchema.safeParse(body) : cartSchema.safeParse(body);
 
-  if (!parsed.success) {
-    if (isGuest) {
+    if (!parsed.success) {
+      if (isGuest) {
+        return NextResponse.json(
+          {
+            error:
+              "Guest checkout requires name, email, and phone. Log in or use the checkout page.",
+          },
+          { status: 401 },
+        );
+      }
       return NextResponse.json(
-        { error: "Guest checkout requires name, email, and phone. Log in or use the checkout page." },
-        { status: 401 },
+        { error: "Invalid cart payload", details: parsed.error.flatten() },
+        { status: 400 },
       );
     }
-    return NextResponse.json(
-      { error: "Invalid cart payload", details: parsed.error.flatten() },
-      { status: 400 },
-    );
-  }
 
-  try {
     const admin = createAdminClient();
     const items = parsed.data.items;
 
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
     }
 
-    if (totalPaise < 0) {
+    if (totalPaise <= 0) {
       return NextResponse.json(
         { error: "Invalid order amount" },
         { status: 400 },
@@ -175,7 +178,11 @@ export async function POST(req: Request) {
       currency: razorpayOrder.currency,
       keyId,
     });
-  } catch {
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (error) {
+    console.error("[ORDERS CART ERROR]", error);
+    return NextResponse.json(
+      { error: "Order creation failed" },
+      { status: 500 },
+    );
   }
 }
