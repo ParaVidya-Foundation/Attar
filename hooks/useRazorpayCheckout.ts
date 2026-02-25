@@ -98,6 +98,11 @@ export function useRazorpayCheckout(opts?: {
 
         return new Promise<boolean>((resolve) => {
           resolveRef.current = resolve;
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+          const logoUrl =
+            typeof siteUrl === "string" && siteUrl.startsWith("https://")
+              ? `${siteUrl.replace(/\/+$/, "")}/logo.png`
+              : undefined;
 
           const options: Record<string, unknown> = {
             key: data.keyId,
@@ -132,6 +137,7 @@ export function useRazorpayCheckout(opts?: {
             },
             prefill: {},
             theme: { color: "#1e2023" },
+            ...(logoUrl ? { image: logoUrl } : {}),
           };
 
           const rzp = new window.Razorpay(options);

@@ -27,6 +27,7 @@ const nextConfig = {
     ];
   },
   images: {
+    unoptimized: false,
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
@@ -39,27 +40,37 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   async headers() {
-    const csp = [
-      "default-src 'self'",
-      "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com",
-      "img-src 'self' data: blob: https://images.unsplash.com https://plus.unsplash.com https://*.supabase.co https://*.razorpay.com",
-      "font-src 'self' data:",
-      "connect-src 'self' https://*.supabase.co https://api.razorpay.com https://lumberjack.razorpay.com",
-      "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "object-src 'none'",
-      "upgrade-insecure-requests",
-    ].join("; ");
+    const csp = `
+default-src 'self';
+script-src 'self' 'unsafe-inline' 'unsafe-eval'
+  https://checkout.razorpay.com
+  https://va.vercel-scripts.com;
+style-src 'self' 'unsafe-inline';
+img-src 'self' data: https: blob:;
+font-src 'self' data: https:;
+connect-src 'self'
+  https://api.razorpay.com
+  https://*.supabase.co
+  https://va.vercel-scripts.com;
+frame-src
+  https://api.razorpay.com
+  https://checkout.razorpay.com;
+object-src 'none';
+base-uri 'self';
+form-action 'self';
+frame-ancestors 'self';
+`.replace(/\n/g, " ");
 
     const securityHeaders = [
       { key: "Content-Security-Policy", value: csp },
       { key: "Referrer-Policy", value: "no-referrer-when-downgrade" },
       { key: "X-Content-Type-Options", value: "nosniff" },
       { key: "X-Frame-Options", value: "DENY" },
-      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
+      {
+        key: "Permissions-Policy",
+        value:
+          "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(self)",
+      },
       { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
     ];
 

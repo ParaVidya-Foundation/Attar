@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { useCart } from "@/components/cart/CartProvider";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 export type Product = {
   id: string;
@@ -18,6 +19,8 @@ export type Product = {
   href?: string;
   isSale?: boolean;
   slug?: string;
+  /** Default variant id used for one-click add-to-cart from grid */
+  defaultVariantId?: string;
 };
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -26,7 +29,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const href = product.href ?? `/product/${slug ?? id}`;
   const [hovered, setHovered] = useState(false);
 
-  const { add } = useCart(); // cart context
+  const { addItem, setOpen } = useCart(); // cart context
 
   // Performance: memoized discount
   const discount = useMemo(() => {
@@ -34,14 +37,37 @@ export default function ProductCard({ product }: { product: Product }) {
     return Math.round(((originalPrice - price) / originalPrice) * 100);
   }, [price, originalPrice]);
 
+  const primarySrc =
+    images.primary && images.primary.trim().length > 0 ? images.primary.trim() : PLACEHOLDER_IMAGE_URL;
+
+  const secondarySrc =
+    images.secondary && images.secondary.trim().length > 0 ? images.secondary.trim() : primarySrc;
+
   const handleAddToCart = () => {
-    add({
+    const rawVariantId = product.defaultVariantId;
+    const variantId = typeof rawVariantId === "string" ? rawVariantId.trim() : "";
+
+    if (!variantId) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.error("[Cart] Missing defaultVariantId for ProductCard", {
+          productId: id,
+          slug,
+        });
+      }
+      return;
+    }
+
+    addItem({
       id,
-      name: title,
+      variantId,
+      slug,
+      title,
       price,
-      imageUrl: images.primary,
-      qty: 1,
+      image: primarySrc,
+      quantity: 1,
     });
+    setOpen(true);
   };
 
   return (
@@ -69,19 +95,19 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Image Container */}
         <div className="relative w-full aspect-square flex items-center justify-center p-10">
           <Image
-            src={images.primary || "/placeholder.png"}
+            src={primarySrc}
             alt={title}
             fill
             sizes="(max-width:768px) 100vw, 520px"
             className={`object-contain transition-opacity duration-500 ease-out ${
-              hovered && images.secondary ? "opacity-0" : "opacity-100"
+              hovered && !!images.secondary ? "opacity-0" : "opacity-100"
             }`}
             priority={false}
           />
 
           {images.secondary && (
             <Image
-              src={images.secondary}
+              src={secondarySrc}
               alt={`${title} alternate`}
               fill
               sizes="(max-width:768px) 100vw, 520px"

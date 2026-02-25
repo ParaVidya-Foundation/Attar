@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 export interface BlogCardProps {
   id: string;
@@ -50,7 +51,7 @@ export default function BlogCard({
         className="relative w-full aspect-[4/3] overflow-hidden bg-black/5"
       >
         <Image
-          src={image || "/placeholder.png"}
+          src={image || PLACEHOLDER_IMAGE_URL}
           alt={imageAlt || title}
           fill
           sizes="(max-width:768px) 100vw, (max-width:1200px) 50vw, 33vw"

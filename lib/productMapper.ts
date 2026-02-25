@@ -1,14 +1,21 @@
 import type { Product as CardProduct } from "@/components/shop/ProductCard";
 import type { ProductDisplay } from "@/types/product";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 /**
  * Maps ProductDisplay (API) to ProductCard format.
- * Uses product images when available; fallback to /products/{slug}.webp.
- * Cart receives product_id (id), variant_id from selection, price, name, image.
+ * Uses product images when available; fallback to placeholder.
+ * Also exposes a defaultVariantId (first variant) for grid add-to-cart.
  */
 export function mapToCardProduct(product: ProductDisplay): CardProduct {
-  const primaryImage = product.images?.[0]?.url ?? `/products/${product.slug}.webp`;
-  const secondaryImage = product.images?.[1]?.url;
+  const primaryImage = product.images?.[0]?.url?.trim()
+    ? product.images[0].url.trim()
+    : PLACEHOLDER_IMAGE_URL;
+  const secondaryImage = product.images?.[1]?.url?.trim()
+    ? product.images[1].url.trim()
+    : undefined;
+  const defaultVariantId = product.variants?.[0]?.id;
+
   return {
     id: product.id,
     title: product.name,
@@ -21,5 +28,6 @@ export function mapToCardProduct(product: ProductDisplay): CardProduct {
     href: `/product/${product.slug}`,
     slug: product.slug,
     isSale: Boolean(product.original_price && product.original_price > product.price),
+    defaultVariantId,
   };
 }

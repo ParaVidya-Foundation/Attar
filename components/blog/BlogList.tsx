@@ -2,8 +2,7 @@
 
 import BlogCard from "./BlogCard";
 import type { BlogPostListItem } from "@/lib/blog";
-
-const PLACEHOLDER_IMAGE = "/products/placeholder.webp";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 type Props = { posts: BlogPostListItem[] };
 
@@ -15,7 +14,7 @@ export default function BlogList({ posts }: Props) {
           <BlogCard
             id={post.id}
             title={post.title}
-            image={post.cover_image || PLACEHOLDER_IMAGE}
+            image={post.cover_image || PLACEHOLDER_IMAGE_URL}
             imageAlt={post.title}
             date={post.published_at ?? ""}
             excerpt={post.excerpt ?? undefined}

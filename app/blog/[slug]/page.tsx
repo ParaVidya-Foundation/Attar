@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getPostBySlug, getAllBlogSlugs } from "@/lib/blog";
 import { absoluteUrl, pageMetadata, articleJsonLdFromRow } from "@/lib/seo";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 export const revalidate = 3600;
 
@@ -63,7 +64,7 @@ export default async function BlogPostPage({ params }: Props) {
   const publishedAt = post.published_at
     ? new Date(post.published_at).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
     : null;
-  const imageUrl = post.cover_image ?? "/products/placeholder.webp";
+  const imageUrl = post.cover_image ?? PLACEHOLDER_IMAGE_URL;
   const articleLd = articleJsonLdFromRow(post);
 
   return (

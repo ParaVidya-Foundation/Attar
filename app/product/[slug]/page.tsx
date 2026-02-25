@@ -6,6 +6,7 @@ import TrustBar from "@/components/Home/TrustBar";
 import OtherInfo from "@/components/product/otherinfo";
 import { getProductBySlug } from "@/lib/api/products";
 import { absoluteUrl, BRAND } from "@/lib/seo";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 export const revalidate = 60;
 
@@ -40,8 +41,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       images: [
         {
           url: product.images[0]?.url
-            ? (product.images[0].url.startsWith("http") ? product.images[0].url : absoluteUrl(product.images[0].url))
-            : absoluteUrl(`/products/${product.slug}.webp`),
+            ? product.images[0].url.startsWith("http")
+              ? product.images[0].url
+              : absoluteUrl(product.images[0].url)
+            : absoluteUrl(PLACEHOLDER_IMAGE_URL),
         },
       ],
     },
@@ -59,8 +62,10 @@ function buildProductJsonLd(product: {
 }) {
   const url = absoluteUrl(`/product/${product.slug}`);
   const image = product.images[0]?.url
-    ? (product.images[0].url.startsWith("http") ? product.images[0].url : absoluteUrl(product.images[0].url))
-    : absoluteUrl(`/products/${product.slug}.webp`);
+    ? product.images[0].url.startsWith("http")
+      ? product.images[0].url
+      : absoluteUrl(product.images[0].url)
+    : absoluteUrl(PLACEHOLDER_IMAGE_URL);
   const desc = product.short_description ?? product.description ?? "Premium handcrafted attar.";
 
   return {
@@ -91,13 +96,13 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
-  const images =
-    product.images?.length > 0
-      ? product.images.map((img) => ({ src: img.url, alt: product.name }))
-      : [
-          { src: "/products/placeholder.webp", alt: product.name },
-          { src: "/products/placeholder.webp", alt: product.name },
-        ];
+  const mappedImages =
+    product.images
+      ?.map((img) => (typeof img.url === "string" ? img.url.trim() : ""))
+      .filter((url) => url.length > 0)
+      .map((url) => ({ src: url, alt: product.name })) ?? [];
+
+  const images = mappedImages.length > 0 ? mappedImages : [{ src: PLACEHOLDER_IMAGE_URL, alt: product.name }];
 
   const showcaseProduct = {
     id: product.id,

@@ -5,6 +5,7 @@
 import { cache } from "react";
 import { createStaticClient } from "@/lib/supabase/server";
 import { serverError, serverWarn } from "@/lib/security/logger";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import type { Product, ProductVariant, ProductImage, ProductDisplay } from "@/types/product";
 
 const IS_DEV = process.env.NODE_ENV === "development";
@@ -26,12 +27,21 @@ const PRODUCT_COLUMNS =
 const PRODUCT_IMAGE_COLUMNS = "id,product_id,image_url,is_primary,sort_order";
 const PRODUCT_VARIANT_COLUMNS = "id,product_id,size_ml,price,stock,sku";
 
-const PLACEHOLDER_IMAGE_URL = "/products/placeholder.webp";
-
 function sortImages(
   images: { image_url: string; is_primary?: boolean; sort_order?: number }[],
 ): { url: string }[] {
-  const sorted = [...images]
+  const cleaned = images
+    .map((img) => ({
+      ...img,
+      image_url: typeof img.image_url === "string" ? img.image_url.trim() : "",
+    }))
+    .filter((img) => img.image_url);
+
+  if (cleaned.length === 0) {
+    return [{ url: PLACEHOLDER_IMAGE_URL }];
+  }
+
+  const sorted = [...cleaned]
     .sort((a, b) => {
       const aPrimary = a.is_primary ?? false;
       const bPrimary = b.is_primary ?? false;
@@ -40,10 +50,7 @@ function sortImages(
       return (a.sort_order ?? 0) - (b.sort_order ?? 0);
     })
     .map((img) => ({ url: img.image_url }));
-  // Enforce minimum 2 images for gallery/slider
-  while (sorted.length < 2) {
-    sorted.push({ url: PLACEHOLDER_IMAGE_URL });
-  }
+
   return sorted;
 }
 
@@ -103,7 +110,11 @@ async function fetchProductRows(
     }
     if (!product) return [];
     const [imagesRes, variantsRes] = await Promise.all([
-      supabase.from("product_images").select(PRODUCT_IMAGE_COLUMNS).eq("product_id", product.id),
+      supabase
+        .from("product_images")
+        .select(PRODUCT_IMAGE_COLUMNS)
+        .eq("product_id", product.id)
+        .order("sort_order", { ascending: true }),
       supabase.from("product_variants").select(PRODUCT_VARIANT_COLUMNS).eq("product_id", product.id),
     ]);
     if (imagesRes.error) logError("fetchProductRows (by slug) product_images", imagesRes.error);
@@ -133,7 +144,11 @@ async function fetchProductRows(
 
   const ids = products.map((p: { id: string }) => p.id);
   const [imagesRes, variantsRes] = await Promise.all([
-    supabase.from("product_images").select(PRODUCT_IMAGE_COLUMNS).in("product_id", ids),
+    supabase
+      .from("product_images")
+      .select(PRODUCT_IMAGE_COLUMNS)
+      .in("product_id", ids)
+      .order("sort_order", { ascending: true }),
     supabase.from("product_variants").select(PRODUCT_VARIANT_COLUMNS).in("product_id", ids),
   ]);
   if (imagesRes.error) logError("fetchProductRows product_images", imagesRes.error);

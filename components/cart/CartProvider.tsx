@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useLocalCart } from "@/hooks/useLocalCart";
 import type { CartItem } from "@/types/cart";
 
@@ -29,18 +29,47 @@ type CartContextValue = ReturnType<typeof useLocalCart> &
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidVariantId(id: unknown): id is string {
+  if (typeof id !== "string") return false;
+  const trimmed = id.trim();
+  if (trimmed.length !== 36) return false;
+  return UUID_REGEX.test(trimmed);
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const cart = useLocalCart();
   const [open, setOpen] = useState(false);
 
   const addItem = useCallback(
     (item: CartItem) => {
-      if (!item.variantId) {
+      const rawVariantId = item.variantId;
+      if (!isValidVariantId(rawVariantId)) {
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.error("[Cart] Invalid variantId in addItem()", {
+            productId: item.id,
+            variantId: rawVariantId,
+          });
+        }
         return;
       }
+      const variantId = rawVariantId.trim();
+
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.log("[Cart] Adding item via addItem()", {
+          productId: item.id,
+          variantId,
+          qty: item.quantity,
+        });
+      }
+
       cart.add({
         id: item.id,
-        variantId: item.variantId,
+        variantId,
         slug: item.slug ?? item.id,
         name: item.title,
         price: item.price,
@@ -89,6 +118,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }),
     [cart, open, addItem, removeItem, updateQuantity, clearCart, getCheckoutPayload],
   );
+
+  // Dev-only debug handle
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+      (window as any).cartDebug = cart;
+    }
+  }, [cart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

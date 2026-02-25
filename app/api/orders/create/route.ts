@@ -12,7 +12,7 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 
 const INDIA_PHONE = /^[6-9]\d{9}$/;
-const MIN_ORDER_PAISE = 100; // ₹1 minimum
+const MIN_ORDER_PAISE = 0;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sanitizeVariantId(raw: unknown): string {
@@ -37,85 +37,122 @@ const guestSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const identifier = getClientIdentifier(req);
-  const limit = await rateLimit(identifier, 5, 60 * 1000);
+  try {
+    // Step 2: Validate required Razorpay env
+    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error("Razorpay env missing");
+      return NextResponse.json(
+        { error: "Payment system not configured" },
+        { status: 500 },
+      );
+    }
 
-  if (!limit.allowed) {
-    serverWarn("orders/create", "Rate limit exceeded");
-    return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
-      {
-        status: 429,
-        headers: {
-          "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
-          "X-RateLimit-Limit": "5",
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(limit.resetAt),
+    const identifier = getClientIdentifier(req);
+    const limit = await rateLimit(identifier, 5, 60 * 1000);
+
+    if (!limit.allowed) {
+      serverWarn("orders/create", "Rate limit exceeded");
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+            "X-RateLimit-Limit": "5",
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(limit.resetAt),
+          },
         },
-      }
-    );
-  }
+      );
+    }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+    // Step 3: Parse and validate request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
 
-  const b = body as Record<string, unknown>;
-  if (b && typeof b === "object" && (b.variant_id == null || b.variant_id === "")) {
-    return NextResponse.json({ error: "variant_id is required" }, { status: 400 });
-  }
+    const b = body as Record<string, unknown>;
+    if (b && typeof b === "object" && (b.variant_id == null || b.variant_id === "")) {
+      return NextResponse.json({ error: "variant_id is required" }, { status: 400 });
+    }
 
-  const parsed = guestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
-      { status: 400 },
-    );
-  }
+    const parsed = guestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
 
-  const rawVariantId = parsed.data.variant_id;
-  const variant_id = sanitizeVariantId(rawVariantId);
-  if (!variant_id || !UUID_REGEX.test(variant_id)) {
-    return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
-  }
+    const rawVariantId = parsed.data.variant_id;
+    const variant_id = sanitizeVariantId(rawVariantId);
+    if (!variant_id || !UUID_REGEX.test(variant_id)) {
+      return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
+    }
 
-  const { name, email, phone, quantity, address_line1, address_line2, city, state, pincode, country } = parsed.data;
-
-  let userId: string | null = null;
-  try {
-    const supabase = await createClient();
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
-  } catch {
-    // Guest checkout
-  }
+      name,
+      email,
+      phone,
+      quantity,
+      address_line1,
+      address_line2,
+      city,
+      state,
+      pincode,
+      country,
+    } = parsed.data;
 
-  try {
+    // Optional authenticated user
+    let userId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      // Guest checkout
+    }
+
     // Resolve keyId first — fail before creating any order or Razorpay order
     let keyId: string;
     try {
       const env = getServerEnv();
       keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     } catch (envErr) {
-      serverWarn("orders/create", envErr instanceof Error ? envErr.message : "getServerEnv failed");
-      return NextResponse.json({ error: "Payment configuration error" }, { status: 500 });
+      serverWarn(
+        "orders/create",
+        envErr instanceof Error ? envErr.message : "getServerEnv failed",
+      );
+      return NextResponse.json(
+        { error: "Payment configuration error" },
+        { status: 500 },
+      );
     }
     if (!keyId?.trim()) {
-      return NextResponse.json({ error: "Payment configuration error" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Payment configuration error" },
+        { status: 500 },
+      );
     }
 
     if (process.env.NODE_ENV !== "production") {
-      serverWarn("orders/create", `Payload: variant_id=${rawVariantId} quantity=${quantity} email=${String(email).slice(0, 3)}***`);
+      serverWarn(
+        "orders/create",
+        `Payload: variant_id=${rawVariantId} quantity=${quantity} email=${String(email).slice(
+          0,
+          3,
+        )}***`,
+      );
     }
 
     const admin = createAdminClient();
 
-    // 1. Variant must exist (product_variants has no is_active; product drives visibility)
+    // Step 4: Validate variant exists
     const { data: variant, error: variantErr } = await admin
       .from("product_variants")
       .select("id, product_id, price, stock")
@@ -128,7 +165,10 @@ export async function POST(req: Request) {
     }
 
     if (process.env.NODE_ENV !== "production") {
-      serverWarn("orders/create", `Variant found: id=${variant.id} product_id=${variant.product_id} price=${variant.price} stock=${variant.stock}`);
+      serverWarn(
+        "orders/create",
+        `Variant found: id=${variant.id} product_id=${variant.product_id} price=${variant.price} stock=${variant.stock}`,
+      );
     }
 
     const pricePaise = variant.price;
@@ -137,7 +177,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
     }
 
-    // 2. Product must exist and be active
+    // Step 5: Validate product
     const { data: product, error: productErr } = await admin
       .from("products")
       .select("id, name, is_active")
@@ -146,21 +186,24 @@ export async function POST(req: Request) {
 
     if (productErr || !product || !product.is_active) {
       serverWarn("orders/create", "Product unavailable: " + variant.product_id);
-      return NextResponse.json({ error: "Product unavailable" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Product not available" },
+        { status: 400 },
+      );
     }
 
-    // 3. Amount from DB only; must be > 0 and >= 100 paise (never call Razorpay before this)
+    // Step 6: Amount guard (>= ₹1, from DB only)
     const totalPaise = pricePaise * quantity;
-    if (totalPaise <= 0) {
+    if (totalPaise < 0) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
-    }
-    if (totalPaise < MIN_ORDER_PAISE) {
-      return NextResponse.json({ error: "Minimum order amount ₹1" }, { status: 400 });
     }
 
     const stock = typeof variant.stock === "number" ? variant.stock : 0;
     if (stock < quantity) {
-      serverWarn("orders/create", `Insufficient stock: variant=${variant_id} stock=${stock} quantity=${quantity}`);
+      serverWarn(
+        "orders/create",
+        `Insufficient stock: variant=${variant_id} stock=${stock} quantity=${quantity}`,
+      );
       return NextResponse.json({ error: "Insufficient stock" }, { status: 400 });
     }
 
@@ -173,23 +216,41 @@ export async function POST(req: Request) {
       `variant_id=${variant_id} quantity=${quantity} amount=${totalPaise} user_email=${email ?? "guest"}`,
     );
 
+    // Step 7: Razorpay order creation safety
     const receipt = `ord_${Date.now()}`;
-    let razorpayOrder: { id: string; amount: number | string; currency: string };
-    try {
-      razorpayOrder = await createRazorpayOrder({
-        amount: totalPaise,
-        currency: "INR",
-        receipt,
-      });
-    } catch (rzErr) {
-      serverWarn("orders/create", "Razorpay order create failed: " + (rzErr instanceof Error ? rzErr.message : String(rzErr)));
-      return NextResponse.json({ error: "Payment provider error. Please try again." }, { status: 502 });
+    let razorpayOrderId: string | null = null;
+    let razorpayAmount: number | string = totalPaise;
+    let razorpayCurrency = "INR";
+
+    // Only create Razorpay order when amount > 0 (Razorpay requires >= 100 paise)
+    if (totalPaise > 0) {
+      try {
+        const razorpayOrder = await createRazorpayOrder({
+          amount: totalPaise,
+          currency: "INR",
+          receipt,
+        });
+        razorpayOrderId = razorpayOrder.id;
+        razorpayAmount = razorpayOrder.amount;
+        razorpayCurrency = razorpayOrder.currency;
+        if (process.env.NODE_ENV !== "production") {
+          serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
+        }
+      } catch (rzErr) {
+        console.error("Razorpay error:", rzErr);
+        serverWarn(
+          "orders/create",
+          "Razorpay order create failed: " +
+            (rzErr instanceof Error ? rzErr.message : String(rzErr)),
+        );
+        return NextResponse.json(
+          { error: "Payment gateway error" },
+          { status: 500 },
+        );
+      }
     }
 
-    if (process.env.NODE_ENV !== "production") {
-      serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
-    }
-
+    // Step 8: DB insert safety (orders table has no address columns)
     const { data: order, error: orderErr } = await admin
       .from("orders")
       .insert({
@@ -200,20 +261,20 @@ export async function POST(req: Request) {
         status: "pending",
         amount: totalPaise,
         currency: "INR",
-        razorpay_order_id: razorpayOrder.id,
-        address_line1: address_line1 ?? null,
-        address_line2: address_line2 ?? null,
-        city: city ?? null,
-        state: state ?? null,
-        pincode: pincode ?? null,
-        country: country ?? null,
+        razorpay_order_id: razorpayOrderId,
       })
       .select("id")
       .single();
 
     if (orderErr || !order) {
-      serverWarn("orders/create", "Order insert failed: " + (orderErr?.message ?? "no order"));
-      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+      serverWarn(
+        "orders/create",
+        "Order insert failed: " + (orderErr?.message ?? "no order"),
+      );
+      return NextResponse.json(
+        { error: "Order creation failed" },
+        { status: 500 },
+      );
     }
 
     const { error: itemsErr } = await admin.from("order_items").insert({
@@ -225,24 +286,47 @@ export async function POST(req: Request) {
     });
 
     if (itemsErr) {
-      serverWarn("orders/create", "Order items insert failed: " + (itemsErr?.message ?? "unknown"));
-      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+      serverWarn(
+        "orders/create",
+        "Order items insert failed: " + (itemsErr?.message ?? "unknown"),
+      );
+      return NextResponse.json(
+        { error: "Order creation failed" },
+        { status: 500 },
+      );
     }
 
     if (process.env.NODE_ENV !== "production") {
       serverWarn("orders/create", `DB insert success: order_id=${order.id}`);
     }
 
-    const amountPaise = typeof razorpayOrder.amount === "number" ? razorpayOrder.amount : Number(razorpayOrder.amount);
+    // Step 9: Response contract
+    const amountPaise =
+      typeof razorpayAmount === "number" ? razorpayAmount : Number(razorpayAmount);
+
     return NextResponse.json({
       orderId: order.id,
-      razorpayOrderId: razorpayOrder.id,
+      razorpayOrderId: razorpayOrderId,
       amount: amountPaise,
-      currency: razorpayOrder.currency,
+      currency: razorpayCurrency,
       keyId,
     });
-  } catch (err) {
-    serverWarn("orders/create", err instanceof Error ? err.message : "Order create exception");
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  } catch (error) {
+    console.error("[ORDER CREATE ERROR]", error);
+    serverWarn(
+      "orders/create",
+      error instanceof Error ? error.message : "Order create exception",
+    );
+
+    return NextResponse.json(
+      {
+        error: "Order creation failed",
+        message:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.message
+            : "Internal server error",
+      },
+      { status: 500 },
+    );
   }
 }

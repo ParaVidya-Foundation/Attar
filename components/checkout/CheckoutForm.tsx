@@ -6,8 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
-const MIN_ORDER_PAISE = 100; // ₹1
+const MIN_ORDER_PAISE = 0;
 
 type ProductData = {
   id: string;
@@ -159,7 +160,9 @@ export function CheckoutForm() {
         }
         const data = await res.json();
         const imageUrl =
-          (data.product.image && String(data.product.image).trim()) || "/products/placeholder.webp";
+          data.product.image && String(data.product.image).trim()
+            ? String(data.product.image).trim()
+            : PLACEHOLDER_IMAGE_URL;
         setProduct({
           id: data.product.id,
           name: data.product.name,
@@ -215,7 +218,18 @@ export function CheckoutForm() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!product || submitLockRef.current || total < MIN_ORDER_PAISE) return;
+      if (!product || submitLockRef.current) return;
+
+      const effectiveVariantId = (product.variantId ?? variantId)?.trim();
+      if (!effectiveVariantId || !UUID_REGEX.test(effectiveVariantId)) {
+        setSubmitError("Invalid checkout request");
+        return;
+      }
+
+      if (total < 0) {
+        setSubmitError("Invalid order amount");
+        return;
+      }
 
       const raw = {
         name: name.trim(),
@@ -254,7 +268,7 @@ export function CheckoutForm() {
             name: parsed.data.name,
             email: parsed.data.email,
             phone: parsed.data.phone,
-            variant_id: product.variantId ?? variantId,
+            variant_id: effectiveVariantId,
             quantity: qty,
             address_line1: parsed.data.address_line1,
             address_line2: parsed.data.address_line2,
@@ -282,6 +296,12 @@ export function CheckoutForm() {
           return;
         }
 
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        const logoUrl =
+          typeof siteUrl === "string" && siteUrl.startsWith("https://")
+            ? `${siteUrl.replace(/\/+$/, "")}/logo.png`
+            : undefined;
+
         const options: Record<string, unknown> = {
           key: data.keyId,
           amount: data.amount,
@@ -295,6 +315,7 @@ export function CheckoutForm() {
             contact: parsed.data.phone,
           },
           theme: { color: "#1e2023" },
+          ...(logoUrl ? { image: logoUrl } : {}),
           handler: async (response: {
             razorpay_order_id: string;
             razorpay_payment_id: string;
@@ -632,7 +653,7 @@ export function CheckoutForm() {
             </button>
 
             <p className="text-center text-xs text-neutral-400">
-              Secure payment via Razorpay • Minimum order ₹1
+              Secure payment via Razorpay
             </p>
           </div>
         </form>
@@ -640,17 +661,25 @@ export function CheckoutForm() {
         {/* ORDER SUMMARY - right column */}
         <aside className="order-1 lg:order-2 lg:col-span-1">
           <div className="sticky top-6 space-y-4">
-            <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
+              <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
               <div className="flex items-center gap-4">
                 <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-neutral-50">
+                  {(() => {
+                    const src =
+                      product.image && product.image.trim().length > 0
+                        ? product.image.trim()
+                        : PLACEHOLDER_IMAGE_URL;
+                    return (
                   <Image
-                    src={product.image || "/products/placeholder.webp"}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="80px"
-                    unoptimized={product.image.startsWith("http")}
-                  />
+                      src={src}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                      unoptimized={src.startsWith("http")}
+                    />
+                    );
+                  })()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-heading text-lg text-neutral-900 truncate">{product.name}</p>
@@ -676,8 +705,8 @@ export function CheckoutForm() {
                   <span className="font-heading text-xl text-neutral-900">{formatINR(total)}</span>
                 </div>
 
-                {total > 0 && total < MIN_ORDER_PAISE && (
-                  <p className="mt-3 text-xs text-amber-700">Minimum order amount is ₹1</p>
+                {total < 0 && (
+                  <p className="mt-3 text-xs text-amber-700">Invalid order amount</p>
                 )}
               </div>
             </div>

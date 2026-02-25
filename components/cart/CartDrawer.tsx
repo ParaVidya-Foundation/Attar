@@ -16,6 +16,16 @@ function formatINR(paise: number) {
   }).format(paise / 100);
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidVariantId(id: unknown): id is string {
+  if (typeof id !== "string") return false;
+  const trimmed = id.trim();
+  if (trimmed.length !== 36) return false;
+  return UUID_REGEX.test(trimmed);
+}
+
 export function CartDrawer(): JSX.Element | null {
   const cart = (typeof useCart === "function" ? useCart() : null) ?? {
     open: false,
@@ -38,10 +48,15 @@ export function CartDrawer(): JSX.Element | null {
       router.refresh();
     },
     onGuestRequired: () => {
-      const first = lines.find((l) => l.variantId);
-      if (first) {
+      const first = lines.find((l) => isValidVariantId(l.variantId));
+      if (first && first.variantId) {
         setOpen(false);
-        router.push(`/checkout?variant_id=${encodeURIComponent(first.variantId ?? "")}&quantity=${first.qty}`);
+        router.push(
+          `/checkout?variant_id=${encodeURIComponent(first.variantId.trim())}&quantity=${first.qty}`,
+        );
+      } else if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.error("[Cart] Guest checkout blocked: no valid variantId in cart lines");
       }
     },
   });
@@ -50,8 +65,17 @@ export function CartDrawer(): JSX.Element | null {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const handleCheckout = useCallback(async () => {
-    const items = lines.filter((l) => l.variantId).map((l) => ({
-      variant_id: l.variantId!,
+    const invalid = lines.filter((l) => !isValidVariantId(l.variantId));
+    if (invalid.length > 0) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.error("[Cart] Checkout blocked: invalid items", invalid);
+      }
+      return;
+    }
+
+    const items = lines.map((l) => ({
+      variant_id: l.variantId!.trim(),
       quantity: l.qty,
     }));
     if (items.length === 0) {

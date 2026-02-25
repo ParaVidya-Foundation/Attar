@@ -110,10 +110,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
     }
 
-    const MIN_ORDER_PAISE = 100;
-    if (totalPaise < MIN_ORDER_PAISE) {
+    if (totalPaise < 0) {
       return NextResponse.json(
-        { error: "Minimum order amount is ₹1" },
+        { error: "Invalid order amount" },
         { status: 400 },
       );
     }

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { serverError } from "@/lib/security/logger";
 import { NextResponse } from "next/server";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -49,7 +50,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       .order("sort_order", { ascending: true })
       .limit(1);
 
-    const imageUrl = images?.[0]?.image_url ?? `/products/${product.slug}.webp`;
+    const imageUrl =
+      images?.[0]?.image_url && images[0].image_url.trim().length > 0
+        ? images[0].image_url.trim()
+        : PLACEHOLDER_IMAGE_URL;
 
     return NextResponse.json({
       variant: {

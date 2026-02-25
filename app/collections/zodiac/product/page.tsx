@@ -5,6 +5,7 @@ import OtherInfo from "@/components/product/otherinfo";
 import ZodiacCollection from "@/components/product/ZodiacCollection";
 import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 export const revalidate = 60;
 
@@ -16,13 +17,13 @@ export default async function ZodiacProductPage() {
     notFound();
   }
 
-  const images =
-    product.images?.length > 0
-      ? product.images.map((img) => ({ src: img.url, alt: product.name }))
-      : [
-          { src: "/products/placeholder.webp", alt: product.name },
-          { src: "/products/placeholder.webp", alt: product.name },
-        ];
+  const mappedImages =
+    product.images
+      ?.map((img) => (typeof img.url === "string" ? img.url.trim() : ""))
+      .filter((url) => url.length > 0)
+      .map((url) => ({ src: url, alt: product.name })) ?? [];
+
+  const images = mappedImages.length > 0 ? mappedImages : [{ src: PLACEHOLDER_IMAGE_URL, alt: product.name }];
   const viewProduct = {
     id: product.id,
     slug: product.slug,

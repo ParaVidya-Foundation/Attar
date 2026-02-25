@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/CartProvider";
+import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 type Size = { id: string; label: string; priceModifier?: number; priceValue?: number };
 
@@ -27,6 +28,16 @@ export type FullProduct = {
   inStock?: boolean;
 };
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidVariantId(id: unknown): id is string {
+  if (typeof id !== "string") return false;
+  const trimmed = id.trim();
+  if (trimmed.length !== 36) return false;
+  return UUID_REGEX.test(trimmed);
+}
+
 export default function ProductInfo({ product }: { product: FullProduct }) {
   const { addItem, setOpen } = useCart();
   const router = useRouter();
@@ -48,18 +59,31 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function addToCart() {
-    const variantId = product.sizes?.length ? (selectedSize || product.sizes[0]?.id) : undefined;
-    if (!variantId) {
+    const rawVariantId = product.sizes?.length ? (selectedSize || product.sizes[0]?.id) : undefined;
+    if (!isValidVariantId(rawVariantId)) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.error("[Cart] Invalid variantId in ProductInfo.addToCart()", {
+          productId: product.id,
+          variantId: rawVariantId,
+        });
+      }
       return;
     }
+    const variantId = rawVariantId.trim();
     const price = product.sizes?.find((s) => s.id === selectedSize)?.priceValue ?? product.priceValue ?? 0;
+    const imageSrc =
+      product.images?.[0]?.src && product.images[0].src.trim().length > 0
+        ? product.images[0].src.trim()
+        : PLACEHOLDER_IMAGE_URL;
+
     addItem({
       id: product.id,
       variantId,
       slug: product.slug,
       title: product.title,
       price,
-      image: product.images?.[0]?.src ?? `/products/${product.slug}.webp`,
+      image: imageSrc,
       quantity,
     });
     showToast("Added to cart");
@@ -67,10 +91,18 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   }
 
   function buyNow() {
-    const variantId = (selectedSize || product.sizes?.[0]?.id)?.trim();
-    if (!variantId) {
+    const rawVariantId = (selectedSize || product.sizes?.[0]?.id) ?? "";
+    if (!isValidVariantId(rawVariantId)) {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.error("[Cart] Invalid variantId in ProductInfo.buyNow()", {
+          productId: product.id,
+          variantId: rawVariantId,
+        });
+      }
       return;
     }
+    const variantId = rawVariantId.trim();
     router.push(`/checkout?variant_id=${encodeURIComponent(variantId)}&quantity=${quantity}`);
   }
 

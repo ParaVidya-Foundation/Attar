@@ -20,11 +20,14 @@ type CartState = {
   updatedAt: number;
 };
 
-const STORAGE_KEY = "sm_cart_v1";
+// Primary cart storage key (versioned)
+const STORAGE_KEY = "attar_cart_v1";
+// Legacy key kept for migration
+const LEGACY_STORAGE_KEY = "sm_cart_v1";
 
 type SimpleAddPayload = {
   id: string;
-  variantId?: string;
+  variantId: string;
   slug?: string;
   name: string;
   imageUrl: string;
@@ -41,6 +44,16 @@ function safeParse(raw: string | null): CartState | null {
   }
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isValidVariantId(id: unknown): id is string {
+  if (typeof id !== "string") return false;
+  const trimmed = id.trim();
+  if (trimmed.length !== 36) return false;
+  return UUID_REGEX.test(trimmed);
+}
+
 function computeCount(lines: CartLine[]) {
   return lines.reduce((acc, l) => acc + l.qty, 0);
 }
@@ -51,15 +64,44 @@ export function useLocalCart() {
   const count = useMemo(() => computeCount(lines), [lines]);
 
   useEffect(() => {
-    const st = safeParse(typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null);
-    if (st?.lines) setLines(st.lines);
+    if (typeof window === "undefined") {
+      setHydrated(true);
+      return;
+    }
+
+    // Prefer new key; fall back to legacy key once.
+    const primaryRaw = localStorage.getItem(STORAGE_KEY);
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+
+    const primary = safeParse(primaryRaw);
+    const legacy = safeParse(legacyRaw);
+
+    const source = primary ?? legacy;
+    if (source?.lines) {
+      setLines(source.lines);
+      // If we migrated from legacy, write to new key and clear old.
+      if (!primary && legacy) {
+        try {
+          const state: CartState = { lines: source.lines, updatedAt: Date.now() };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+        } catch {
+          // ignore storage errors; cart will still function in-memory
+        }
+      }
+    }
+
     setHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || typeof window === "undefined") return;
     const state: CartState = { lines, updatedAt: Date.now() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      // Swallow storage errors; never break UI because of quota
+    }
   }, [lines, hydrated]);
 
   const add = useCallback(
@@ -98,24 +140,35 @@ export function useLocalCart() {
 
       // Path 2: simplified product payload (variantId required for checkout)
       const payload = item as SimpleAddPayload;
-      if (!payload.variantId) {
+      const rawVariantId = payload.variantId;
+      if (!isValidVariantId(rawVariantId)) {
+        if (process.env.NODE_ENV !== "production") {
+          // eslint-disable-next-line no-console
+          console.error("[Cart] Invalid variantId in add()", {
+            productId: payload.id,
+            variantId: rawVariantId,
+          });
+        }
         return;
       }
+      const variantId = rawVariantId.trim();
       const qtyValue = Math.max(1, payload.qty ?? 1);
       const lineMl = 0;
       const slug = payload.slug ?? payload.id;
 
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.log("[Cart] Adding item", { productId: payload.id, variantId, qty: qtyValue });
+      }
+
       setLines((prev) => {
-        const key = payload.variantId ?? `${payload.id}:${lineMl}`;
-        const existing = prev.find(
-          (l) => (payload.variantId ? l.variantId === payload.variantId : `${l.id}:${l.ml}` === `${payload.id}:${lineMl}`),
-        );
+        const existing = prev.find((l) => l.variantId === variantId);
         if (!existing) {
           return [
             ...prev,
             {
               id: payload.id,
-              variantId: payload.variantId,
+              variantId,
               slug,
               name: payload.name,
               imageUrl: payload.imageUrl,
@@ -126,9 +179,7 @@ export function useLocalCart() {
           ];
         }
         return prev.map((l) =>
-          (payload.variantId ? l.variantId === payload.variantId : l.id === payload.id && l.ml === lineMl)
-            ? { ...l, qty: l.qty + qtyValue }
-            : l,
+          l.variantId === variantId ? { ...l, qty: l.qty + qtyValue } : l,
         );
       });
     },
