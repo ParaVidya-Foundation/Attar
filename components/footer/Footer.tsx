@@ -1,137 +1,217 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { Instagram, Facebook, Youtube, Linkedin } from "lucide-react";
 import { LOGO_PATH } from "@/lib/seo";
 
+/* =========================
+   DATA (Static — SEO friendly)
+========================= */
+
+const collections = [
+  { name: "Planets Attar", href: "/collections/planets" },
+  { name: "Zodiac Attar", href: "/collections/zodiac" },
+  { name: "Stress Relief Attar", href: "/collections/stress" },
+  { name: "Incense Sticks", href: "/collections/Incense" },
+  { name: "Gift Sets", href: "/gift-sets" },
+];
+
+const supportLinks = [
+  { name: "Contact Us", href: "/contact" },
+
+  { name: "Shipping Policy", href: "/policies#shipping" },
+
+  { name: "Bulk Enquiry", href: "/bulk-enquiry" },
+  { name: "FAQ", href: "/faq" },
+];
+
+const companyLinks = [
+  { name: "About Anand Rasa", href: "/about" },
+  { name: "Our Story", href: "/our-story" },
+  { name: "Blog", href: "/blog" },
+  { name: "Privacy Policy", href: "/privacy" },
+  { name: "Terms & Conditions", href: "/terms" },
+];
+
+const socialLinks = [
+  { name: "Instagram", href: "https://www.instagram.com/anandrasafragnance", Icon: Instagram },
+  { name: "Facebook", href: "https://www.facebook.com/anandrasafragnance", Icon: Facebook },
+  { name: "YouTube", href: "https://www.youtube.com/@anandrasafragnance", Icon: Youtube },
+  { name: "LinkedIn", href: "https://www.linkedin.com/company/anandrasafragnance", Icon: Linkedin },
+];
+
+const payments = [
+  { name: "Visa", src: "/visa-icon.svg", width: 48, height: 28 },
+  { name: "MasterCard", src: "/master-card-icon.svg", width: 48, height: 28 },
+  { name: "UPI", src: "/upi-payment-icon.svg", width: 48, height: 28 },
+  { name: "Razorpay", src: "/razorpay-icon.svg", width: 64, height: 28 },
+];
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Anand Rasa",
+  url: "https://anandrasafragnance.com",
+  sameAs: socialLinks.map((s) => s.href),
+};
+
+/* =========================
+   COMPONENT
+========================= */
+
 export function Footer() {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  // Subtle reveal on scroll (performance safe)
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setVisible(true);
-      },
-      { threshold: 0.15 },
-    );
-
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const LinkItem = ({ href, label }: { href: string; label: string }) => (
-    <Link
-      href={href}
-      className="group relative text-sm text-ink/85 transition-colors duration-300 hover:text-ink"
-    >
-      {label}
-      <span className="absolute -bottom-1 left-0 h-[1px] w-0 bg-gold transition-all duration-300 group-hover:w-full" />
-    </Link>
-  );
-
   return (
-    <footer ref={ref} className="relative border-t border-ash/40 bg-cream overflow-hidden">
-      {/* Subtle luxury gradient glow */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_50%_0%,#C9A34A,transparent_60%)]" />
+    <footer className="border-t border-neutral-200 bg-white text-neutral-700">
+      {/* SEO Structured Data */}
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
 
-      <div
-        className={`mx-auto max-w-7xl px-6 py-20 transition-all duration-700 ease-out ${
-          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-        }`}
-      >
-        <div className="grid gap-14 md:grid-cols-12">
-          {/* Brand Section */}
-          <div className="md:col-span-5">
-            <Link href="/" className="inline-block" aria-label="Anand Ras – Home">
+      <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">
+        {/* ================= MAIN GRID ================= */}
+        <section className="grid gap-12 md:grid-cols-4">
+          {/* Brand */}
+          <div className="space-y-5">
+            <Link href="/" aria-label="Anand Rasa home">
               <Image
                 src={LOGO_PATH}
-                alt="Anand Ras"
+                alt="Anand Rasa"
                 width={300}
                 height={80}
-                className="h-20 w-auto object-contain text-ink sm:h-11 md:h-12"
+                className="h-14 w-auto object-contain md:h-16"
+                priority={false}
               />
             </Link>
 
-            <p className="mt-4 max-w-sm text-sm leading-7 text-charcoal/80">
-              Heritage Indian attars crafted through timeless distillation. Minimal. Pure. Designed for calm
-              presence and quiet luxury.
+            <p className="max-w-xs text-sm leading-7 text-neutral-600">
+              Luxury spiritual attars inspired by Vedic tradition.
             </p>
 
-            {/* Decorative divider */}
-            <div className="mt-6 h-px w-20 bg-gold/60" />
-          </div>
-
-          {/* Navigation */}
-          <div className="md:col-span-7">
-            <div className="grid gap-10 sm:grid-cols-3">
-              {/* Shop */}
-              <div>
-                <p className="text-[11px] font-semibold tracking-[0.28em] text-charcoal/70">SHOP</p>
-                <ul className="mt-4 space-y-3">
-                  <li>
-                    <LinkItem href="/shop" label="All Attars" />
-                  </li>
-                  <li>
-                    <LinkItem href="/collections/planets" label="Planets" />
-                  </li>
-                  <li>
-                    <LinkItem href="/collections/zodiac" label="Zodiac" />
-                  </li>
-                  <li>
-                    <LinkItem href="/collections/divine" label="Divine" />
-                  </li>
-                </ul>
-              </div>
-
-              {/* Knowledge */}
-              <div>
-                <p className="text-[11px] font-semibold tracking-[0.28em] text-charcoal/70">KNOWLEDGE</p>
-                <ul className="mt-4 space-y-3">
-                  <li>
-                    <LinkItem href="/blog" label="Journal" />
-                  </li>
-                  <li>
-                    <LinkItem href="/zodiac" label="Zodiac Guide" />
-                  </li>
-                  <li>
-                    <LinkItem href="/planets" label="Planetary Attars" />
-                  </li>
-                </ul>
-              </div>
-
-              {/* Company */}
-              <div>
-                <p className="text-[11px] font-semibold tracking-[0.28em] text-charcoal/70">COMPANY</p>
-                <ul className="mt-4 space-y-3">
-                  <li>
-                    <LinkItem href="/about" label="About Us" />
-                  </li>
-                  <li>
-                    <LinkItem href="/policies" label="Policies" />
-                  </li>
-                  <li>
-                    <LinkItem href="/account" label="Account" />
-                  </li>
-                </ul>
-              </div>
+            <div className="space-y-1 text-sm text-neutral-500">
+              <p>Anand Rasa Fragrance</p>
+              <p>Gurugram, Haryana, India</p>
+              <p>
+                <a
+                  href="mailto:hello@anandrasafragnance.com"
+                  className="hover:text-neutral-900 transition-colors"
+                >
+                  hello@anandrasafragnance.com
+                </a>
+              </p>
+              <p>
+                <a href="tel:+919000000000" className="hover:text-neutral-900 transition-colors">
+                  +91-90000-00000
+                </a>
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-ash/30 pt-6 text-xs text-charcoal/70 sm:flex-row">
-          <p>© {new Date().getFullYear()} Anand Ras. All rights reserved.</p>
+          {/* Collections */}
+          <nav aria-label="Collections" className="space-y-4">
+            <p className="text-xs font-semibold tracking-[0.2em] text-neutral-500">COLLECTIONS</p>
+            <ul className="space-y-2.5">
+              {collections.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-neutral-600 transition-colors duration-200 hover:text-neutral-900"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-          <div className="flex items-center gap-6">
-            <LinkItem href="/privacy" label="Privacy" />
-            <LinkItem href="/terms" label="Terms" />
-            <LinkItem href="/contact" label="Contact" />
+          {/* Support */}
+          <nav aria-label="Support" className="space-y-4">
+            <p className="text-xs font-semibold tracking-[0.2em] text-neutral-500">SUPPORT</p>
+            <ul className="space-y-2.5">
+              {supportLinks.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-neutral-600 transition-colors duration-200 hover:text-neutral-900"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Company */}
+          <nav aria-label="Company" className="space-y-4">
+            <p className="text-xs font-semibold tracking-[0.2em] text-neutral-500">COMPANY</p>
+            <ul className="space-y-2.5">
+              {companyLinks.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-neutral-600 transition-colors duration-200 hover:text-neutral-900"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </section>
+
+        {/* ================= SOCIAL + PAYMENTS ================= */}
+        <section className="mt-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            {socialLinks.map(({ name, href, Icon }) => (
+              <Link
+                key={name}
+                href={href}
+                aria-label={name}
+                className="flex h-9 w-9 items-center justify-center text-neutral-500 opacity-70 transition-all duration-200 hover:opacity-100 hover:text-neutral-900"
+              >
+                <Icon className="h-4 w-4" />
+              </Link>
+            ))}
           </div>
-        </div>
+
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {payments.map((p) => (
+              <Image
+                key={p.name}
+                src={p.src}
+                alt={p.name}
+                width={p.width}
+                height={p.height}
+                loading="lazy"
+                className="h-4 w-auto opacity-80 sm:h-5 md:h-6"
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Divider */}
+        <div className="mt-10 border-t border-neutral-200" />
+
+        {/* ================= LARGE BRAND IMAGE (90%) ================= */}
+        <section className="mt-10 flex flex-col items-center gap-4 text-center">
+          <div className="w-full flex justify-center">
+            <Image
+              src="/Footer.webp"
+              alt="Anand Rasa"
+              width={1800}
+              height={600}
+              priority
+              className="w-full h-auto object-contain"
+            />
+          </div>
+
+          <p className="text-xs text-neutral-500">
+            © {new Date().getFullYear()} Anand Rasa. All rights reserved.
+          </p>
+        </section>
       </div>
     </footer>
   );
 }
+
+export default Footer;

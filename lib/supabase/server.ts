@@ -8,9 +8,8 @@ import { serverWarn, serverError } from "@/lib/security/logger";
  *
  * Calls cookies() FIRST so Next.js opts the page into dynamic rendering before
  * any env-var check runs. This prevents prerender crashes during `next build`.
- * If env vars are still missing at runtime, a no-op SSR client is returned
- * whose auth.getUser() resolves to { user: null }, letting requireUser()
- * redirect to /login instead of crashing.
+ * If env vars are missing at runtime, this throws immediately to avoid
+ * silent checkout/auth failures in production.
  */
 export async function createServerClient() {
   // cookies() must be called before anything else.
@@ -22,16 +21,8 @@ export async function createServerClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    serverWarn("supabase/server", "Supabase env not set; returning no-op client");
-    // Return a real SSR-shaped client with a placeholder URL.
-    // auth.getUser() will return { user: null } because there is no valid
-    // session, which causes requireUser() to redirect to /login.
-    return createSupabaseServerClient("https://placeholder.invalid", "placeholder", {
-      cookies: {
-        getAll: () => [],
-        setAll: () => {},
-      },
-    });
+    serverWarn("supabase/server", "Supabase env not set");
+    throw new Error("[supabase/server] NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required");
   }
 
   return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {

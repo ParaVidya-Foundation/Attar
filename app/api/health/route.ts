@@ -167,13 +167,13 @@ export async function GET() {
       { status: statusCode },
     );
   } catch {
-    health.status = "error";
-    health.env.allRequired = false;
-    health.supabase = {
-      connected: false,
-      error: "Check failed",
-    };
-
-    return NextResponse.json(health, { status: 503 });
+    return NextResponse.json(
+      {
+        supabase: false,
+        razorpay: false,
+        env: false,
+      },
+      { status: 503 },
+    );
   }
 }

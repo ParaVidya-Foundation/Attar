@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "./CartProvider";
 import { Button } from "@/components/ui/Button";
@@ -24,6 +25,7 @@ function formatINR(v: number) {
 
 export default function CartPage() {
   const cart = useCart?.() ?? null;
+  const router = useRouter();
   // defensive defaults if provider is not present (prevents white-screen)
   const lines = cart?.lines ?? [];
   const total = cart?.total ?? 0;
@@ -37,10 +39,7 @@ export default function CartPage() {
         <header className="mb-8">
           <p className="text-xs font-semibold tracking-[0.26em] text-gray-500">CART</p>
           <h1 className="mt-4 font-heading text-3xl sm:text-4xl tracking-tight text-gray-900">Your cart</h1>
-          <p className="mt-3 text-sm text-gray-600">
-            Frontend demo cart — stored client-side. Integrate with your checkout backend (Stripe / Razorpay)
-            for production.
-          </p>
+          <p className="mt-3 text-sm text-gray-600">Review your items before secure checkout.</p>
         </header>
 
         {lines.length === 0 ? (
@@ -173,7 +172,13 @@ export default function CartPage() {
                 <div className="mt-6 grid gap-3">
                   <Button
                     type="button"
-                    onClick={() => alert("Checkout placeholder — implement backend flow")}
+                    onClick={() => {
+                      if (!lines.length) {
+                        router.push("/shop");
+                        return;
+                      }
+                      router.push("/checkout?mode=cart");
+                    }}
                   >
                     Checkout
                   </Button>

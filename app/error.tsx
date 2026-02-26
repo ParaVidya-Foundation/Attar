@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 
@@ -24,14 +23,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production") {
-      // Development only: do not expose in production
-      // eslint-disable-next-line no-console
-      console.error("[Error Boundary]", error.message);
-    }
-  }, [error]);
-
   // Check if error is environment-related
   const isEnvError =
     error.message.includes("environment") ||

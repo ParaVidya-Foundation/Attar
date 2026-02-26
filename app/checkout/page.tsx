@@ -1,9 +1,17 @@
-"use client";
-
 import { Suspense } from "react";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 
-export default function CheckoutPage() {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function firstValue(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
+}
+
+export default function CheckoutPage({ searchParams }: { searchParams: SearchParams }) {
+  const variantId = firstValue(searchParams?.variant_id)?.trim();
+  const mode = firstValue(searchParams?.mode);
+  const initialMode = variantId ? "single" : mode === "cart" ? "cart" : "unknown";
+
   return (
     <Suspense
       fallback={
@@ -12,7 +20,7 @@ export default function CheckoutPage() {
         </div>
       }
     >
-      <CheckoutForm />
+      <CheckoutForm initialMode={initialMode} />
     </Suspense>
   );
 }

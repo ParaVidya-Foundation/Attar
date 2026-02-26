@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { useLocalCart } from "@/hooks/useLocalCart";
 import type { CartItem } from "@/types/cart";
 
@@ -47,25 +47,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     (item: CartItem) => {
       const rawVariantId = item.variantId;
       if (!isValidVariantId(rawVariantId)) {
-        if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
-          console.error("[Cart] Invalid variantId in addItem()", {
-            productId: item.id,
-            variantId: rawVariantId,
-          });
-        }
         return;
       }
       const variantId = rawVariantId.trim();
-
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.log("[Cart] Adding item via addItem()", {
-          productId: item.id,
-          variantId,
-          qty: item.quantity,
-        });
-      }
 
       cart.add({
         id: item.id,
@@ -118,13 +102,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }),
     [cart, open, addItem, removeItem, updateQuantity, clearCart, getCheckoutPayload],
   );
-
-  // Dev-only debug handle
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
-      (window as any).cartDebug = cart;
-    }
-  }, [cart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

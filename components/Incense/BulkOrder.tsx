@@ -15,7 +15,7 @@ export default function BulkOrder() {
 
     // Replace with API later
     setTimeout(() => {
-      console.log(Object.fromEntries(data.entries()));
+      void Object.fromEntries(data.entries());
       setStatus("success");
       form.reset();
     }, 800);

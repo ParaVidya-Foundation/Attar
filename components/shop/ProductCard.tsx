@@ -48,13 +48,6 @@ export default function ProductCard({ product }: { product: Product }) {
     const variantId = typeof rawVariantId === "string" ? rawVariantId.trim() : "";
 
     if (!variantId) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[Cart] Missing defaultVariantId for ProductCard", {
-          productId: id,
-          slug,
-        });
-      }
       return;
     }
 

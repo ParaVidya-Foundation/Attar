@@ -24,11 +24,17 @@ function validateServerEnv() {
     }),
   });
 
-  if (
-    process.env.NODE_ENV === "production" &&
-    !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")
-  ) {
+  if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
     throw new Error("Live Razorpay key required in production");
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    if (env.NEXT_PUBLIC_SITE_URL !== PRODUCTION_DOMAIN) {
+      throw new Error(`NEXT_PUBLIC_SITE_URL must be ${PRODUCTION_DOMAIN} in production`);
+    }
+    if (!env.NEXT_PUBLIC_SITE_URL.startsWith("https://")) {
+      throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS in production");
+    }
   }
 
   return env;
@@ -47,26 +53,15 @@ export type ClientEnv = {
  * In production, throws if NEXT_PUBLIC_SITE_URL is missing (fail fast).
  */
 export function getSiteUrl(): string {
-  const url =
-    typeof process !== "undefined" && process.env
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : undefined;
+  const url = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_SITE_URL : undefined;
   if (process.env.NODE_ENV === "production" && !url) {
     throw new Error(
       "[env] NEXT_PUBLIC_SITE_URL is required in production. Set it to https://anandrasafragnance.com",
     );
   }
-  return (
-    url ||
-    (process.env.NODE_ENV === "development" ? "http://localhost:3000" : PRODUCTION_DOMAIN)
-  );
+  return url || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : PRODUCTION_DOMAIN);
 }
 
-/**
- * Validates and returns server-side environment variables (envalid).
- * Throws at first use if required vars are missing — no silent failure.
- * Lazy — only runs when first called at runtime; safe for build when env not yet set if you guard usage.
- */
 export function getServerEnv(): ServerEnv {
   if (_serverEnv) return _serverEnv;
   _serverEnv = validateServerEnv();
@@ -75,18 +70,12 @@ export function getServerEnv(): ServerEnv {
 
 let _clientEnv: ClientEnv | null = null;
 
-/**
- * Returns client-safe (NEXT_PUBLIC_*) environment variables.
- * On server, uses validated env. In production, returns fallbacks instead of throwing to avoid client crashes.
- */
 export function getClientEnv(): ClientEnv {
   if (_clientEnv) return _clientEnv;
   const e = process.env;
   const url = e.NEXT_PUBLIC_SITE_URL;
   const valid =
-    e.NEXT_PUBLIC_SUPABASE_URL &&
-    e.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    e.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    e.NEXT_PUBLIC_SUPABASE_URL && e.NEXT_PUBLIC_SUPABASE_ANON_KEY && e.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   if (!valid && process.env.NODE_ENV === "production") {
     _clientEnv = {
       NEXT_PUBLIC_SUPABASE_URL: "",

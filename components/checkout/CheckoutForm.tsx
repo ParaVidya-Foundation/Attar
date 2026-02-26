@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
+import { useCart } from "@/components/cart/CartProvider";
+import type { CartLine } from "@/hooks/useLocalCart";
 
 const MIN_ORDER_PAISE = 0;
+const STORAGE_KEY = "attar_cart_v1";
+const LEGACY_STORAGE_KEY = "sm_cart_v1";
 
 type ProductData = {
   id: string;
@@ -75,29 +79,77 @@ function sanitizeVariantId(raw: string | null): string {
   return trimmed.startsWith("=") ? trimmed.slice(1).trim() : trimmed;
 }
 
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-      <p className="text-sm text-neutral-500">{message}</p>
-      <Link href="/shop" className="text-sm font-medium text-neutral-900 underline">
-        Browse products
-      </Link>
-    </div>
-  );
+function isValidQuantity(rawQty: unknown): rawQty is number {
+  return typeof rawQty === "number" && Number.isInteger(rawQty) && rawQty >= 1 && rawQty <= 99;
 }
 
-/* -------------------------------------------------------------------------- */
-/* ------------------------------ CheckoutForm ------------------------------ */
-/* -------------------------------------------------------------------------- */
+function normalizeCartLines(lines: unknown): CartLine[] {
+  if (!Array.isArray(lines)) return [];
+  return lines.filter((line): line is CartLine => {
+    if (!line || typeof line !== "object") return false;
+    const l = line as CartLine;
+    const variantId = typeof l.variantId === "string" ? l.variantId.trim() : "";
+    const price = typeof l.price === "number" ? l.price : NaN;
+    return UUID_REGEX.test(variantId) && isValidQuantity(l.qty) && Number.isFinite(price) && price > 0;
+  });
+}
 
-export function CheckoutForm() {
+function readCartFromStorage(): CartLine[] {
+  if (typeof window === "undefined") return [];
+
+  const parseState = (raw: string | null): unknown => {
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+
+  const primary = parseState(window.localStorage.getItem(STORAGE_KEY));
+  const legacy = parseState(window.localStorage.getItem(LEGACY_STORAGE_KEY));
+  const source = primary ?? legacy;
+  if (!source || typeof source !== "object") return [];
+
+  const maybeLines = (source as { lines?: unknown }).lines;
+  return normalizeCartLines(maybeLines);
+}
+
+function lineSizeLabel(line: CartLine) {
+  return line.ml > 0 ? `${line.ml} ml` : "Default size";
+}
+
+type CheckoutMode = "single" | "cart" | "unknown";
+
+export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: CheckoutMode }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const cart = useCart();
+  const clearCart = cart.clear;
 
   const rawVariantId = searchParams.get("variant_id");
   const variantId = sanitizeVariantId(rawVariantId);
   const qtyParam = parseInt(searchParams.get("qty") ?? searchParams.get("quantity") ?? "1", 10);
   const qty = Math.max(1, Math.min(99, isNaN(qtyParam) ? 1 : qtyParam));
+  const isBuyNow = !!variantId && UUID_REGEX.test(variantId);
+  const isCartMode = !isBuyNow && (searchParams.get("mode") === "cart" || initialMode === "cart");
+
+  const [storageCartLines, setStorageCartLines] = useState<CartLine[]>([]);
+  const [cartSourceReady, setCartSourceReady] = useState(false);
+
+  const contextCartLines = useMemo(() => normalizeCartLines(cart.lines), [cart.lines]);
+  const effectiveCartLines = useMemo(
+    () => (contextCartLines.length ? contextCartLines : storageCartLines),
+    [contextCartLines, storageCartLines],
+  );
+  const hasInvalidContextLines = useMemo(
+    () => cart.lines.length > 0 && contextCartLines.length !== cart.lines.length,
+    [cart.lines, contextCartLines.length],
+  );
+  const cartTotal = useMemo(
+    () => effectiveCartLines.reduce((sum, line) => sum + line.price * line.qty, 0),
+    [effectiveCartLines],
+  );
 
   const [product, setProduct] = useState<ProductData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,7 +171,21 @@ export function CheckoutForm() {
   const submitLockRef = useRef(false);
   const autoFilledRef = useRef(false);
 
-  // Preconnect Razorpay for perf
+  const releaseSubmitLock = useCallback(() => {
+    if (!submitLockRef.current) return;
+    submitLockRef.current = false;
+    setSubmitting(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isCartMode) {
+      setCartSourceReady(true);
+      return;
+    }
+    setStorageCartLines(readCartFromStorage());
+    setCartSourceReady(true);
+  }, [isCartMode]);
+
   useEffect(() => {
     const link = document.createElement("link");
     link.rel = "preconnect";
@@ -133,22 +199,36 @@ export function CheckoutForm() {
     };
   }, []);
 
-  // Redirect to shop when variant_id is missing (invalid checkout URL)
   useEffect(() => {
-    if (!rawVariantId?.trim() || !sanitizeVariantId(rawVariantId)) {
-      router.replace("/shop");
+    if (isBuyNow) {
+      if (!rawVariantId?.trim() || !sanitizeVariantId(rawVariantId)) {
+        router.replace("/shop");
+      }
       return;
     }
-  }, [rawVariantId, router]);
 
-  // Fetch product
-  useEffect(() => {
-    if (!variantId) {
-      setLoading(false);
-      setError("Invalid checkout request");
+    if (!isCartMode) {
+      router.replace("/cart");
       return;
     }
+
+    if (cartSourceReady && effectiveCartLines.length === 0) {
+      router.replace("/cart");
+    }
+  }, [isBuyNow, rawVariantId, isCartMode, cartSourceReady, effectiveCartLines.length, router]);
+
+  useEffect(() => {
+    if (!isBuyNow) {
+      setLoading(false);
+      setProduct(null);
+      setError(null);
+      return;
+    }
+
+    if (!variantId) return;
     let cancelled = false;
+    setLoading(true);
+
     (async () => {
       try {
         const res = await fetch(`/api/variants/${variantId}`);
@@ -178,14 +258,14 @@ export function CheckoutForm() {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [variantId]);
+  }, [isBuyNow, variantId]);
 
-  // Auto-fill from logged-in user (once)
   useEffect(() => {
-    if (autoFilledRef.current || !variantId) return;
+    if (autoFilledRef.current) return;
     autoFilledRef.current = true;
     const supabase = createClient();
     (async () => {
@@ -202,33 +282,34 @@ export function CheckoutForm() {
       if (profile?.full_name) setName(profile.full_name);
       if (profile?.phone) setPhone(profile.phone);
     })();
-  }, [variantId]);
+  }, []);
 
-  if (!variantId) {
-    return null;
-  }
-
-  if (!UUID_REGEX.test(variantId)) {
-    return <EmptyState message="Product not available." />;
-  }
-
-  const total = product ? product.price * qty : 0;
-  const canPay = total >= MIN_ORDER_PAISE && !submitting && product;
+  const total = isBuyNow ? (product ? product.price * qty : 0) : cartTotal;
+  const canPay =
+    total > MIN_ORDER_PAISE &&
+    !submitting &&
+    (isBuyNow ? !!product : effectiveCartLines.length > 0 && !hasInvalidContextLines);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!product || submitLockRef.current) return;
+      if ((isBuyNow && !product) || submitLockRef.current) return;
 
-      const effectiveVariantId = (product.variantId ?? variantId)?.trim();
-      if (!effectiveVariantId || !UUID_REGEX.test(effectiveVariantId)) {
-        setSubmitError("Invalid checkout request");
+      if (total <= 0) {
+        setSubmitError("Invalid order amount");
         return;
       }
 
-      if (total < 0) {
-        setSubmitError("Invalid order amount");
-        return;
+      if (!isBuyNow) {
+        if (hasInvalidContextLines) {
+          setSubmitError("Some cart items are invalid. Please review your cart.");
+          return;
+        }
+        if (!effectiveCartLines.length) {
+          setSubmitError("Your cart is empty.");
+          router.replace("/cart");
+          return;
+        }
       }
 
       const raw = {
@@ -245,54 +326,93 @@ export function CheckoutForm() {
       const parsed = checkoutSchema.safeParse(raw);
       if (!parsed.success) {
         const fieldErrors: Partial<Record<keyof CheckoutFormData, string>> = {};
-        const err = parsed.error;
-        if (err instanceof z.ZodError) {
-          err.issues.forEach((issue: z.ZodIssue) => {
-            const path = issue.path[0] as keyof CheckoutFormData;
-            if (path && !fieldErrors[path]) fieldErrors[path] = issue.message;
-          });
-        }
+        parsed.error.issues.forEach((issue: z.ZodIssue) => {
+          const path = issue.path[0] as keyof CheckoutFormData;
+          if (path && !fieldErrors[path]) fieldErrors[path] = issue.message;
+        });
         setFormErrors(fieldErrors);
         return;
       }
+
       setFormErrors({});
       submitLockRef.current = true;
       setSubmitting(true);
       setSubmitError(null);
 
       try {
-        const res = await fetch("/api/orders/create", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: parsed.data.name,
-            email: parsed.data.email,
-            phone: parsed.data.phone,
-            variant_id: effectiveVariantId,
-            quantity: qty,
-            address_line1: parsed.data.address_line1,
-            address_line2: parsed.data.address_line2,
-            city: parsed.data.city,
-            state: parsed.data.state,
-            pincode: parsed.data.pincode,
-            country: parsed.data.country,
-          }),
-        });
+        let res: Response;
+        if (isBuyNow) {
+          const effectiveVariantId = (product?.variantId ?? variantId)?.trim();
+          if (!effectiveVariantId || !UUID_REGEX.test(effectiveVariantId)) {
+            setSubmitError("Invalid checkout request");
+            releaseSubmitLock();
+            return;
+          }
+          res = await fetch("/api/orders/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: parsed.data.name,
+              email: parsed.data.email,
+              phone: parsed.data.phone,
+              variant_id: effectiveVariantId,
+              quantity: qty,
+              address_line1: parsed.data.address_line1,
+              address_line2: parsed.data.address_line2,
+              city: parsed.data.city,
+              state: parsed.data.state,
+              pincode: parsed.data.pincode,
+              country: parsed.data.country,
+            }),
+          });
+        } else {
+          const items = effectiveCartLines.map((line) => ({
+            variant_id: line.variantId!.trim(),
+            quantity: line.qty,
+          }));
+
+          if (!items.length || items.some((item) => !UUID_REGEX.test(item.variant_id))) {
+            setSubmitError("Some cart items are invalid. Please review your cart.");
+            releaseSubmitLock();
+            return;
+          }
+
+          res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items,
+              name: parsed.data.name,
+              email: parsed.data.email,
+              phone: parsed.data.phone,
+              address_line1: parsed.data.address_line1,
+              address_line2: parsed.data.address_line2,
+              city: parsed.data.city,
+              state: parsed.data.state,
+              pincode: parsed.data.pincode,
+              country: parsed.data.country,
+            }),
+          });
+        }
 
         const data = await res.json();
         if (!res.ok) {
           setSubmitError(data.error ?? "Order creation failed");
+          releaseSubmitLock();
           return;
         }
 
-        if (!data.keyId || !data.razorpayOrderId || data.amount == null || Number(data.amount) < 100) {
+        const amount = Number(data.amount);
+        if (!data.orderId || !data.keyId || !data.razorpayOrderId || !Number.isFinite(amount) || amount <= 0) {
           setSubmitError("Payment configuration error. Please try again later.");
+          releaseSubmitLock();
           return;
         }
 
         const loaded = await loadRazorpayScript();
         if (!loaded || typeof window === "undefined" || !window.Razorpay) {
           setSubmitError("Payment system could not load. Please try again.");
+          releaseSubmitLock();
           return;
         }
 
@@ -304,10 +424,10 @@ export function CheckoutForm() {
 
         const options: Record<string, unknown> = {
           key: data.keyId,
-          amount: data.amount,
+          amount,
           currency: data.currency ?? "INR",
           name: "Anand Ras",
-          description: product.name,
+          description: isBuyNow ? product?.name ?? "Order payment" : `Cart checkout (${effectiveCartLines.length} items)`,
           order_id: data.razorpayOrderId,
           prefill: {
             name: parsed.data.name,
@@ -316,6 +436,9 @@ export function CheckoutForm() {
           },
           theme: { color: "#1e2023" },
           ...(logoUrl ? { image: logoUrl } : {}),
+          modal: {
+            ondismiss: () => releaseSubmitLock(),
+          },
           handler: async (response: {
             razorpay_order_id: string;
             razorpay_payment_id: string;
@@ -329,12 +452,17 @@ export function CheckoutForm() {
               });
 
               if (verifyRes.ok) {
+                if (!isBuyNow) {
+                  clearCart();
+                }
                 router.push(`/order-success?orderId=${data.orderId}`);
               } else {
                 setSubmitError("Payment verification failed. Contact support if charged.");
               }
             } catch {
-              setSubmitError("Verification error. Your payment is safe — check your email.");
+              setSubmitError("Verification error. Your payment is safe - check your email.");
+            } finally {
+              releaseSubmitLock();
             }
           },
         };
@@ -342,17 +470,22 @@ export function CheckoutForm() {
         const rzp = new window.Razorpay(options);
         rzp.on("payment.failed", () => {
           setSubmitError("Payment failed. Please try again.");
+          releaseSubmitLock();
         });
         rzp.open();
       } catch {
         setSubmitError("Something went wrong. Please try again.");
-      } finally {
-        submitLockRef.current = false;
-        setSubmitting(false);
+        releaseSubmitLock();
       }
     },
     [
+      isBuyNow,
       product,
+      variantId,
+      qty,
+      effectiveCartLines,
+      hasInvalidContextLines,
+      total,
       name,
       email,
       phone,
@@ -362,14 +495,11 @@ export function CheckoutForm() {
       state,
       pincode,
       country,
-      qty,
-      variantId,
-      total,
+      releaseSubmitLock,
+      clearCart,
       router,
     ],
   );
-
-  /* ----------------------- Loading + Error states (UI) ---------------------- */
 
   if (loading) {
     return (
@@ -379,7 +509,7 @@ export function CheckoutForm() {
     );
   }
 
-  if (error || !product) {
+  if (error || (isBuyNow && !product)) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
         <p className="text-sm text-neutral-500">{error ?? "Product not found."}</p>
@@ -390,8 +520,6 @@ export function CheckoutForm() {
     );
   }
 
-  /* -------------------------------- Render --------------------------------- */
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12 lg:px-8">
       <header className="mb-6 flex items-center justify-between">
@@ -400,7 +528,6 @@ export function CheckoutForm() {
       </header>
 
       <main className="grid gap-8 lg:grid-cols-3">
-        {/* FORM - left on mobile, center on desktop */}
         <form
           onSubmit={handleSubmit}
           className="order-2 lg:order-1 lg:col-span-2 space-y-6"
@@ -410,7 +537,6 @@ export function CheckoutForm() {
             Checkout form
           </h2>
 
-          {/* Customer */}
           <section className="rounded-xl border border-neutral-100 bg-white p-6 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-neutral-800">Customer</h3>
@@ -490,7 +616,6 @@ export function CheckoutForm() {
             </div>
           </section>
 
-          {/* Shipping */}
           <section className="rounded-xl border border-neutral-100 bg-white p-6 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-neutral-800">Shipping Address</h3>
@@ -625,7 +750,6 @@ export function CheckoutForm() {
             </div>
           </section>
 
-          {/* Error & Pay CTA */}
           <div className="space-y-3">
             <div role="status" aria-live="polite">
               {submitError && (
@@ -645,57 +769,83 @@ export function CheckoutForm() {
                     <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" opacity="0.25" />
                     <path d="M22 12a10 10 0 00-10-10" stroke="white" strokeWidth="3" strokeLinecap="round" />
                   </svg>
-                  Processing…
+                  Processing...
                 </>
               ) : (
                 `Pay ${formatINR(total)}`
               )}
             </button>
 
-            <p className="text-center text-xs text-neutral-400">
-              Secure payment via Razorpay
-            </p>
+            <p className="text-center text-xs text-neutral-400">Secure payment via Razorpay</p>
           </div>
         </form>
 
-        {/* ORDER SUMMARY - right column */}
         <aside className="order-1 lg:order-2 lg:col-span-1">
           <div className="sticky top-6 space-y-4">
-              <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
-              <div className="flex items-center gap-4">
-                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-neutral-50">
-                  {(() => {
-                    const src =
-                      product.image && product.image.trim().length > 0
-                        ? product.image.trim()
-                        : PLACEHOLDER_IMAGE_URL;
-                    return (
-                  <Image
-                      src={src}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      sizes="80px"
-                      unoptimized={src.startsWith("http")}
-                    />
-                    );
-                  })()}
+            <div className="rounded-xl border border-neutral-100 bg-white p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
+              {isBuyNow && product ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md bg-neutral-50">
+                      <Image
+                        src={product.image.trim().length ? product.image.trim() : PLACEHOLDER_IMAGE_URL}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                        unoptimized={product.image.startsWith("http")}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-heading text-lg text-neutral-900 truncate">{product.name}</p>
+                      <p className="mt-1 text-sm text-neutral-500">Qty: {qty}</p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-100 pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-neutral-500">Subtotal</span>
+                      <span className="text-sm font-medium text-neutral-900">{formatINR(product.price * qty)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-heading text-lg text-neutral-900 truncate">{product.name}</p>
-                  <p className="mt-1 text-sm text-neutral-500">Qty: {qty}</p>
+              ) : (
+                <div className="space-y-4">
+                  {effectiveCartLines.map((line) => (
+                    <div key={`${line.variantId}:${line.ml}`} className="flex gap-3">
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-neutral-50">
+                        <Image
+                          src={
+                            line.imageUrl && line.imageUrl.trim().length > 0
+                              ? line.imageUrl.trim()
+                              : PLACEHOLDER_IMAGE_URL
+                          }
+                          alt={line.name}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                          unoptimized={line.imageUrl.startsWith("http")}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-neutral-900">{line.name}</p>
+                        <p className="text-xs text-neutral-500">{lineSizeLabel(line)}</p>
+                        <div className="mt-1 flex items-center justify-between text-xs text-neutral-500">
+                          <span>Qty: {line.qty}</span>
+                          <span>{formatINR(line.price)}</span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between">
+                          <span className="text-xs text-neutral-500">Subtotal</span>
+                          <span className="text-sm font-medium text-neutral-900">{formatINR(line.price * line.qty)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
 
               <div className="mt-4 border-t border-neutral-100 pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-neutral-500">Subtotal</span>
-                  <span className="text-sm font-medium text-neutral-900">
-                    {formatINR(product.price * qty)}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
                   <span className="text-sm text-neutral-500">Shipping</span>
                   <span className="text-sm text-neutral-500">Free</span>
                 </div>
@@ -705,9 +855,7 @@ export function CheckoutForm() {
                   <span className="font-heading text-xl text-neutral-900">{formatINR(total)}</span>
                 </div>
 
-                {total < 0 && (
-                  <p className="mt-3 text-xs text-amber-700">Invalid order amount</p>
-                )}
+                {total <= 0 && <p className="mt-3 text-xs text-amber-700">Invalid order amount</p>}
               </div>
             </div>
 
@@ -731,9 +879,7 @@ export function CheckoutForm() {
                 </svg>
                 <div>
                   <div className="font-medium text-neutral-800">Secure payment</div>
-                  <div className="mt-1 text-xs text-neutral-500">
-                    We use Razorpay for encrypted transactions.
-                  </div>
+                  <div className="mt-1 text-xs text-neutral-500">We use Razorpay for encrypted transactions.</div>
                 </div>
               </div>
             </div>

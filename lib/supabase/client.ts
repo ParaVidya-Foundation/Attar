@@ -15,28 +15,7 @@ export function createBrowserSupabaseClient() {
   // Check if env vars are available
   if (!hasClientEnv()) {
     const errorMsg = "Supabase environment variables not configured. Please check your Vercel environment variables.";
-    console.error(`[supabase/client] ${errorMsg}`);
-    
-    // In production, return a no-op client to prevent crashes
-    // This allows the app to render but Supabase calls will fail gracefully
-    if (typeof window !== "undefined") {
-      // Return a minimal client that will fail gracefully on use
-      const env = getClientEnv();
-      if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        // Create a client with placeholder values - it will fail on actual use but won't crash
-        _client = createBrowserClient("https://placeholder.invalid", "placeholder");
-        return _client;
-      }
-    }
-    
-    // If we're here, something went wrong - throw only in development
-    if (process.env.NODE_ENV !== "production") {
-      throw new Error(errorMsg);
-    }
-    
-    // Production fallback: return placeholder client
-    _client = createBrowserClient("https://placeholder.invalid", "placeholder");
-    return _client;
+    throw new Error(`[supabase/client] ${errorMsg}`);
   }
 
   const env = getClientEnv();

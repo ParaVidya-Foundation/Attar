@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, JSX } from "react";
+import React, { useEffect, useRef, JSX, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FocusTrap } from "@/components/ui/FocusTrap";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "./CartProvider";
-import { useRazorpayCheckout } from "@/hooks/useRazorpayCheckout";
 
 function formatINR(paise: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -14,16 +13,6 @@ function formatINR(paise: number) {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(paise / 100);
-}
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function isValidVariantId(id: unknown): id is string {
-  if (typeof id !== "string") return false;
-  const trimmed = id.trim();
-  if (trimmed.length !== 36) return false;
-  return UUID_REGEX.test(trimmed);
 }
 
 export function CartDrawer(): JSX.Element | null {
@@ -40,50 +29,14 @@ export function CartDrawer(): JSX.Element | null {
   const { open, setOpen, lines, total, remove, setQty, clear } = cart;
   const router = useRouter();
 
-  const { loading: checkoutLoading, error: checkoutError, startCheckout } = useRazorpayCheckout({
-    onSuccess: () => {
-      clear();
-      setOpen(false);
-      router.push("/account/orders");
-      router.refresh();
-    },
-    onGuestRequired: () => {
-      const first = lines.find((l) => isValidVariantId(l.variantId));
-      if (first && first.variantId) {
-        setOpen(false);
-        router.push(
-          `/checkout?variant_id=${encodeURIComponent(first.variantId.trim())}&quantity=${first.qty}`,
-        );
-      } else if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[Cart] Guest checkout blocked: no valid variantId in cart lines");
-      }
-    },
-  });
-
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  const handleCheckout = useCallback(async () => {
-    const invalid = lines.filter((l) => !isValidVariantId(l.variantId));
-    if (invalid.length > 0) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[Cart] Checkout blocked: invalid items", invalid);
-      }
-      return;
-    }
-
-    const items = lines.map((l) => ({
-      variant_id: l.variantId!.trim(),
-      quantity: l.qty,
-    }));
-    if (items.length === 0) {
-      return;
-    }
-
-    await startCheckout(items);
-  }, [lines, startCheckout]);
+  const handleCheckout = useCallback(() => {
+    if (!lines.length) return;
+    setOpen(false);
+    router.push("/checkout?mode=cart");
+  }, [lines.length, router, setOpen]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -253,18 +206,12 @@ export function CartDrawer(): JSX.Element | null {
               </div>
 
               <div className="mt-4 grid gap-3">
-                {checkoutError && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
-                    {checkoutError}
-                  </div>
-                )}
-
                 <Button
                   type="button"
                   onClick={handleCheckout}
-                  disabled={lines.length === 0 || checkoutLoading}
+                  disabled={lines.length === 0}
                 >
-                  {checkoutLoading ? "Processing…" : "Checkout"}
+                  Checkout
                 </Button>
 
                 <Button type="button" variant="secondary" onClick={clear} disabled={lines.length === 0}>

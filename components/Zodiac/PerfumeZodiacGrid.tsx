@@ -80,18 +80,12 @@ const zodiacs: Zodiac[] = [
 ];
 
 const PerfumeZodiacGrid = React.memo(function PerfumeZodiacGrid() {
-  const handleAddToCart = React.useCallback((id: number) => {
-    // Add to cart functionality (noop in prod, logs in dev)
-    if (process.env.NODE_ENV === "development") {
-      console.log("add-to-cart", id);
-    }
+  const handleAddToCart = React.useCallback((_id: number) => {
+    // Placeholder until Zodiac cart integration is wired to real variants.
   }, []);
 
-  const handleToggleWishlist = React.useCallback((id: number, wishlisted: boolean) => {
-    // Toggle wishlist functionality (noop in prod, logs in dev)
-    if (process.env.NODE_ENV === "development") {
-      console.log("wishlist", id, wishlisted);
-    }
+  const handleToggleWishlist = React.useCallback((_id: number, _wishlisted: boolean) => {
+    // Placeholder until wishlist service is added.
   }, []);
 
   return (

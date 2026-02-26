@@ -7,12 +7,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { getServerEnv } from "@/lib/env";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
-import { serverWarn } from "@/lib/security/logger";
+import { serverError, serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
 const INDIA_PHONE = /^[6-9]\d{9}$/;
-const MIN_ORDER_PAISE = 0;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function sanitizeVariantId(raw: unknown): string {
@@ -40,7 +39,7 @@ export async function POST(req: Request) {
   try {
     // Step 2: Validate required Razorpay env
     if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      console.error("Razorpay env missing");
+      serverError("orders/create", "Razorpay env missing");
       return NextResponse.json(
         { error: "Payment system not configured" },
         { status: 500 },
@@ -98,12 +97,6 @@ export async function POST(req: Request) {
       email,
       phone,
       quantity,
-      address_line1,
-      address_line2,
-      city,
-      state,
-      pincode,
-      country,
     } = parsed.data;
 
     // Optional authenticated user
@@ -216,41 +209,7 @@ export async function POST(req: Request) {
       `variant_id=${variant_id} quantity=${quantity} amount=${totalPaise} user_email=${email ?? "guest"}`,
     );
 
-    // Step 7: Razorpay order creation safety
-    const receipt = `ord_${Date.now()}`;
-    let razorpayOrderId: string | null = null;
-    let razorpayAmount: number | string = totalPaise;
-    let razorpayCurrency = "INR";
-
-    // Only create Razorpay order when amount > 0 (Razorpay requires >= 100 paise)
-    if (totalPaise > 0) {
-      try {
-        const razorpayOrder = await createRazorpayOrder({
-          amount: totalPaise,
-          currency: "INR",
-          receipt,
-        });
-        razorpayOrderId = razorpayOrder.id;
-        razorpayAmount = razorpayOrder.amount;
-        razorpayCurrency = razorpayOrder.currency;
-        if (process.env.NODE_ENV !== "production") {
-          serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
-        }
-      } catch (rzErr) {
-        console.error("Razorpay error:", rzErr);
-        serverWarn(
-          "orders/create",
-          "Razorpay order create failed: " +
-            (rzErr instanceof Error ? rzErr.message : String(rzErr)),
-        );
-        return NextResponse.json(
-          { error: "Payment gateway error" },
-          { status: 500 },
-        );
-      }
-    }
-
-    // Step 8: DB insert safety (orders table has no address columns)
+    // Step 7: DB insert before Razorpay (order must exist before gateway call)
     const { data: order, error: orderErr } = await admin
       .from("orders")
       .insert({
@@ -261,7 +220,7 @@ export async function POST(req: Request) {
         status: "pending",
         amount: totalPaise,
         currency: "INR",
-        razorpay_order_id: razorpayOrderId,
+        razorpay_order_id: null,
       })
       .select("id")
       .single();
@@ -296,23 +255,59 @@ export async function POST(req: Request) {
       );
     }
 
+    // Step 8: Razorpay order creation safety
+    const receipt = `ord_${Date.now()}`;
+    let razorpayOrderId: string;
+    let razorpayAmount: number;
+    let razorpayCurrency = "INR";
+    try {
+      const razorpayOrder = await createRazorpayOrder({
+        amount: totalPaise,
+        currency: "INR",
+        receipt,
+      });
+      razorpayOrderId = razorpayOrder.id;
+      razorpayAmount = Number(razorpayOrder.amount);
+      razorpayCurrency = razorpayOrder.currency;
+      if (process.env.NODE_ENV !== "production") {
+        serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
+      }
+    } catch (rzErr) {
+      serverError("orders/create razorpay", rzErr);
+      await admin
+        .from("orders")
+        .update({ status: "failed", updated_at: new Date().toISOString() })
+        .eq("id", order.id);
+      return NextResponse.json({ error: "Payment gateway error" }, { status: 500 });
+    }
+
+    const { error: orderUpdateErr } = await admin
+      .from("orders")
+      .update({
+        razorpay_order_id: razorpayOrderId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .eq("status", "pending");
+    if (orderUpdateErr) {
+      serverError("orders/create update razorpay_order_id", orderUpdateErr);
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+    }
+
     if (process.env.NODE_ENV !== "production") {
       serverWarn("orders/create", `DB insert success: order_id=${order.id}`);
     }
 
     // Step 9: Response contract
-    const amountPaise =
-      typeof razorpayAmount === "number" ? razorpayAmount : Number(razorpayAmount);
-
     return NextResponse.json({
       orderId: order.id,
-      razorpayOrderId: razorpayOrderId,
-      amount: amountPaise,
+      razorpayOrderId,
+      amount: razorpayAmount,
       currency: razorpayCurrency,
       keyId,
     });
   } catch (error) {
-    console.error("[ORDER CREATE ERROR]", error);
+    serverError("orders/create", error);
     serverWarn(
       "orders/create",
       error instanceof Error ? error.message : "Order create exception",

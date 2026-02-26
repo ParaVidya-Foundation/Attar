@@ -142,24 +142,12 @@ export function useLocalCart() {
       const payload = item as SimpleAddPayload;
       const rawVariantId = payload.variantId;
       if (!isValidVariantId(rawVariantId)) {
-        if (process.env.NODE_ENV !== "production") {
-          // eslint-disable-next-line no-console
-          console.error("[Cart] Invalid variantId in add()", {
-            productId: payload.id,
-            variantId: rawVariantId,
-          });
-        }
         return;
       }
       const variantId = rawVariantId.trim();
       const qtyValue = Math.max(1, payload.qty ?? 1);
       const lineMl = 0;
       const slug = payload.slug ?? payload.id;
-
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.log("[Cart] Adding item", { productId: payload.id, variantId, qty: qtyValue });
-      }
 
       setLines((prev) => {
         const existing = prev.find((l) => l.variantId === variantId);

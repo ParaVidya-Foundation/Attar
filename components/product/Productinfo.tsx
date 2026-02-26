@@ -61,13 +61,6 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   function addToCart() {
     const rawVariantId = product.sizes?.length ? (selectedSize || product.sizes[0]?.id) : undefined;
     if (!isValidVariantId(rawVariantId)) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[Cart] Invalid variantId in ProductInfo.addToCart()", {
-          productId: product.id,
-          variantId: rawVariantId,
-        });
-      }
       return;
     }
     const variantId = rawVariantId.trim();
@@ -93,13 +86,6 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
   function buyNow() {
     const rawVariantId = (selectedSize || product.sizes?.[0]?.id) ?? "";
     if (!isValidVariantId(rawVariantId)) {
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
-        console.error("[Cart] Invalid variantId in ProductInfo.buyNow()", {
-          productId: product.id,
-          variantId: rawVariantId,
-        });
-      }
       return;
     }
     const variantId = rawVariantId.trim();

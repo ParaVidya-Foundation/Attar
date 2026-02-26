@@ -31,8 +31,7 @@ export function UserMenu({ onItemClick }: UserMenuProps = {}) {
     try {
       const supabase = createBrowserClient();
 
-      supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => setUser(u ?? null)).catch((err: unknown) => {
-        console.error("[UserMenu] Error getting user:", err);
+      supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => setUser(u ?? null)).catch(() => {
         setUser(null);
       });
 
@@ -43,8 +42,7 @@ export function UserMenu({ onItemClick }: UserMenuProps = {}) {
       });
 
       subscription = sub;
-    } catch (err) {
-      console.error("[UserMenu] Error initializing Supabase:", err);
+    } catch {
       setUser(null);
     }
 
@@ -61,8 +59,7 @@ export function UserMenu({ onItemClick }: UserMenuProps = {}) {
       await supabase.auth.signOut();
       router.push("/");
       router.refresh();
-    } catch (err) {
-      console.error("[UserMenu] Error during logout:", err);
+    } catch {
       // Still redirect even if logout fails
       router.push("/");
       router.refresh();

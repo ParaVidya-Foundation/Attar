@@ -5,6 +5,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/browser";
 
+function getAuthOrigin() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (siteUrl) return siteUrl.replace(/\/+$/, "");
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_SITE_URL is required in production");
+  }
+  return typeof window !== "undefined" ? window.location.origin : "";
+}
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -49,8 +58,7 @@ function LoginForm() {
 
     try {
       const supabase = createBrowserClient();
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
-      const redirectTo = `${origin.replace(/\/+$/, "")}/auth/callback`;
+      const redirectTo = `${getAuthOrigin()}/auth/callback`;
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -69,8 +77,7 @@ function LoginForm() {
 
     try {
       const supabase = createBrowserClient();
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
-      const redirectTo = `${origin.replace(/\/+$/, "")}/auth/callback`;
+      const redirectTo = `${getAuthOrigin()}/auth/callback`;
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "facebook",
