@@ -3,6 +3,7 @@ import ProductCard from "@/components/shop/ProductCard";
 import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
+import HowToUse from "@/components/stress/howtouse";
 
 export const revalidate = 60;
 
@@ -35,12 +36,11 @@ export default async function StressPerfumePage() {
           {mappedProducts.length === 0 ? (
             <p className="col-span-full text-center text-black/60 py-12">No products available.</p>
           ) : (
-            mappedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))
+            mappedProducts.map((product) => <ProductCard key={product.id} product={product} />)
           )}
         </div>
       </section>
+      <HowToUse />
     </main>
   );
 }

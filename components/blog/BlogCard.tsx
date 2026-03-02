@@ -1,9 +1,7 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
@@ -17,6 +15,7 @@ export interface BlogCardProps {
   author?: string;
   category?: string;
   href?: string;
+  variant?: "default" | "compact";
 }
 
 export default function BlogCard({
@@ -29,17 +28,43 @@ export default function BlogCard({
   author,
   category,
   href,
+  variant = "default",
 }: BlogCardProps) {
   const formattedDate = typeof date === "string" ? date : format(new Date(date), "d MMM yyyy");
 
-  const blogUrl = href || `/blog/BlogPage`;
+  const blogUrl = href || "/blog";
+
+  if (variant === "compact") {
+    return (
+      <article className="group border-t border-neutral-200 pt-4 first:border-t-0 first:pt-0">
+        <Link href={blogUrl} className="grid grid-cols-[88px_1fr] gap-3">
+          <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+            <Image
+              src={image || PLACEHOLDER_IMAGE_URL}
+              alt={imageAlt || title}
+              fill
+              sizes="88px"
+              className="object-cover transition-transform duration-300 ease-out group-hover:scale-[1.02]"
+            />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium leading-snug text-neutral-900 transition-colors group-hover:text-neutral-700">
+              {title}
+            </h3>
+            <time
+              dateTime={typeof date === "string" ? date : format(new Date(date), "yyyy-MM-dd")}
+              className="mt-1 block text-xs text-neutral-500"
+            >
+              {formattedDate}
+            </time>
+          </div>
+        </Link>
+      </article>
+    );
+  }
 
   return (
-    <motion.article
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
+    <article
       className="group flex flex-col h-full border-t border-neutral-200 pt-6"
       itemScope
       itemType="https://schema.org/BlogPosting"
@@ -111,23 +136,6 @@ export default function BlogCard({
           </Link>
         </div>
       </div>
-
-      {/* Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: title,
-            image: image,
-            datePublished: typeof date === "string" ? date : format(new Date(date), "yyyy-MM-dd"),
-            author: author ? { "@type": "Person", name: author } : undefined,
-            description: excerpt,
-            url: blogUrl,
-          }),
-        }}
-      />
-    </motion.article>
+    </article>
   );
 }

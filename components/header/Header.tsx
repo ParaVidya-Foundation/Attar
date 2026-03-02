@@ -20,8 +20,15 @@ const COLLECTIONS = [
     id: "stress",
     href: "/collections/stress",
     label: "Stress Relief Attars",
-    img: "/collections/stress-thumb.jpg",
+    img: "/stress/stress_calm.webp",
   },
+  {
+    id: "Love-attar",
+    href: "/collections/Love-attar",
+    label: "Love Attars",
+    img: "/love.webp",
+  },
+
   {
     id: "divine",
     href: "/collections/Incense",

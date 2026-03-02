@@ -40,7 +40,7 @@ export default function BlogLayout({ post }: BlogLayoutProps) {
             </li>
             <span>/</span>
             <li>
-              <Link href="/research/blogs" className="hover:text-black transition-colors">
+              <Link href="/blog" className="hover:text-black transition-colors">
                 Blogs
               </Link>
             </li>

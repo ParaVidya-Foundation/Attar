@@ -49,7 +49,7 @@ export default function Categories() {
                 }}
               >
                 <Link
-                  href={`/research/blogs?category=${slug}`}
+                  href={`/blog/category/${slug}`}
                   aria-label={`View posts in ${category}`}
                   className="
                     block

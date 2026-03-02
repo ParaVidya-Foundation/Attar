@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
 import ProductShowcase from "@/components/product/ProductShowcase";
 import ProductInfo from "@/components/product/Productinfo";
@@ -7,8 +8,11 @@ import OtherInfo from "@/components/product/otherinfo";
 import { getProductBySlug } from "@/lib/api/products";
 import { absoluteUrl, BRAND } from "@/lib/seo";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
+import { getProductFeatures } from "@/config/productFeatures";
 
 export const revalidate = 60;
+
+const IncenseTable = dynamic(() => import("@/components/product/features/incensetable"));
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -129,6 +133,7 @@ export default async function ProductPage({ params }: PageProps) {
   };
 
   const jsonLd = buildProductJsonLd(product);
+  const features = getProductFeatures(product.slug);
 
   return (
     <main className="w-full min-h-screen bg-white">
@@ -149,6 +154,8 @@ export default async function ProductPage({ params }: PageProps) {
           { title: "Category", text: "Luxury Attar" },
         ]}
       />
+
+      {features.showIncenseTable && <IncenseTable />}
 
       <TrustBar />
     </main>

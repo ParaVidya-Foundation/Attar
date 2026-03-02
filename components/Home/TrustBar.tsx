@@ -10,19 +10,19 @@ type Item = {
 
 const items: Item[] = [
   {
-    img: "/icons/india.png",
-    title: "Packaged at source and shipped direct to you",
+    img: "/Shop.webp",
+    title: "Promoting Local Businesses",
   },
   {
-    img: "/icons/cruelty-free.png",
+    img: "/NoAnimal.webp",
     title: "Not tested on animals",
   },
   {
-    img: "/icons/science.png",
-    title: "No animal derived ingredients",
+    img: "/NoChem.webp",
+    title: "No Alcohol/Chemicals",
   },
   {
-    img: "/icons/shipping.png",
+    img: "/FreeShipping.webp",
     title: "Free shipping",
   },
 ];

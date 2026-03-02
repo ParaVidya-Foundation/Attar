@@ -6,7 +6,7 @@
 import { MetadataRoute } from "next";
 import { createStaticClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/seo";
-import { getBlogSlugsWithUpdated } from "@/lib/blog";
+import { getBlogSlugsWithUpdated, getAllBlogCategorySlugs, getAllBlogTagSlugs } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -92,7 +92,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Blog post pages (/blog already in staticPages)
-  const blogPosts = await getBlogSlugsWithUpdated();
+  const [blogPosts, blogCategorySlugs, blogTagSlugs] = await Promise.all([
+    getBlogSlugsWithUpdated(),
+    getAllBlogCategorySlugs(),
+    getAllBlogTagSlugs(),
+  ]);
   const blogPostPages: MetadataRoute.Sitemap = blogPosts.map((p) => ({
     url: absoluteUrl(`/blog/${p.slug}`),
     lastModified: p.updated_at ? new Date(p.updated_at) : new Date(),
@@ -100,5 +104,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...productPages, ...blogPostPages];
+  const blogCategoryPages: MetadataRoute.Sitemap = blogCategorySlugs.map((slug) => ({
+    url: absoluteUrl(`/blog/category/${slug}`),
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  const blogTagPages: MetadataRoute.Sitemap = blogTagSlugs.map((slug) => ({
+    url: absoluteUrl(`/blog/tag/${slug}`),
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.5,
+  }));
+
+  return [...staticPages, ...productPages, ...blogPostPages, ...blogCategoryPages, ...blogTagPages];
 }

@@ -11,6 +11,7 @@ const collections = [
   { name: "Planets Attar", href: "/collections/planets" },
   { name: "Zodiac Attar", href: "/collections/zodiac" },
   { name: "Stress Relief Attar", href: "/collections/stress" },
+  { name: "Love Attar", href: "/collections/Love-attar" },
   { name: "Incense Sticks", href: "/collections/Incense" },
   { name: "Gift Sets", href: "/gift-sets" },
 ];
@@ -26,7 +27,7 @@ const supportLinks = [
 
 const companyLinks = [
   { name: "About Anand Rasa", href: "/about" },
-  { name: "Our Story", href: "/our-story" },
+
   { name: "Blog", href: "/blog" },
   { name: "Privacy Policy", href: "/privacy" },
   { name: "Terms & Conditions", href: "/terms" },
@@ -40,10 +41,10 @@ const socialLinks = [
 ];
 
 const payments = [
-  { name: "Visa", src: "/visa-icon.svg", width: 48, height: 28 },
-  { name: "MasterCard", src: "/master-card-icon.svg", width: 48, height: 28 },
-  { name: "UPI", src: "/upi-payment-icon.svg", width: 48, height: 28 },
-  { name: "Razorpay", src: "/razorpay-icon.svg", width: 64, height: 28 },
+  { name: "Visa", src: "/Footer/visa-icon.svg", width: 48, height: 28 },
+  { name: "MasterCard", src: "/Footer/master-card-icon.svg", width: 48, height: 28 },
+  { name: "UPI", src: "/Footer/upi-payment-icon.svg", width: 48, height: 28 },
+  { name: "Razorpay", src: "/Footer/razorpay-icon.svg", width: 64, height: 28 },
 ];
 
 const organizationJsonLd = {
@@ -196,7 +197,7 @@ export function Footer() {
         <section className="mt-10 flex flex-col items-center gap-4 text-center">
           <div className="w-full flex justify-center">
             <Image
-              src="/Footer.webp"
+              src="/Footer/Footer.webp"
               alt="Anand Rasa"
               width={1800}
               height={600}

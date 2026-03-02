@@ -169,7 +169,7 @@ function LoginForm() {
             className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99] mb-3"
           >
             <img
-              src="/google-icon-logo-svgrepo-com.svg"
+              src="/Footer/google-icon-logo-svgrepo-com.svg"
               alt="Google"
               className="h-5 w-5"
             />
@@ -183,7 +183,7 @@ function LoginForm() {
             className="w-full flex items-center justify-center gap-3 border border-neutral-300 py-3 text-sm font-medium text-neutral-800 transition-all duration-150 hover:border-neutral-900 hover:bg-neutral-50 active:scale-[0.99]"
           >
             <img
-              src="/facebook-2-logo-svgrepo-com.svg"
+              src="/Footer/facebook-2-logo-svgrepo-com.svg"
               alt="Meta"
               className="h-5 w-5"
             />

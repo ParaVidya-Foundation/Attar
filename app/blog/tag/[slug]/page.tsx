@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getPostsByTag, getBlogTags } from "@/lib/blog";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
+import { pageMetadata, breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo";
 import BlogList from "@/components/blog/BlogList";
 import { notFound } from "next/navigation";
 
@@ -46,10 +46,12 @@ export default async function BlogTagPage({ params, searchParams }: Props) {
     { name: "Journal", path: "/blog" },
     { name: `Tag: ${tag.name}`, path: `/blog/tag/${tag.slug}` },
   ]);
+  const itemListLd = itemListJsonLd(posts.map((post) => ({ name: post.title, path: `/blog/${post.slug}` })));
 
   return (
     <main className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
       <div className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
         <header className="mb-14">
           <Link href="/blog" className="text-sm font-medium text-neutral-500 hover:text-neutral-900">

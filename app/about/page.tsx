@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import Image from "next/image";
-import { pageMetadata, LOGO_PATH } from "@/lib/seo";
-import { Container } from "@/components/ui/Container";
+import BrandStory from "@/components/about/BrandStory";
+import HeadPerson from "@/components/about/HeadPerson";
+import OurMission from "@/components/about/ouraim";
 
 export const revalidate = 3600;
 
@@ -15,27 +17,45 @@ export const metadata: Metadata = pageMetadata({
 
 export default function AboutPage() {
   return (
-    <Container className="py-12 sm:py-16">
-      <p className="text-xs font-semibold tracking-[0.26em] text-charcoal/70">ABOUT</p>
-      <div className="mt-4">
-        <Image src={LOGO_PATH} alt="" width={240} height={64} className="h-14 w-auto object-contain text-ink sm:h-16 md:h-[4.5rem]" aria-hidden />
-        <h1 className="sr-only">Anand Ras</h1>
-      </div>
-      <div className="mt-6 grid gap-4 text-sm leading-7 text-charcoal/85 sm:text-base">
-        <p>
-          Anand Ras is a frontend-only, production-ready template for a luxury attar brand. It is
-          intentionally minimal: cream lightness, indigo ink depth, and antique-gold accents.
-        </p>
-        <p>
-          The product catalog and journal are mocked using local JSON files, but the architecture is ready for
-          a real backend: replace the JSON loader in{" "}
-          <code className="rounded bg-white/60 px-2 py-1">lib/fetchers.ts</code> with API calls.
-        </p>
-        <p>
-          Our design philosophy: calm typography, semantic HTML, accessible components, and SEO-first
-          structure with metadata and JSON-LD for product and article pages.
-        </p>
-      </div>
-    </Container>
+    <div className="relative">
+      {/* Brand Story Section */}
+      <BrandStory />
+
+      {/* Border + Head Section */}
+      <section className="relative w-full">
+        {/* Top Paper Border */}
+        <div className="pointer-events-none absolute left-0 right-0 -top-[115px] z-40">
+          <div className="relative w-full h-[230px]">
+            <Image
+              src="/about/Paper-Border.webp"
+              alt="Paper Border Top"
+              fill
+              priority
+              sizes="100vw"
+              className="object-fill"
+            />
+          </div>
+        </div>
+
+        {/* Content (HeadPerson should be interactive) */}
+        <div className="relative z-30">
+          <HeadPerson />
+        </div>
+
+        {/* Bottom Paper Border */}
+        <div className="pointer-events-none absolute left-0 right-0 -bottom-[105px] z-40 rotate-180">
+          <div className="relative w-full h-[230px]">
+            <Image
+              src="/about/Paper-Border.webp"
+              alt="Paper Border Bottom"
+              fill
+              sizes="100vw"
+              className="object-fill"
+            />
+          </div>
+        </div>
+      </section>
+      <OurMission />
+    </div>
   );
 }

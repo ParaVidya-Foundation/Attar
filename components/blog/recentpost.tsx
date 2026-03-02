@@ -46,7 +46,7 @@ export default function RecentPosts({ posts }: RecentPostsProps) {
                 }}
               >
                 <Link
-                  href={post.href || `/research/blogs/${post.id}`}
+                  href={post.href || `/blog`}
                   aria-label={`Read ${post.title}`}
                   className="
                     flex items-center gap-4

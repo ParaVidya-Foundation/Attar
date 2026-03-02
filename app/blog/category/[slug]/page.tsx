@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPostsByCategory, getBlogCategories } from "@/lib/blog";
-import { pageMetadata, breadcrumbJsonLd } from "@/lib/seo";
+import { getPostsByCategory, getBlogCategories, getBlogCategoriesWithCounts } from "@/lib/blog";
+import { pageMetadata, breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo";
 import BlogList from "@/components/blog/BlogList";
 import { notFound } from "next/navigation";
+import BlogCategorySidebar from "@/components/blog/BlogCategorySidebar";
 
 export const revalidate = 3600;
 
@@ -38,7 +39,7 @@ export default async function BlogCategoryPage({ params, searchParams }: Props) 
   const { page: pageParam } = await searchParams;
   const page = Math.max(1, parseInt(String(pageParam), 10) || 1);
   const { posts, totalPages, category } = await getPostsByCategory(slug, page);
-  const categories = await getBlogCategories();
+  const [categories, categoryCounts] = await Promise.all([getBlogCategories(), getBlogCategoriesWithCounts()]);
 
   if (!category) notFound();
 
@@ -47,11 +48,13 @@ export default async function BlogCategoryPage({ params, searchParams }: Props) 
     { name: "Journal", path: "/blog" },
     { name: category.name, path: `/blog/category/${category.slug}` },
   ]);
+  const itemListLd = itemListJsonLd(posts.map((post) => ({ name: post.title, path: `/blog/${post.slug}` })));
 
   return (
     <main className="min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-      <div className="mx-auto max-w-4xl px-6 py-16 sm:py-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
+      <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <header className="mb-14">
           <Link href="/blog" className="text-sm font-medium text-neutral-500 hover:text-neutral-900">
             Journal
@@ -64,60 +67,68 @@ export default async function BlogCategoryPage({ params, searchParams }: Props) 
           )}
         </header>
 
-        {categories.length > 0 && (
-          <nav className="mb-10 flex flex-wrap gap-2" aria-label="Blog categories">
-            <Link
-              href="/blog"
-              className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-neutral-900"
-            >
-              All
-            </Link>
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/blog/category/${c.slug}`}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  c.id === category.id
-                    ? "border-neutral-900 bg-neutral-900 text-white"
-                    : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:text-neutral-900"
-                }`}
-              >
-                {c.name}
-              </Link>
-            ))}
-          </nav>
-        )}
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[260px_1fr]">
+          <aside className="hidden lg:block">
+            <BlogCategorySidebar categories={categoryCounts} activeSlug={category.slug} />
+          </aside>
 
-        {posts.length === 0 ? (
-          <p className="text-neutral-500">No posts in this category yet.</p>
-        ) : (
-          <>
-            <BlogList posts={posts} />
-            {totalPages > 1 && (
-              <nav className="mt-14 flex items-center justify-center gap-2" aria-label="Pagination">
-                {page > 1 && (
+          <section>
+            {categories.length > 0 && (
+              <nav className="mb-10 flex flex-wrap gap-2" aria-label="Blog categories">
+                <Link
+                  href="/blog"
+                  className="rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-neutral-900 hover:text-neutral-900"
+                >
+                  All
+                </Link>
+                {categories.map((c) => (
                   <Link
-                    href={page === 2 ? `/blog/category/${slug}` : `/blog/category/${slug}?page=${page - 1}`}
-                    className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                    key={c.id}
+                    href={`/blog/category/${c.slug}`}
+                    className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                      c.id === category.id
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:text-neutral-900"
+                    }`}
                   >
-                    Previous
+                    {c.name}
                   </Link>
-                )}
-                <span className="text-sm text-neutral-500">
-                  Page {page} of {totalPages}
-                </span>
-                {page < totalPages && (
-                  <Link
-                    href={`/blog/category/${slug}?page=${page + 1}`}
-                    className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-                  >
-                    Next
-                  </Link>
-                )}
+                ))}
               </nav>
             )}
-          </>
-        )}
+
+            {posts.length === 0 ? (
+              <p className="text-neutral-500">No posts in this category yet.</p>
+            ) : (
+              <>
+                <BlogList posts={posts} />
+                {totalPages > 1 && (
+                  <nav className="mt-14 flex items-center justify-center gap-2" aria-label="Pagination">
+                    {page > 1 && (
+                      <Link
+                        href={page === 2 ? `/blog/category/${slug}` : `/blog/category/${slug}?page=${page - 1}`}
+                        className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        Previous
+                      </Link>
+                    )}
+                    <span className="text-sm text-neutral-500">
+                      Page {page} of {totalPages}
+                    </span>
+                    {page < totalPages && (
+                      <Link
+                        href={`/blog/category/${slug}?page=${page + 1}`}
+                        className="rounded-md border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                      >
+                        Next
+                      </Link>
+                    )}
+                  </nav>
+                )}
+              </>
+            )}
+          </section>
+        </div>
       </div>
     </main>
   );

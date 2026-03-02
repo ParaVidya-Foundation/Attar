@@ -58,29 +58,17 @@ export default function ShopTrio() {
       >
         {/* LEFT LARGE */}
         <div className="h-[420px] md:h-[600px]">
-          <Card
-            src="/Incensehero.webp"
-            alt="Luxury perfume portrait minimal white background"
-            href="/collections/Incense"
-          />
+          <Card src="/Incensehero.webp" alt="Luxury Incense Sticks" href="/collections/Incense" />
         </div>
 
         {/* RIGHT STACK */}
         <div className="grid h-[420px] md:h-[600px] grid-rows-2">
           <div>
-            <Card
-              src="/images/perfume-drop.jpg"
-              alt="Applying perfume dropper minimal studio lighting"
-              href="/shop"
-            />
+            <Card src="/stress/stress_calm.webp" alt="Stress Relief Attars" href="/collections/stress" />
           </div>
 
           <div>
-            <Card
-              src="/images/perfume-bottle.jpg"
-              alt="Luxury perfume bottle minimal white background studio shadow"
-              href="/shop"
-            />
+            <Card src="/love.webp" alt="Love Attars" href="/collections/Love-attar" />
           </div>
         </div>
       </div>

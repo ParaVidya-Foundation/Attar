@@ -179,3 +179,17 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
     })),
   };
 }
+
+export function itemListJsonLd(items: { name: string; path: string }[]) {
+  const base = absoluteUrl("/").replace(/\/+$/, "");
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      url: `${base}${item.path.startsWith("/") ? item.path : `/${item.path}`}`,
+    })),
+  };
+}
