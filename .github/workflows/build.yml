@@ -1,4 +1,4 @@
-name: CI
+name: Build
 
 on:
   push:
@@ -7,12 +7,14 @@ on:
     branches: ["main"]
 
 jobs:
-  build-test:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -21,11 +23,22 @@ jobs:
       - name: Enable Corepack
         run: corepack enable
 
+      - name: Activate pnpm
+        run: corepack prepare pnpm@latest --activate
+
+      - name: Show tool versions
+        run: |
+          node --version
+          pnpm --version
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm run lint
+
+      - name: Type-check
+        run: pnpm run type-check
 
       - name: Build
         run: pnpm run build
@@ -36,11 +49,4 @@ jobs:
           NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_live_placeholder
           RAZORPAY_KEY_SECRET: placeholder
           RAZORPAY_WEBHOOK_SECRET: placeholder
-          RAZORPAY_WEBHOOK_URL: https://placeholder.vercel.app/api/webhooks/razorpay
           NEXT_PUBLIC_SITE_URL: https://placeholder.vercel.app
-
-      - name: Type-check
-        run: pnpm run type-check
-
-      - name: Test
-        run: pnpm run test

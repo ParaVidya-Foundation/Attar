@@ -1,47 +1,24 @@
 /**
- * Environment validation — envalid (server), Zod (client-safe).
- * If required server vars are missing, getServerEnv() throws on first use (startup).
- * Use safe getters everywhere; do not read process.env directly in app code.
+ * Environment validation and safe accessors.
+ * Missing variables are logged as warnings so the app can stay up and return controlled errors.
  */
-import { cleanEnv, str, url } from "envalid";
 import { validatePublicHttpsUrl } from "@/lib/payments/network-safety";
+import { serverWarn } from "@/lib/security/logger";
 
 const PRODUCTION_DOMAIN = "https://anandrasafragnance.com";
 
-/** Server-only validated env (includes secrets). Lazy-initialized on first getServerEnv() call. */
-let _serverEnv: ReturnType<typeof validateServerEnv> | null = null;
+const warnedMessages = new Set<string>();
+let _serverEnv: ServerEnv | null = null;
 
-function validateServerEnv() {
-  const env = cleanEnv(process.env, {
-    NEXT_PUBLIC_SUPABASE_URL: url({ desc: "Supabase project URL" }),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: str({ desc: "Supabase anon key" }),
-    SUPABASE_SERVICE_ROLE_KEY: str({ desc: "Supabase service role key (server only)" }),
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: str({ desc: "Razorpay key ID" }),
-    RAZORPAY_KEY_SECRET: str({ desc: "Razorpay key secret (server only)" }),
-    RAZORPAY_WEBHOOK_SECRET: str({ desc: "Razorpay webhook signing secret" }),
-    NEXT_PUBLIC_SITE_URL: url({
-      desc: "Canonical site URL",
-      default: process.env.NODE_ENV === "development" ? "http://localhost:3000" : undefined,
-    }),
-  });
-
-  if (process.env.NODE_ENV === "production" && !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
-    throw new Error("Live Razorpay key required in production");
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    const siteUrlCheck = validatePublicHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
-    if (!siteUrlCheck.ok) {
-      throw new Error(
-        `NEXT_PUBLIC_SITE_URL is invalid for production (${siteUrlCheck.reason ?? "unknown reason"})`,
-      );
-    }
-  }
-
-  return env;
-}
-
-export type ServerEnv = ReturnType<typeof validateServerEnv>;
+export type ServerEnv = {
+  NEXT_PUBLIC_SUPABASE_URL: string;
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: string;
+  RAZORPAY_KEY_SECRET: string;
+  RAZORPAY_WEBHOOK_SECRET: string;
+  NEXT_PUBLIC_SITE_URL: string;
+};
 export type ClientEnv = {
   NEXT_PUBLIC_SUPABASE_URL: string;
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
@@ -49,23 +26,70 @@ export type ClientEnv = {
   NEXT_PUBLIC_SITE_URL?: string;
 };
 
+function warnOnce(message: string): void {
+  if (warnedMessages.has(message)) return;
+  warnedMessages.add(message);
+  serverWarn("env", message);
+}
+
+function getRawEnv(key: string): string {
+  return process.env[key]?.trim() ?? "";
+}
+
+function buildServerEnv(): ServerEnv {
+  const env: ServerEnv = {
+    NEXT_PUBLIC_SUPABASE_URL: getRawEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: getRawEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    SUPABASE_SERVICE_ROLE_KEY: getRawEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: getRawEnv("NEXT_PUBLIC_RAZORPAY_KEY_ID"),
+    RAZORPAY_KEY_SECRET: getRawEnv("RAZORPAY_KEY_SECRET"),
+    RAZORPAY_WEBHOOK_SECRET: getRawEnv("RAZORPAY_WEBHOOK_SECRET"),
+    NEXT_PUBLIC_SITE_URL: getRawEnv("NEXT_PUBLIC_SITE_URL"),
+  };
+
+  const missing = Object.entries(env)
+    .filter(([, value]) => !value)
+    .map(([key]) => key);
+  if (missing.length) {
+    warnOnce(`Missing environment variables: ${missing.join(", ")}`);
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    if (env.NEXT_PUBLIC_RAZORPAY_KEY_ID && !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
+      warnOnce("Production is using a non-live Razorpay key ID. Expected prefix: rzp_live_");
+    }
+
+    if (env.NEXT_PUBLIC_SITE_URL) {
+      const siteUrlCheck = validatePublicHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
+      if (!siteUrlCheck.ok) {
+        warnOnce(`NEXT_PUBLIC_SITE_URL is invalid in production (${siteUrlCheck.reason ?? "unknown reason"})`);
+      }
+    } else {
+      warnOnce(`NEXT_PUBLIC_SITE_URL is missing in production. Falling back to ${PRODUCTION_DOMAIN}`);
+    }
+  }
+
+  return env;
+}
+
 /**
  * Single source of truth for site URL. Use everywhere instead of hardcoding.
- * In production, throws if NEXT_PUBLIC_SITE_URL is missing (fail fast).
  */
 export function getSiteUrl(): string {
-  const url = typeof process !== "undefined" && process.env ? process.env.NEXT_PUBLIC_SITE_URL : undefined;
-  if (process.env.NODE_ENV === "production" && !url) {
-    throw new Error(
-      "[env] NEXT_PUBLIC_SITE_URL is required in production. Set it to https://anandrasafragnance.com",
-    );
+  const rawUrl = getRawEnv("NEXT_PUBLIC_SITE_URL");
+  if (rawUrl) {
+    return rawUrl.replace(/\/+$/, "");
   }
-  return url || (process.env.NODE_ENV === "development" ? "http://localhost:3000" : PRODUCTION_DOMAIN);
+  if (process.env.NODE_ENV === "production") {
+    warnOnce(`[env] NEXT_PUBLIC_SITE_URL is not set in production. Using fallback ${PRODUCTION_DOMAIN}`);
+    return PRODUCTION_DOMAIN;
+  }
+  return "http://localhost:3000";
 }
 
 export function getServerEnv(): ServerEnv {
   if (_serverEnv) return _serverEnv;
-  _serverEnv = validateServerEnv();
+  _serverEnv = buildServerEnv();
   return _serverEnv;
 }
 

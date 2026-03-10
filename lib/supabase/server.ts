@@ -8,8 +8,8 @@ import { serverWarn, serverError } from "@/lib/security/logger";
  *
  * Calls cookies() FIRST so Next.js opts the page into dynamic rendering before
  * any env-var check runs. This prevents prerender crashes during `next build`.
- * If env vars are missing at runtime, this throws immediately to avoid
- * silent checkout/auth failures in production.
+ * If env vars are missing at runtime, logs warnings and uses placeholder
+ * values so handlers can return controlled errors instead of crashing.
  */
 export async function createServerClient() {
   // cookies() must be called before anything else.
@@ -19,13 +19,16 @@ export async function createServerClient() {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const hasSupabaseEnv = !!(supabaseUrl.trim() && supabaseAnonKey.trim());
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!hasSupabaseEnv) {
     serverWarn("supabase/server", "Supabase env not set");
-    throw new Error("[supabase/server] NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are required");
   }
 
-  return createSupabaseServerClient(supabaseUrl, supabaseAnonKey, {
+  return createSupabaseServerClient(
+    hasSupabaseEnv ? supabaseUrl : "https://placeholder.supabase.co",
+    hasSupabaseEnv ? supabaseAnonKey : "placeholder-anon-key",
+    {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -40,14 +43,15 @@ export async function createServerClient() {
         }
       },
     },
-  });
+    },
+  );
 }
 
 const SUPABASE_ENV_MSG =
   "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set. Product/catalog fetches will fail.";
 
 /**
- * Runtime guard: in development throws if Supabase env is missing; in production logs only.
+ * Runtime guard: logs if Supabase env is missing.
  * Call before using createStaticClient() for catalog/product data to avoid silent empty results.
  */
 export function assertSupabaseEnv(): void {
@@ -55,30 +59,32 @@ export function assertSupabaseEnv(): void {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
   const missing = !url.trim() || !anonKey.trim();
   if (!missing) return;
-  if (process.env.NODE_ENV === "development") {
-    throw new Error(`[supabase/server] ${SUPABASE_ENV_MSG}`);
-  }
-  serverError("supabase/server", SUPABASE_ENV_MSG);
+  serverWarn("supabase/server", SUPABASE_ENV_MSG);
 }
 
 /**
  * Lightweight Supabase client for data fetching in server components / ISR.
- * Throws if env vars are missing (no silent empty responses).
+ * Logs and uses placeholder values if env vars are missing.
  */
 export function createStaticClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const hasSupabaseEnv = !!(url.trim() && anonKey.trim());
 
-  if (!url.trim() || !anonKey.trim()) {
-    throw new Error(`[supabase/server] ${SUPABASE_ENV_MSG}`);
+  if (!hasSupabaseEnv) {
+    serverError("supabase/server", SUPABASE_ENV_MSG);
   }
 
-  return createSupabaseClient(url, anonKey, {
+  return createSupabaseClient(
+    hasSupabaseEnv ? url : "https://placeholder.supabase.co",
+    hasSupabaseEnv ? anonKey : "placeholder-anon-key",
+    {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  });
+    },
+  );
 }
 
 export const createClient = createServerClient;

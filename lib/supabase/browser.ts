@@ -7,6 +7,7 @@ import { createBrowserClient as createSupabaseBrowserClient } from "@supabase/ss
 import { getClientEnv, hasClientEnv } from "@/lib/env";
 
 let _client: ReturnType<typeof createSupabaseBrowserClient> | null = null;
+let _warned = false;
 
 export function createBrowserClient() {
   // Return cached client if available
@@ -14,8 +15,15 @@ export function createBrowserClient() {
 
   // Check if env vars are available
   if (!hasClientEnv()) {
-    const errorMsg = "Supabase environment variables not configured. Please check your Vercel environment variables.";
-    throw new Error(`[supabase/browser] ${errorMsg}`);
+    if (!_warned) {
+      _warned = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[supabase/browser] Supabase environment variables not configured. Using placeholder client.",
+      );
+    }
+    _client = createSupabaseBrowserClient("https://placeholder.supabase.co", "placeholder-anon-key");
+    return _client;
   }
 
   const env = getClientEnv();

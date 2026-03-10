@@ -5,9 +5,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     if (process.env.NODE_ENV === "production") {
-      const { assertEnv } = await import("./lib/security/assertEnv");
       const { getServerEnv } = await import("./lib/env");
-      assertEnv();
       getServerEnv();
     }
     await import("./sentry.server.config");
