@@ -8,7 +8,6 @@ import { serverError, serverWarn } from "@/lib/security/logger";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import type { Product, ProductVariant, ProductImage, ProductDisplay } from "@/types/product";
 
-const IS_DEV = process.env.NODE_ENV === "development";
 export const revalidate = 60;
 
 function logError(context: string, err: unknown) {
@@ -178,15 +177,13 @@ async function fetchProductRows(
  * Fetch all active products with images and variants (safe path: products then images/variants by id).
  */
 export async function getAllProducts(): Promise<ProductDisplay[]> {
-  const supabase = createStaticClient();
-  if (!supabase) {
-    if (IS_DEV) throw new Error("[api/products] Supabase client not initialized — cannot return empty list in dev");
-    return [];
-  }
-
   try {
+    const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, {});
-    if (rows.length === 0) return [];
+    if (rows.length === 0) {
+      serverError("api/products", "getAllProducts returned zero active products");
+      return [];
+    }
 
     const categoryIds = [...new Set(rows.map((p) => p.category_id).filter(Boolean))] as string[];
     const categoryMap = new Map<string, string>();
@@ -198,9 +195,11 @@ export async function getAllProducts(): Promise<ProductDisplay[]> {
       (categories ?? []).forEach((c: { id: string; slug: string }) => categoryMap.set(c.id, c.slug));
     }
 
-    return rows.map((p) =>
+    const products = rows.map((p) =>
       toProductDisplay(p, p.category_id ? categoryMap.get(p.category_id) ?? null : null),
     );
+    serverWarn("api/products", `getAllProducts product_count=${products.length}`);
+    return products;
   } catch (e) {
     logError("getAllProducts exception", e);
     return [];
@@ -211,15 +210,13 @@ export async function getAllProducts(): Promise<ProductDisplay[]> {
  * Fetch featured active products (safe path).
  */
 export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
-  const supabase = createStaticClient();
-  if (!supabase) {
-    if (IS_DEV) throw new Error("[api/products] Supabase client not initialized — cannot return empty list in dev");
-    return [];
-  }
-
   try {
+    const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, { featured: true });
-    if (rows.length === 0) return [];
+    if (rows.length === 0) {
+      serverWarn("api/products", "getFeaturedProducts returned zero featured active products");
+      return [];
+    }
 
     const categoryIds = [...new Set(rows.map((p) => p.category_id).filter(Boolean))] as string[];
     const categoryMap = new Map<string, string>();
@@ -245,13 +242,8 @@ export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
  * Cached per-request so generateMetadata and page share one fetch.
  */
 export const getProductBySlug = cache(async function getProductBySlug(slug: string): Promise<ProductDisplay | null> {
-  const supabase = createStaticClient();
-  if (!supabase) {
-    if (IS_DEV) throw new Error("[api/products] Supabase client not initialized");
-    return null;
-  }
-
   try {
+    const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, { slug });
     const row = rows[0] ?? null;
     if (!row) return null;
@@ -276,13 +268,8 @@ export const getProductBySlug = cache(async function getProductBySlug(slug: stri
  * Fetch products by category slug. Returns [] if category not found; logs slug mismatch.
  */
 export async function getProductsByCategory(categorySlug: string): Promise<ProductDisplay[]> {
-  const supabase = createStaticClient();
-  if (!supabase) {
-    if (IS_DEV) throw new Error("[api/products] Supabase client not initialized");
-    return [];
-  }
-
   try {
+    const supabase = createStaticClient();
     const { data: category, error: catErr } = await supabase
       .from("categories")
       .select("id")
@@ -310,10 +297,8 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
  * Fetch variants for a product (e.g. for cart/checkout).
  */
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {
-  const supabase = createStaticClient();
-  if (!supabase) return [];
-
   try {
+    const supabase = createStaticClient();
     const { data, error } = await supabase
       .from("product_variants")
       .select("id,product_id,size_ml,price,stock,sku")

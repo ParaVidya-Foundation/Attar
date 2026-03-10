@@ -1,18 +1,30 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError } from "@/lib/admin/assertAdmin";
+
+import { assertAdmin, ForbiddenError, NotAuthenticatedError, ProfileMissingError } from "@/lib/admin/assertAdmin";
 import { serverError } from "@/lib/security/logger";
 
 const PROTECTED_PREFIXES = ["/account", "/admin"];
 const CANONICAL_HOST = "anandrasafragnance.com";
 const CANONICAL_ORIGIN = `https://${CANONICAL_HOST}`;
 
-export async function middleware(request: NextRequest) {
+function isLocalHost(host: string): boolean {
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host.startsWith("192.168.") ||
+    host.startsWith("10.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  );
+}
+
+export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const host = url.hostname.toLowerCase();
   const isProduction = process.env.NODE_ENV === "production";
 
-  if (isProduction && host !== CANONICAL_HOST) {
+  if (isProduction && host !== CANONICAL_HOST && !isLocalHost(host)) {
     const canonicalUrl = new URL(url.pathname + url.search, CANONICAL_ORIGIN);
     return NextResponse.redirect(canonicalUrl.toString(), 301);
   }
@@ -45,7 +57,7 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     const path = request.nextUrl.pathname;
-    const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+    const isProtected = PROTECTED_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 
     if (isProtected && !user) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -54,19 +66,19 @@ export async function middleware(request: NextRequest) {
     if (path.startsWith("/admin") && user) {
       try {
         await assertAdmin(supabase);
-      } catch (err) {
-        if (err instanceof NotAuthenticatedError) {
+      } catch (error) {
+        if (error instanceof NotAuthenticatedError) {
           return NextResponse.redirect(new URL("/login", request.url));
         }
-        if (err instanceof ForbiddenError || err instanceof ProfileMissingError) {
+        if (error instanceof ForbiddenError || error instanceof ProfileMissingError) {
           return NextResponse.redirect(new URL("/", request.url));
         }
-        serverError("middleware", err);
+        serverError("proxy", error);
         return NextResponse.redirect(new URL("/", request.url));
       }
     }
   } catch (error) {
-    serverError("middleware", error);
+    serverError("proxy", error);
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -75,6 +87,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

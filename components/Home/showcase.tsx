@@ -67,7 +67,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Soothing aroma for relaxation.",
     price: "₹1,299",
     size: "10ml",
-    image: "/products/stress.webp",
+    image: "/stress/stress_calm.webp",
     href: "/product/calm-mind-attar",
   },
   {
@@ -117,7 +117,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Soothing aroma for relaxation.",
     price: "₹1,299",
     size: "10ml",
-    image: "/products/stress.webp",
+    image: "/stress/stress_calm.webp",
     href: "/product/calm-mind-attar",
   },
 ];
@@ -179,9 +179,9 @@ export default function Showcase({ products = [] }: ShowcaseProps) {
           ref={containerRef}
           className="flex gap-8 sm:gap-10 lg:gap-12 overflow-x-auto px-6 scroll-smooth snap-x snap-mandatory touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
-          {displayProducts.map((product) => (
+          {displayProducts.map((product, index) => (
             <article
-              key={product.id}
+              key={`${product.id}-${index}`}
               className="min-w-[200px] sm:min-w-[220px] lg:min-w-[240px] max-w-[240px] lg:max-w-[260px] flex-shrink-0 snap-start text-center"
             >
               <Link href={product.href} className="group block">

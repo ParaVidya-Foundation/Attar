@@ -17,10 +17,22 @@ const COLLECTIONS = [
   },
   { id: "zodiac", href: "/collections/zodiac", label: "Zodiac Attars", img: "/collections/zodiac-thumb.jpg" },
   {
+    id: "nakshatra",
+    href: "/collections/nakshatra",
+    label: "Nakshatra Attars",
+    img: "/collections/nakshatra-thumb.jpg",
+  },
+  {
     id: "stress",
     href: "/collections/stress",
     label: "Stress Relief Attars",
     img: "/stress/stress_calm.webp",
+  },
+  {
+    id: "Chakra-attar",
+    href: "/collections/Chakra-attar",
+    label: "Chakra Attars",
+    img: "/love.webp",
   },
   {
     id: "Love-attar",

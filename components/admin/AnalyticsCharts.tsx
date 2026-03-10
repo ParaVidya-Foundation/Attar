@@ -1,19 +1,21 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { SalesAnalytics } from "@/lib/admin/queries";
 
 type Props = {
   data: SalesAnalytics;
 };
+
+function toNumber(value: string | number | ReadonlyArray<string | number> | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value) || 0;
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0];
+    return typeof first === "number" ? first : Number(first) || 0;
+  }
+  return 0;
+}
 
 export function AnalyticsCharts({ data }: Props) {
   const ordersData = data.ordersLast7Days.map((d) => ({
@@ -38,7 +40,7 @@ export function AnalyticsCharts({ data }: Props) {
               <YAxis tick={{ fontSize: 12 }} stroke="#737373" />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(value: number | undefined) => [value ?? 0, "Orders"]}
+                formatter={(value) => [toNumber(value), "Orders"]}
               />
               <Bar dataKey="orders" fill="#404040" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -53,10 +55,17 @@ export function AnalyticsCharts({ data }: Props) {
             <BarChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
               <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#737373" />
-              <YAxis tick={{ fontSize: 12 }} stroke="#737373" tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                stroke="#737373"
+                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+              />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(value: number | undefined) => [`₹${(value ?? 0).toLocaleString("en-IN")}`, "Revenue"]}
+                formatter={(value) => [
+                  `₹${toNumber(value).toLocaleString("en-IN")}`,
+                  "Revenue",
+                ]}
               />
               <Bar dataKey="revenue" fill="#525252" radius={[4, 4, 0, 0]} />
             </BarChart>

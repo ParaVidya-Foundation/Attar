@@ -11,8 +11,6 @@ export function serverError(context: string, err: unknown): void {
 }
 
 export function serverWarn(context: string, message: string): void {
-  if (process.env.NODE_ENV !== "production") {
-    // eslint-disable-next-line no-console
-    console.warn(`[${context}]`, message);
-  }
+  // eslint-disable-next-line no-console
+  console.warn(`[${context}]`, message);
 }

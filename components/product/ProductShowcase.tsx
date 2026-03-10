@@ -92,7 +92,7 @@ export default function ProductShowcase({ product }: { product: Product }) {
         <div className="relative w-full max-w-[640px] aspect-[4/5]">
           {images.map((img, i) => (
             <div
-              key={img.src}
+              key={`${img.src}-${i}`}
               className={`absolute inset-0 transition-opacity duration-700 ease-out ${
                 i === index ? "opacity-100 z-10" : "opacity-0"
               }`}

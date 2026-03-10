@@ -19,6 +19,7 @@ export type Product = {
   href?: string;
   isSale?: boolean;
   slug?: string;
+  description?: string;
   /** Default variant id used for one-click add-to-cart from grid */
   defaultVariantId?: string;
 };

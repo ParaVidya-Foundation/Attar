@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 import { poppins, caudex } from "@/app/fonts";
@@ -56,7 +57,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const orgLd = organizationJsonLd();
   const webLd = websiteJsonLd();
   return (
-    <html lang="en-IN" className={`${poppins.variable} ${caudex.variable}`}>
+    <html
+      lang="en-IN"
+      className={`${poppins.variable} ${caudex.variable}`}
+      style={
+        {
+          "--font-heading": '"Poppins", ui-sans-serif, system-ui, sans-serif',
+          "--font-body": '"Caudex", ui-serif, Georgia, serif',
+        } as CSSProperties
+      }
+    >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://checkout.razorpay.com" crossOrigin="" />

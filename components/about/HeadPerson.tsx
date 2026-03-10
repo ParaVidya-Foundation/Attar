@@ -3,12 +3,6 @@
 import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Playfair_Display } from "next/font/google";
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-});
 
 export default function HeadPerson() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -49,9 +43,7 @@ export default function HeadPerson() {
             transition={{ duration: 0.5 }}
             className="text-center md:text-left"
           >
-            <h2
-              className={`${playfair.className} text-6xl md:text-6xl font-semibold text-black tracking-tight`}
-            >
+            <h2 className="font-heading text-6xl font-semibold tracking-tight text-black md:text-6xl">
               Handpicked Attars For You
             </h2>
             <p className="mt-4 text-2xl md:text-2xl text-black/75 leading-relaxed max-w-md mx-auto md:mx-0">
@@ -107,7 +99,7 @@ export default function HeadPerson() {
             transition={{ duration: 0.5 }}
             className="order-2 text-center md:text-left"
           >
-            <h3 className={`${playfair.className} text-6xl md:text-6xl font-semibold tracking-tight`}>
+            <h3 className="font-heading text-6xl font-semibold tracking-tight md:text-6xl">
               Select Your Attar
             </h3>
             <p className="mt-4 text-2xl md:text-2xl text-black/75 leading-relaxed max-w-md mx-auto md:mx-0">

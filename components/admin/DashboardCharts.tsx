@@ -15,6 +15,16 @@ import type { SalesAnalytics } from "@/lib/admin/queries";
 
 type Props = { data: SalesAnalytics };
 
+function toNumber(value: string | number | ReadonlyArray<string | number> | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") return Number(value) || 0;
+  if (Array.isArray(value) && value.length > 0) {
+    const first = value[0];
+    return typeof first === "number" ? first : Number(first) || 0;
+  }
+  return 0;
+}
+
 export function DashboardCharts({ data }: Props) {
   const lineData = data.revenueLast7Days.map((d) => ({
     date: d.date.slice(5),
@@ -41,7 +51,10 @@ export function DashboardCharts({ data }: Props) {
               <YAxis tick={{ fontSize: 11 }} stroke="#737373" tickFormatter={(v) => `₹${v}`} />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                formatter={(value: number | undefined) => [`₹${(value ?? 0).toLocaleString("en-IN")}`, "Revenue"]}
+                formatter={(value) => [
+                  `₹${toNumber(value).toLocaleString("en-IN")}`,
+                  "Revenue",
+                ]}
                 labelFormatter={(label) => `Date: ${label}`}
               />
               <Line type="monotone" dataKey="revenue" stroke="#171717" strokeWidth={2} dot={{ r: 3 }} />
@@ -58,7 +71,10 @@ export function DashboardCharts({ data }: Props) {
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#737373" />
               <YAxis tick={{ fontSize: 11 }} stroke="#737373" />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number | undefined) => [v ?? 0, "Orders"]} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                formatter={(value) => [toNumber(value), "Orders"]}
+              />
               <Bar dataKey="orders" fill="#404040" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -78,7 +94,10 @@ export function DashboardCharts({ data }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} formatter={(v: number | undefined) => [v ?? 0, "Sold"]} />
+                <Tooltip
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  formatter={(value) => [toNumber(value), "Sold"]}
+                />
                 <Bar dataKey="qty" fill="#525252" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>

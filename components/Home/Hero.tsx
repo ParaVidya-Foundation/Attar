@@ -3,26 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "../ui/Button";
-import { useEffect, useState } from "react";
 
 export default function Hero() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <section className="relative overflow-hidden bg-white">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-10">
         {/* Reduced vertical space */}
         <div className="relative grid items-center gap-10 py-10 sm:py-14 lg:grid-cols-2 lg:py-16">
           {/* LEFT CONTENT */}
-          <div
-            className={`relative z-10 max-w-xl transition-all duration-700 ease-out ${
-              mounted ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-            }`}
-          >
+          <div className="relative z-10 max-w-xl translate-y-0 opacity-100 transition-all duration-700 ease-out">
             <p className="text-[11px] font-semibold tracking-[0.28em] text-gray-500">ANAND RAS</p>
 
             <h1 className="mt-3 font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-gray-900">
@@ -49,11 +38,7 @@ export default function Hero() {
           </div>
 
           {/* RIGHT IMAGE — BIG + OVERLAP */}
-          <div
-            className={`relative transition-all duration-700 delay-100 ease-out ${
-              mounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
-            }`}
-          >
+          <div className="relative translate-x-0 opacity-100 transition-all duration-700 delay-100 ease-out">
             {/* Image wrapper */}
             <div
               className="

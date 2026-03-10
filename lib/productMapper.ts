@@ -1,5 +1,22 @@
-import type { Product as CardProduct } from "@/components/shop/ProductCard";
 import type { ProductDisplay } from "@/types/product";
+
+// Card-facing product shape lives here to avoid components ↔ lib circular imports.
+export type CardProduct = {
+  id: string;
+  title: string;
+  price: number;
+  originalPrice?: number;
+  currency?: string;
+  images: {
+    primary: string;
+    secondary?: string;
+  };
+  href?: string;
+  isSale?: boolean;
+  slug?: string;
+  description?: string;
+  defaultVariantId?: string;
+};
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 
 /**

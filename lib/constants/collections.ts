@@ -5,6 +5,8 @@
 export const COLLECTION_SLUGS = {
   planets: "planet-attar",
   zodiac: "zodiac-attar",
+  chakraAttar: "chakra-attar",
+  nakshatraAttar: "nakshatra-attar",
   incense: "incense-sticks",
   stress: "stress-relief-attar",
   gifts: "gift-sets",

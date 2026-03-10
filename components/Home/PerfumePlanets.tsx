@@ -114,12 +114,12 @@ export default function PerfumePlanetGrid() {
 
         {/* LEFT GRID */}
         <div className="order-2 lg:order-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 lg:col-span-4">
-          {PLANETS.map((p, index) => {
+        {PLANETS.map((p, index) => {
             const active = selected.id === p.id;
 
             return (
               <button
-                key={p.id}
+                key={`${p.id}-${index}`}
                 onClick={() => setSelected(p)}
                 aria-selected={active}
                 className={`

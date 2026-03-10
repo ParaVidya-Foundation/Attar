@@ -26,6 +26,17 @@ pnpm install
 pnpm dev
 ```
 
+## Clean build cache (recommended)
+
+When debugging or before a fresh production test, start from a clean cache:
+
+```bash
+rm -rf .next
+rm -rf node_modules/.cache
+pnpm install
+pnpm dev
+```
+
 Open `http://localhost:3000` and you’ll be redirected to `/home`.
 
 ## Scripts
@@ -81,3 +92,20 @@ Open `http://localhost:3000` and you’ll be redirected to `/home`.
 docker build -t kamal-vallabh .
 docker run -p 3000:3000 kamal-vallabh
 ```
+
+## Astrology Engine Notes
+
+- **Ayanamsa**: Sidereal Lahiri is used (`swe_set_sid_mode(SE_SIDM_LAHIRI, 0, 0)`) before all planetary calculations.
+- **Node standard**: True node (`SE_TRUE_NODE`) is used consistently for Rahu; Ketu is computed as `Rahu + 180°` normalized.
+- **Recommendation weighting**:
+  - Priority 1: Nakshatra mapping
+  - Priority 2: Weak-planet remedy signals from Ashtakavarga + Shadbala blend
+  - Priority 3: Venus uplift signals
+  - Priority 4: Moon sign mapping
+  - Priority 5: Sun sign mapping
+- **Ashtakavarga + Shadbala usage**:
+  - Ashtakavarga scores drive chart graph data and weak/strong classification.
+  - Shadbala uses six components (Sthana, Dig, Kala, Cheshta, Naisargika, Drik) with normalized output.
+- **Run tests**:
+  - `npm run test`
+  - `npm run type-check`
