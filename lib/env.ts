@@ -4,6 +4,7 @@
  * Use safe getters everywhere; do not read process.env directly in app code.
  */
 import { cleanEnv, str, url } from "envalid";
+import { validatePublicHttpsUrl } from "@/lib/payments/network-safety";
 
 const PRODUCTION_DOMAIN = "https://anandrasafragnance.com";
 
@@ -29,11 +30,11 @@ function validateServerEnv() {
   }
 
   if (process.env.NODE_ENV === "production") {
-    if (env.NEXT_PUBLIC_SITE_URL !== PRODUCTION_DOMAIN) {
-      throw new Error(`NEXT_PUBLIC_SITE_URL must be ${PRODUCTION_DOMAIN} in production`);
-    }
-    if (!env.NEXT_PUBLIC_SITE_URL.startsWith("https://")) {
-      throw new Error("NEXT_PUBLIC_SITE_URL must use HTTPS in production");
+    const siteUrlCheck = validatePublicHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
+    if (!siteUrlCheck.ok) {
+      throw new Error(
+        `NEXT_PUBLIC_SITE_URL is invalid for production (${siteUrlCheck.reason ?? "unknown reason"})`,
+      );
     }
   }
 

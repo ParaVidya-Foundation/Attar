@@ -5,6 +5,7 @@
  */
 import { verifyPaymentSignature } from "@/lib/payments/razorpay";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
 
   const parsed = verifySchema.safeParse(body);
   if (!parsed.success) {
+    serverWarn("orders/verify", "Invalid payload received");
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 
@@ -37,6 +39,10 @@ export async function POST(req: Request) {
   });
 
   if (!valid) {
+    serverWarn(
+      "orders/verify",
+      `Signature verification failed: razorpayOrderId=${razorpay_order_id} razorpayPaymentId=${razorpay_payment_id}`,
+    );
     return NextResponse.json({ error: "Payment verification failed" }, { status: 400 });
   }
 

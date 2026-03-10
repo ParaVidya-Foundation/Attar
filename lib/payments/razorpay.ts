@@ -4,7 +4,7 @@
  */
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import { serverWarn } from "@/lib/security/logger";
+import { serverError, serverWarn } from "@/lib/security/logger";
 import { getServerEnv } from "@/lib/env";
 
 export function getRazorpayClient(): Razorpay {
@@ -21,13 +21,35 @@ export function getRazorpayClient(): Razorpay {
 }
 
 export async function createRazorpayOrder(params: { amount: number; currency?: string; receipt?: string }) {
+  if (!Number.isInteger(params.amount) || params.amount <= 0) {
+    throw new Error(`Razorpay order amount must be a positive integer paise value. Received: ${params.amount}`);
+  }
+  const currency = (params.currency ?? "INR").toUpperCase();
+  if (currency !== "INR") {
+    throw new Error(`Unsupported Razorpay currency: ${currency}. Only INR is allowed.`);
+  }
+
   const client = getRazorpayClient();
-  const order = await client.orders.create({
-    amount: params.amount,
-    currency: params.currency ?? "INR",
-    receipt: params.receipt ?? undefined,
-  });
-  return order;
+  try {
+    serverWarn(
+      "razorpay",
+      `Creating order: amount=${params.amount} currency=${currency} receipt=${params.receipt ?? "none"}`,
+    );
+    const order = await client.orders.create({
+      amount: params.amount,
+      currency,
+      receipt: params.receipt ?? undefined,
+    });
+    serverWarn("razorpay", `Order created: id=${order.id} amount=${order.amount} currency=${order.currency}`);
+    return order;
+  } catch (error) {
+    const message =
+      error && typeof error === "object" && "error" in error
+        ? JSON.stringify((error as { error: unknown }).error)
+        : error;
+    serverError("razorpay create order", message);
+    throw error;
+  }
 }
 
 export function verifyWebhookSignature(body: string, signature: string, secret?: string): boolean {
@@ -49,5 +71,7 @@ export function verifyPaymentSignature(params: {
   if (!secret) return false;
   const body = `${params.orderId}|${params.paymentId}`;
   const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
-  return expected === params.signature;
+  const expectedBuf = Buffer.from(expected, "utf8");
+  const actualBuf = Buffer.from(params.signature, "utf8");
+  return expectedBuf.length === actualBuf.length && crypto.timingSafeEqual(expectedBuf, actualBuf);
 }

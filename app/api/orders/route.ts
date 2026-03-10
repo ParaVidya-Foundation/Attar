@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { getServerEnv } from "@/lib/env";
-import { serverError } from "@/lib/security/logger";
+import { serverError, serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
@@ -38,6 +38,14 @@ const guestCartSchema = cartSchema.and(
 export async function POST(req: Request) {
   let body: unknown;
   try {
+    let keyId: string;
+    try {
+      keyId = getServerEnv().NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    } catch (envErr) {
+      serverError("orders cart env", envErr);
+      return NextResponse.json({ error: "Payment system not configured" }, { status: 500 });
+    }
+
     try {
       body = await req.json();
     } catch {
@@ -105,6 +113,10 @@ export async function POST(req: Request) {
         );
       }
 
+      if (typeof variant.price !== "number" || !Number.isInteger(variant.price) || variant.price <= 0) {
+        return NextResponse.json({ error: `Invalid variant price: ${item.variant_id}` }, { status: 400 });
+      }
+
       // Inventory not enforced (unlimited mode)
       const lineTotal = variant.price * item.quantity;
       resolved.push({
@@ -120,7 +132,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
     }
 
-    if (totalPaise <= 0) {
+    if (!Number.isInteger(totalPaise) || totalPaise <= 0) {
       return NextResponse.json(
         { error: "Invalid order amount" },
         { status: 400 },
@@ -176,6 +188,12 @@ export async function POST(req: Request) {
       razorpayOrderId = razorpayOrder.id;
       razorpayAmount = Number(razorpayOrder.amount);
       razorpayCurrency = razorpayOrder.currency;
+      if (!Number.isInteger(razorpayAmount) || razorpayAmount <= 0) {
+        throw new Error(`Invalid Razorpay amount returned: ${String(razorpayOrder.amount)}`);
+      }
+      if (String(razorpayCurrency).toUpperCase() !== "INR") {
+        throw new Error(`Invalid Razorpay currency returned: ${String(razorpayCurrency)}`);
+      }
     } catch (error) {
       serverError("orders cart razorpay", error);
       await admin
@@ -198,16 +216,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
     }
 
-    const env = getServerEnv();
-    const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-
-    if (!keyId) {
-      serverError("orders cart env", "Missing NEXT_PUBLIC_RAZORPAY_KEY_ID");
-      return NextResponse.json(
-        { error: "Payment configuration error" },
-        { status: 500 },
-      );
-    }
+    serverWarn(
+      "orders cart diagnostics",
+      `Checkout diagnostics: orderId=${order.id} razorpayOrderId=${razorpayOrderId} amount=${razorpayAmount} currency=${razorpayCurrency}`,
+    );
 
     return NextResponse.json({
       orderId: order.id,

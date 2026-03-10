@@ -36,11 +36,6 @@ h6 {
   box-sizing: border-box;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
 /* Accessible focus ring */
 :focus-visible {
   outline: 2px solid rgba(201, 163, 74, 0.7);
@@ -212,34 +207,9 @@ html {
 }
 
 /* ==============================
-   GLOBAL BUTTON SYSTEM (Light Only)
-   ============================== */
+BASE RESET
+============================== */
 
-a.btn-primary,
-a.btn-secondary,
-a.btn-outline {
-  color: inherit;
-}
-
-a.btn-primary:hover,
-a.btn-secondary:hover,
-a.btn-outline:hover {
-  color: white !important;
-}
-
-/* Fix link hover/visited color override across project */
 a {
-  color: inherit;
   text-decoration: none;
-}
-
-a:visited,
-a:hover,
-a:active {
-  color: inherit;
-}
-
-/* Ensure buttons implemented as <a> keep white text on dark hover */
-a[class*="btn"]:hover {
-  color: white !important;
 }

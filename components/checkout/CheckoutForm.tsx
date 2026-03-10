@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import { useCart } from "@/components/cart/CartProvider";
 import type { CartLine } from "@/hooks/useLocalCart";
+import { getSafeCheckoutBranding } from "@/lib/payments/network-safety";
 
 const MIN_ORDER_PAISE = 0;
 const STORAGE_KEY = "attar_cart_v1";
@@ -48,19 +49,83 @@ declare global {
   }
 }
 
+let razorpayScriptPromise: Promise<boolean> | null = null;
+
 function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
+  if (typeof window !== "undefined" && window.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  if (razorpayScriptPromise) {
+    return razorpayScriptPromise;
+  }
+
+  razorpayScriptPromise = new Promise((resolve) => {
     if (typeof window !== "undefined" && window.Razorpay) {
       resolve(true);
       return;
     }
+    const src = "https://checkout.razorpay.com/v1/checkout.js";
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+
+    const attachListeners = (script: HTMLScriptElement) => {
+      const onLoad = () => {
+        script.dataset.rzpLoaded = "true";
+        const loaded = !!window.Razorpay;
+        if (!loaded) {
+          razorpayScriptPromise = null;
+          console.error("[checkout] Razorpay script loaded but window.Razorpay is unavailable", { src });
+        }
+        resolve(loaded);
+      };
+      const onError = () => {
+        script.dataset.rzpError = "true";
+        console.error("[checkout] Razorpay script failed to load", { src });
+        razorpayScriptPromise = null;
+        resolve(false);
+      };
+      script.addEventListener("load", onLoad, { once: true });
+      script.addEventListener("error", onError, { once: true });
+      window.setTimeout(() => {
+        if (window.Razorpay) {
+          resolve(true);
+          return;
+        }
+        if (script.dataset.rzpError === "true") return;
+        console.error("[checkout] Razorpay script load timed out", { src });
+        razorpayScriptPromise = null;
+        resolve(false);
+      }, 8000);
+    };
+
+    if (existing) {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      if (existing.dataset.rzpError === "true") {
+        razorpayScriptPromise = null;
+        resolve(false);
+        return;
+      }
+      if (existing.dataset.rzpLoaded === "true") {
+        razorpayScriptPromise = null;
+        resolve(!!window.Razorpay);
+        return;
+      }
+      attachListeners(existing);
+      return;
+    }
+
     const s = document.createElement("script");
-    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.src = src;
     s.async = true;
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
+    s.dataset.razorpayCheckout = "true";
+    attachListeners(s);
     document.body.appendChild(s);
   });
+
+  return razorpayScriptPromise;
 }
 
 function formatINR(paise: number) {
@@ -397,6 +462,11 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
 
         const data = await res.json();
         if (!res.ok) {
+          console.error("[checkout] Order API failed", {
+            endpoint: isBuyNow ? "/api/orders/create" : "/api/orders",
+            status: res.status,
+            body: data,
+          });
           setSubmitError(data.error ?? "Order creation failed");
           releaseSubmitLock();
           return;
@@ -404,6 +474,7 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
 
         const amount = Number(data.amount);
         if (!data.orderId || !data.keyId || !data.razorpayOrderId || !Number.isFinite(amount) || amount <= 0) {
+          console.error("[checkout] Invalid order creation response", { data });
           setSubmitError("Payment configuration error. Please try again later.");
           releaseSubmitLock();
           return;
@@ -417,10 +488,25 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
         }
 
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-        const logoUrl =
-          typeof siteUrl === "string" && siteUrl.startsWith("https://")
-            ? `${siteUrl.replace(/\/+$/, "")}/logo.png`
-            : undefined;
+        const branding = getSafeCheckoutBranding(siteUrl);
+        if (!branding.safeLogoUrl) {
+          console.warn("[checkout] Razorpay branding URL disabled", {
+            siteUrl: siteUrl ?? null,
+            reason: branding.diagnostics.reason ?? "invalid site URL",
+            hostname: branding.diagnostics.hostname ?? null,
+            isLocalhost: branding.diagnostics.isLocalhost,
+            isLoopback: branding.diagnostics.isLoopback,
+            isPrivateNetwork: branding.diagnostics.isPrivateNetwork,
+          });
+        }
+        console.info("[checkout] Razorpay order created", {
+          orderId: data.orderId,
+          razorpayOrderId: data.razorpayOrderId,
+          amount,
+          currency: data.currency ?? "INR",
+          merchantSiteUrl: branding.safeSiteUrl ?? null,
+          logoUrl: branding.safeLogoUrl ?? null,
+        });
 
         const options: Record<string, unknown> = {
           key: data.keyId,
@@ -435,7 +521,7 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
             contact: parsed.data.phone,
           },
           theme: { color: "#1e2023" },
-          ...(logoUrl ? { image: logoUrl } : {}),
+          ...(branding.safeLogoUrl ? { image: branding.safeLogoUrl } : {}),
           modal: {
             ondismiss: () => releaseSubmitLock(),
           },
@@ -445,6 +531,15 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
             razorpay_signature: string;
           }) => {
             try {
+              if (
+                !response?.razorpay_order_id ||
+                !response?.razorpay_payment_id ||
+                !response?.razorpay_signature
+              ) {
+                console.error("[checkout] Missing Razorpay callback fields", { response });
+                setSubmitError("Payment callback was incomplete. Contact support if charged.");
+                return;
+              }
               const verifyRes = await fetch("/api/orders/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -457,9 +552,15 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
                 }
                 router.push(`/order-success?orderId=${data.orderId}`);
               } else {
+                const verifyBody = await verifyRes.text();
+                console.error("[checkout] Verification failed", {
+                  status: verifyRes.status,
+                  body: verifyBody.slice(0, 300),
+                });
                 setSubmitError("Payment verification failed. Contact support if charged.");
               }
-            } catch {
+            } catch (verifyError) {
+              console.error("[checkout] Verification request error", verifyError);
               setSubmitError("Verification error. Your payment is safe - check your email.");
             } finally {
               releaseSubmitLock();
@@ -468,12 +569,14 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
         };
 
         const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", () => {
+        rzp.on("payment.failed", (paymentError: unknown) => {
+          console.error("[checkout] Razorpay payment.failed", paymentError);
           setSubmitError("Payment failed. Please try again.");
           releaseSubmitLock();
         });
         rzp.open();
-      } catch {
+      } catch (error) {
+        console.error("[checkout] Checkout flow failed", error);
         setSubmitError("Something went wrong. Please try again.");
         releaseSubmitLock();
       }

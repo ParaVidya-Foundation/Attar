@@ -37,13 +37,12 @@ const guestSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    // Step 2: Validate required Razorpay env
-    if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      serverError("orders/create", "Razorpay env missing");
-      return NextResponse.json(
-        { error: "Payment system not configured" },
-        { status: 500 },
-      );
+    let keyId: string;
+    try {
+      keyId = getServerEnv().NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    } catch (envErr) {
+      serverError("orders/create env", envErr);
+      return NextResponse.json({ error: "Payment system not configured" }, { status: 500 });
     }
 
     const identifier = getClientIdentifier(req);
@@ -111,28 +110,6 @@ export async function POST(req: Request) {
       // Guest checkout
     }
 
-    // Resolve keyId first — fail before creating any order or Razorpay order
-    let keyId: string;
-    try {
-      const env = getServerEnv();
-      keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    } catch (envErr) {
-      serverWarn(
-        "orders/create",
-        envErr instanceof Error ? envErr.message : "getServerEnv failed",
-      );
-      return NextResponse.json(
-        { error: "Payment configuration error" },
-        { status: 500 },
-      );
-    }
-    if (!keyId?.trim()) {
-      return NextResponse.json(
-        { error: "Payment configuration error" },
-        { status: 500 },
-      );
-    }
-
     if (process.env.NODE_ENV !== "production") {
       serverWarn(
         "orders/create",
@@ -165,7 +142,7 @@ export async function POST(req: Request) {
     }
 
     const pricePaise = variant.price;
-    if (typeof pricePaise !== "number" || pricePaise <= 0) {
+    if (typeof pricePaise !== "number" || !Number.isInteger(pricePaise) || pricePaise <= 0) {
       serverWarn("orders/create", "Invalid variant price: " + variant_id);
       return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
     }
@@ -187,7 +164,7 @@ export async function POST(req: Request) {
 
     // Step 6: Amount guard (>= ₹1, from DB only)
     const totalPaise = pricePaise * quantity;
-    if (totalPaise <= 0) {
+    if (!Number.isInteger(totalPaise) || totalPaise <= 0) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400 });
     }
 
@@ -269,6 +246,12 @@ export async function POST(req: Request) {
       razorpayOrderId = razorpayOrder.id;
       razorpayAmount = Number(razorpayOrder.amount);
       razorpayCurrency = razorpayOrder.currency;
+      if (!Number.isInteger(razorpayAmount) || razorpayAmount <= 0) {
+        throw new Error(`Invalid Razorpay amount returned: ${String(razorpayOrder.amount)}`);
+      }
+      if (String(razorpayCurrency).toUpperCase() !== "INR") {
+        throw new Error(`Invalid Razorpay currency returned: ${String(razorpayCurrency)}`);
+      }
       if (process.env.NODE_ENV !== "production") {
         serverWarn("orders/create", `Razorpay order created: ${razorpayOrder.id}`);
       }
@@ -297,6 +280,10 @@ export async function POST(req: Request) {
     if (process.env.NODE_ENV !== "production") {
       serverWarn("orders/create", `DB insert success: order_id=${order.id}`);
     }
+    serverWarn(
+      "orders/create",
+      `Checkout diagnostics: orderId=${order.id} razorpayOrderId=${razorpayOrderId} amount=${razorpayAmount} currency=${razorpayCurrency}`,
+    );
 
     // Step 9: Response contract
     return NextResponse.json({
