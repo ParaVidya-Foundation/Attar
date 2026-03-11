@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { getSiteUrl } from "@/lib/env";
 
 declare global {
   interface Window {
@@ -117,7 +118,12 @@ export function useRazorpayCheckout(opts?: {
 
         return new Promise<boolean>((resolve) => {
           resolveRef.current = resolve;
-          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+          let siteUrl: string | null = null;
+          try {
+            siteUrl = getSiteUrl();
+          } catch {
+            siteUrl = null;
+          }
           const logoUrl =
             typeof siteUrl === "string" && siteUrl.startsWith("https://")
               ? `${siteUrl.replace(/\/+$/, "")}/logo.png`

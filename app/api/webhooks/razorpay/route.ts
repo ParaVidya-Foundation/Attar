@@ -11,6 +11,7 @@ import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 import { webhookSeen } from "@/lib/redis";
 import { serverError, serverWarn } from "@/lib/security/logger";
 import { recordPurchaseEventsForOrder } from "@/lib/recommendations";
+import { getServerEnv } from "@/lib/env";
 import crypto from "crypto";
 
 const ENDPOINT = "/api/webhooks/razorpay";
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const webhookSecret = getServerEnv().RAZORPAY_WEBHOOK_SECRET;
     if (!webhookSecret) {
       serverError("webhook", "RAZORPAY_WEBHOOK_SECRET missing");
       return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
+import { isDevelopment } from "@/lib/env";
 
 function ErrorIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -41,7 +42,7 @@ export default function Error({
             ? "Configuration error detected. Please check environment variables."
             : "We encountered an unexpected error. Please try again or return home."}
         </p>
-        {process.env.NODE_ENV === "development" && (
+        {isDevelopment() && (
           <details className="mt-4 text-left">
             <summary className="cursor-pointer text-sm text-charcoal/60">Error Details</summary>
             <pre className="mt-2 overflow-auto rounded bg-charcoal/10 p-4 text-xs text-charcoal/80">

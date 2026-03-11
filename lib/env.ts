@@ -33,7 +33,7 @@ function readRawEnv(key: string): string {
   return process.env[key]?.trim() ?? "";
 }
 
-function requireEnv(key: ClientEnvKey | ServerOnlyEnvKey): string {
+export function requireEnv(key: ClientEnvKey | ServerOnlyEnvKey): string {
   const value = readRawEnv(key);
   if (!value) {
     throw new MissingEnvError(key);
@@ -120,6 +120,10 @@ export function hasClientEnv(): boolean {
 
 export function getSiteUrl(): string {
   return getClientEnv().NEXT_PUBLIC_SITE_URL;
+}
+
+export function isDevelopment(): boolean {
+  return process.env.NODE_ENV === "development";
 }
 
 export function requireClientSupabaseEnv(): { url: string; anonKey: string } {

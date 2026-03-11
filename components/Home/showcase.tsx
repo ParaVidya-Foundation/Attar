@@ -47,7 +47,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Strength and motivation essence.",
     price: "₹1,499",
     size: "10ml",
-    image: "/products/mangal.webp",
+    image: "/products/mangal-attar/1.webp",
     href: "/product/mangal-attar",
   },
   {
@@ -57,7 +57,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Luxury and attraction fragrance.",
     price: "₹1,699",
     size: "10ml",
-    image: "/products/shukra.webp",
+    image: "/products/shukra-attar/1.webp",
     href: "/product/shukra-attar",
   },
   {
@@ -77,7 +77,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Energy and confidence fragrance.",
     price: "₹1,499",
     size: "10ml",
-    image: "/products/surya.webp",
+    image: "/products/surya-attar/1.webp",
     href: "/product/surya-attar",
   },
   {
@@ -87,7 +87,7 @@ const SHOWCASE_DATA: ShowcaseProduct[] = [
     description: "Calmness and emotional balance.",
     price: "₹1,399",
     size: "10ml",
-    image: "/products/chandra.webp",
+    image: "/products/chandra-attar/1.webp",
     href: "/product/chandra-attar",
   },
   {

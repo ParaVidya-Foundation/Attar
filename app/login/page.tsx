@@ -4,11 +4,14 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import { getSiteUrl } from "@/lib/env";
 
 function getAuthOrigin() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (siteUrl) return siteUrl.replace(/\/+$/, "");
-  return typeof window !== "undefined" ? window.location.origin : "";
+  try {
+    return getSiteUrl();
+  } catch {
+    return typeof window !== "undefined" ? window.location.origin : "";
+  }
 }
 
 function LoginForm() {

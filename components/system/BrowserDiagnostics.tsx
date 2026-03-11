@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import { getSupabaseAuthStorageKey } from "@/lib/env";
+import { getClientEnv, getSupabaseAuthStorageKey } from "@/lib/env";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 declare global {
@@ -12,8 +12,9 @@ declare global {
 }
 
 async function runBrowserDiagnostics() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+  const clientEnv = getClientEnv();
+  const supabaseUrl = clientEnv.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const storageKey = getSupabaseAuthStorageKey();
   const tokenKeys =
     typeof window === "undefined"
@@ -24,7 +25,7 @@ async function runBrowserDiagnostics() {
     env: {
       supabaseUrlPresent: Boolean(supabaseUrl),
       anonKeyPresent: Boolean(anonKey),
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? null,
+      siteUrl: clientEnv.NEXT_PUBLIC_SITE_URL ?? null,
       storageKey,
     },
     supabase: {

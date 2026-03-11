@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/env";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import { useCart } from "@/components/cart/CartProvider";
 import type { CartLine } from "@/hooks/useLocalCart";
@@ -492,7 +493,12 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
           return;
         }
 
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        let siteUrl: string | null = null;
+        try {
+          siteUrl = getSiteUrl();
+        } catch {
+          siteUrl = null;
+        }
         const branding = getSafeCheckoutBranding(siteUrl);
         if (!branding.safeLogoUrl) {
           console.warn("[checkout] Razorpay branding URL disabled", {

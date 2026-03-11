@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
+import { getSiteUrl } from "@/lib/env";
 
 function getAuthOrigin() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (siteUrl) return siteUrl.replace(/\/+$/, "");
-  return typeof window !== "undefined" ? window.location.origin : "";
+  try {
+    return getSiteUrl();
+  } catch {
+    return typeof window !== "undefined" ? window.location.origin : "";
+  }
 }
 
 export default function SignupPage() {
@@ -25,11 +28,14 @@ export default function SignupPage() {
 
     try {
       const supabase = createBrowserClient();
+      const redirectTo = `${getAuthOrigin()}/auth/callback`;
+
       const { error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { full_name: fullName },
+          emailRedirectTo: redirectTo,
         },
       });
 
@@ -50,9 +56,13 @@ export default function SignupPage() {
       // eslint-disable-next-line no-console
       console.info("[auth] signup succeeded", { email });
     } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong. Please try again.";
       // eslint-disable-next-line no-console
       console.error("[auth] signup failed", err);
-      setError("Something went wrong. Please try again.");
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
-import { getServerEnv } from "@/lib/env";
+import { getEnvPresence, getServerEnv } from "@/lib/env";
 import { createStaticClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAllProducts } from "@/lib/api/products";
 
 export async function GET() {
-  const env = getServerEnv();
-
-  const envStatus = {
-    NEXT_PUBLIC_SUPABASE_URL_present: !!env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY_present: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    SUPABASE_SERVICE_ROLE_KEY_present: !!env.SUPABASE_SERVICE_ROLE_KEY,
-    NEXT_PUBLIC_RAZORPAY_KEY_ID_present: !!env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    RAZORPAY_KEY_SECRET_present: !!env.RAZORPAY_KEY_SECRET,
-    NEXT_PUBLIC_SITE_URL_present: !!env.NEXT_PUBLIC_SITE_URL,
-  };
+  const envStatus = getEnvPresence();
+  let env: ReturnType<typeof getServerEnv> | null = null;
+  try {
+    env = getServerEnv();
+  } catch {
+    env = null;
+  }
 
   let supabaseReachable = false;
   let productsSampleCount = 0;
@@ -57,10 +54,9 @@ export async function GET() {
       product_display_count: productsDisplay.length,
     },
     razorpay: {
-      key_id_prefix: env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.slice(0, 8) ?? null,
+      key_id_prefix: env?.NEXT_PUBLIC_RAZORPAY_KEY_ID?.slice(0, 8) ?? null,
     },
   };
 
   return NextResponse.json(payload, { status: 200 });
 }
-

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { isDevelopment } from "@/lib/env";
 
 export default function GlobalError({
   error,
@@ -18,7 +19,7 @@ export default function GlobalError({
           <p className="mt-6 text-base leading-relaxed text-neutral-600">
             The application hit an unexpected error. Try reloading this view or return to the home page.
           </p>
-          {process.env.NODE_ENV === "development" ? (
+          {isDevelopment() ? (
             <pre className="mt-8 w-full overflow-auto rounded-md border border-neutral-200 bg-neutral-50 p-4 text-left text-xs text-neutral-700">
               {error.message}
               {error.digest ? `\nDigest: ${error.digest}` : ""}
