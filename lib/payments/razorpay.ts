@@ -8,9 +8,6 @@ import { serverError, serverWarn } from "@/lib/security/logger";
 import { getServerEnv } from "@/lib/env";
 
 export function getRazorpayClient(): Razorpay {
-  if (!process.env.RAZORPAY_KEY_SECRET) {
-    throw new Error("Razorpay not configured");
-  }
   const env = getServerEnv();
   const keyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
   const keySecret = env.RAZORPAY_KEY_SECRET;
@@ -53,7 +50,7 @@ export async function createRazorpayOrder(params: { amount: number; currency?: s
 }
 
 export function verifyWebhookSignature(body: string, signature: string, secret?: string): boolean {
-  const secretToUse = secret ?? process.env.RAZORPAY_WEBHOOK_SECRET;
+  const secretToUse = secret ?? getServerEnv().RAZORPAY_WEBHOOK_SECRET;
   if (!secretToUse) {
     serverWarn("razorpay", "RAZORPAY_WEBHOOK_SECRET not set — cannot verify webhook");
     return false;
@@ -67,7 +64,7 @@ export function verifyPaymentSignature(params: {
   paymentId: string;
   signature: string;
 }): boolean {
-  const secret = process.env.RAZORPAY_KEY_SECRET;
+  const secret = getServerEnv().RAZORPAY_KEY_SECRET;
   if (!secret) return false;
   const body = `${params.orderId}|${params.paymentId}`;
   const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");

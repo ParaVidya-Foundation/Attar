@@ -8,8 +8,10 @@ import "@/styles/globals.css";
 import { BRAND, LOGO_PATH, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/env";
 import { CartProvider } from "@/components/cart/CartProvider";
+import { RazorpayScript } from "@/components/system/RazorpayScript";
 import { SkipToContent } from "@/components/ui/SkipToContent";
 import { ScrollToTop } from "@/components/navigation/ScrollToTop";
+import { BrowserDiagnostics } from "@/components/system/BrowserDiagnostics";
 import Header from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
 
@@ -82,9 +84,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(webLd) }}
         />
+        <RazorpayScript />
       </head>
       <body className="font-body bg-cream text-ink antialiased">
         <CartProvider>
+          <BrowserDiagnostics />
           <Suspense fallback={null}>
             <ScrollToTop />
           </Suspense>

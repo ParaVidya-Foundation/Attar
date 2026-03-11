@@ -1,150 +1,129 @@
-/**
- * Environment validation and safe accessors.
- * Missing variables are logged as warnings so the app can stay up and return controlled errors.
- */
-import { validatePublicHttpsUrl } from "@/lib/payments/network-safety";
 import { serverWarn } from "@/lib/security/logger";
 
-const PRODUCTION_DOMAIN = "https://anandrasafragnance.com";
+const CLIENT_ENV_KEYS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "NEXT_PUBLIC_RAZORPAY_KEY_ID",
+  "NEXT_PUBLIC_SITE_URL",
+] as const;
 
-const warnedMessages = new Set<string>();
-let _serverEnv: ServerEnv | null = null;
+const SERVER_ONLY_ENV_KEYS = [
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "RAZORPAY_KEY_SECRET",
+  "RAZORPAY_WEBHOOK_SECRET",
+] as const;
 
-export type ServerEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: string;
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
-  NEXT_PUBLIC_RAZORPAY_KEY_ID: string;
-  RAZORPAY_KEY_SECRET: string;
-  RAZORPAY_WEBHOOK_SECRET: string;
-  NEXT_PUBLIC_SITE_URL: string;
-};
-export type ClientEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: string;
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
-  NEXT_PUBLIC_RAZORPAY_KEY_ID: string;
-  NEXT_PUBLIC_SITE_URL?: string;
-};
+type ClientEnvKey = (typeof CLIENT_ENV_KEYS)[number];
+type ServerOnlyEnvKey = (typeof SERVER_ONLY_ENV_KEYS)[number];
+
+export type ClientEnv = Record<ClientEnvKey, string>;
+export type ServerEnv = ClientEnv & Record<ServerOnlyEnvKey, string>;
 
 export class MissingEnvError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(key: string) {
+    super(`Missing environment variable: ${key}`);
     this.name = "MissingEnvError";
   }
 }
 
-function warnOnce(message: string): void {
-  if (warnedMessages.has(message)) return;
-  warnedMessages.add(message);
-  serverWarn("env", message);
-}
+let cachedClientEnv: ClientEnv | null = null;
+let cachedServerEnv: ServerEnv | null = null;
 
-function getRawEnv(key: string): string {
+function readRawEnv(key: string): string {
   return process.env[key]?.trim() ?? "";
 }
 
-function buildServerEnv(): ServerEnv {
-  const env: ServerEnv = {
-    NEXT_PUBLIC_SUPABASE_URL: getRawEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: getRawEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-    SUPABASE_SERVICE_ROLE_KEY: getRawEnv("SUPABASE_SERVICE_ROLE_KEY"),
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: getRawEnv("NEXT_PUBLIC_RAZORPAY_KEY_ID"),
-    RAZORPAY_KEY_SECRET: getRawEnv("RAZORPAY_KEY_SECRET"),
-    RAZORPAY_WEBHOOK_SECRET: getRawEnv("RAZORPAY_WEBHOOK_SECRET"),
-    NEXT_PUBLIC_SITE_URL: getRawEnv("NEXT_PUBLIC_SITE_URL"),
-  };
+function requireEnv(key: ClientEnvKey | ServerOnlyEnvKey): string {
+  const value = readRawEnv(key);
+  if (!value) {
+    throw new MissingEnvError(key);
+  }
+  return value;
+}
 
-  const missing = Object.entries(env)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
-  if (missing.length) {
-    warnOnce(`Missing environment variables: ${missing.join(", ")}`);
+function normalizeUrl(key: ClientEnvKey, value: string): string {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`Invalid environment variable: ${key}`);
   }
 
-  if (process.env.NODE_ENV === "production") {
-    if (env.NEXT_PUBLIC_RAZORPAY_KEY_ID && !env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith("rzp_live_")) {
-      warnOnce("Production is using a non-live Razorpay key ID. Expected prefix: rzp_live_");
-    }
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error(`${key} must use https in production`);
+  }
 
-    if (env.NEXT_PUBLIC_SITE_URL) {
-      const siteUrlCheck = validatePublicHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
-      if (!siteUrlCheck.ok) {
-        warnOnce(`NEXT_PUBLIC_SITE_URL is invalid in production (${siteUrlCheck.reason ?? "unknown reason"})`);
-      }
-    } else {
-      warnOnce(`NEXT_PUBLIC_SITE_URL is missing in production. Falling back to ${PRODUCTION_DOMAIN}`);
-    }
+  return value.replace(/\/+$/, "");
+}
+
+function buildClientEnv(): ClientEnv {
+  const env: ClientEnv = {
+    NEXT_PUBLIC_SUPABASE_URL: normalizeUrl("NEXT_PUBLIC_SUPABASE_URL", requireEnv("NEXT_PUBLIC_SUPABASE_URL")),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: requireEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: requireEnv("NEXT_PUBLIC_RAZORPAY_KEY_ID"),
+    NEXT_PUBLIC_SITE_URL: normalizeUrl("NEXT_PUBLIC_SITE_URL", requireEnv("NEXT_PUBLIC_SITE_URL")),
+  };
+
+  if (process.env.NODE_ENV === "production") {
+    const host = new URL(env.NEXT_PUBLIC_SUPABASE_URL).host;
+    serverWarn(
+      "env",
+      `[prod] env loaded: supabase_host=${host} anon_key_present=true razorpay_key_present=true site_url=${env.NEXT_PUBLIC_SITE_URL}`,
+    );
   }
 
   return env;
 }
 
-/**
- * Single source of truth for site URL. Use everywhere instead of hardcoding.
- */
-export function getSiteUrl(): string {
-  const rawUrl = getRawEnv("NEXT_PUBLIC_SITE_URL");
-  if (rawUrl) {
-    return rawUrl.replace(/\/+$/, "");
-  }
-  if (process.env.NODE_ENV === "production") {
-    warnOnce(`[env] NEXT_PUBLIC_SITE_URL is not set in production. Using fallback ${PRODUCTION_DOMAIN}`);
-    return PRODUCTION_DOMAIN;
-  }
-  return "";
+function buildServerEnv(): ServerEnv {
+  const clientEnv = getClientEnv();
+
+  return {
+    ...clientEnv,
+    SUPABASE_SERVICE_ROLE_KEY: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    RAZORPAY_KEY_SECRET: requireEnv("RAZORPAY_KEY_SECRET"),
+    RAZORPAY_WEBHOOK_SECRET: requireEnv("RAZORPAY_WEBHOOK_SECRET"),
+  };
+}
+
+export function getClientEnv(): ClientEnv {
+  if (cachedClientEnv) return cachedClientEnv;
+  cachedClientEnv = buildClientEnv();
+  return cachedClientEnv;
 }
 
 export function getServerEnv(): ServerEnv {
-  if (_serverEnv) return _serverEnv;
-  _serverEnv = buildServerEnv();
-  return _serverEnv;
-}
-
-let _clientEnv: ClientEnv | null = null;
-
-export function getClientEnv(): ClientEnv {
-  if (_clientEnv) return _clientEnv;
-  const e = process.env;
-  const url = e.NEXT_PUBLIC_SITE_URL;
-  const valid =
-    e.NEXT_PUBLIC_SUPABASE_URL && e.NEXT_PUBLIC_SUPABASE_ANON_KEY && e.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  if (!valid && process.env.NODE_ENV === "production") {
-    _clientEnv = {
-      NEXT_PUBLIC_SUPABASE_URL: "",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
-      NEXT_PUBLIC_RAZORPAY_KEY_ID: "",
-      NEXT_PUBLIC_SITE_URL: undefined,
-    };
-    return _clientEnv;
+  if (typeof window !== "undefined") {
+    throw new Error("getServerEnv() must only run on the server");
   }
-  _clientEnv = {
-    NEXT_PUBLIC_SUPABASE_URL: e.NEXT_PUBLIC_SUPABASE_URL ?? "",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: e.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
-    NEXT_PUBLIC_RAZORPAY_KEY_ID: e.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
-    NEXT_PUBLIC_SITE_URL: url || undefined,
-  };
-  return _clientEnv;
+  if (cachedServerEnv) return cachedServerEnv;
+  cachedServerEnv = buildServerEnv();
+  return cachedServerEnv;
 }
 
-/**
- * Returns true if required client env vars are present.
- */
+export function getEnvPresence() {
+  const allKeys = [...CLIENT_ENV_KEYS, ...SERVER_ONLY_ENV_KEYS];
+  return Object.fromEntries(allKeys.map((key) => [key, Boolean(readRawEnv(key))])) as Record<
+    ClientEnvKey | ServerOnlyEnvKey,
+    boolean
+  >;
+}
+
 export function hasClientEnv(): boolean {
-  const env = getClientEnv();
-  return !!(
-    env.NEXT_PUBLIC_SUPABASE_URL &&
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    env.NEXT_PUBLIC_RAZORPAY_KEY_ID
-  );
+  try {
+    getClientEnv();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getSiteUrl(): string {
+  return getClientEnv().NEXT_PUBLIC_SITE_URL;
 }
 
 export function requireClientSupabaseEnv(): { url: string; anonKey: string } {
   const env = getClientEnv();
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new MissingEnvError(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Configure them in Vercel project settings.",
-    );
-  }
   return {
     url: env.NEXT_PUBLIC_SUPABASE_URL,
     anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -153,14 +132,16 @@ export function requireClientSupabaseEnv(): { url: string; anonKey: string } {
 
 export function requireServerSupabaseEnv(): { url: string; anonKey: string; serviceRoleKey: string } {
   const env = getServerEnv();
-  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new MissingEnvError(
-      "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY.",
-    );
-  }
   return {
     url: env.NEXT_PUBLIC_SUPABASE_URL,
     anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
   };
+}
+
+export function getSupabaseAuthStorageKey(): string {
+  const { url } = requireClientSupabaseEnv();
+  const host = new URL(url).hostname;
+  const projectRef = host.split(".")[0] ?? "project";
+  return `sb-${projectRef}-auth-token`;
 }

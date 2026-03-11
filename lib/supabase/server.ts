@@ -1,7 +1,9 @@
+import "server-only";
+
 import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { serverWarn, serverError } from "@/lib/security/logger";
+import { serverWarn } from "@/lib/security/logger";
 import { requireClientSupabaseEnv } from "@/lib/env";
 
 /**
@@ -32,20 +34,30 @@ export async function createServerClient() {
     supabaseUrl,
     supabaseAnonKey,
     {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Route Handlers may throw when setting cookies during redirect
+          }
+        },
       },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        } catch {
-          // Route Handlers may throw when setting cookies during redirect
-        }
+      global: {
+        headers: {
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
       },
-    },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
     },
   );
 }
@@ -76,10 +88,16 @@ export function createStaticClient() {
     url,
     anonKey,
     {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+      global: {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     },
   );
 }

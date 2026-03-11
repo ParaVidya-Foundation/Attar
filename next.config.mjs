@@ -54,9 +54,11 @@ style-src 'self' 'unsafe-inline';
 img-src 'self' data: https: blob:;
 font-src 'self' data: https:;
 connect-src 'self'
+  https://checkout.razorpay.com
   https://api.razorpay.com
   https://lumberjack.razorpay.com
   https://*.supabase.co
+  wss://*.supabase.co
   https://va.vercel-scripts.com;
 frame-src
   https://api.razorpay.com

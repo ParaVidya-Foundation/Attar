@@ -39,10 +39,14 @@ function LoginForm() {
       }
 
       if (data.user) {
+        // eslint-disable-next-line no-console
+        console.info("[auth] password sign-in succeeded", { userId: data.user.id });
         router.push("/");
         router.refresh();
       }
-    } catch {
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[auth] password sign-in failed", err);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -63,6 +67,10 @@ function LoginForm() {
       });
 
       if (oauthError) setError(oauthError.message);
+      else {
+        // eslint-disable-next-line no-console
+        console.info("[auth] google oauth started", { redirectTo });
+      }
     } finally {
       setLoading(false);
     }
@@ -82,6 +90,10 @@ function LoginForm() {
       });
 
       if (oauthError) setError(oauthError.message);
+      else {
+        // eslint-disable-next-line no-console
+        console.info("[auth] facebook oauth started", { redirectTo });
+      }
     } finally {
       setLoading(false);
     }

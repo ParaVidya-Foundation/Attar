@@ -2,6 +2,8 @@
  * Production Product API layer — server-side only.
  * Supabase as single source of truth. Safe query path: products first, then images/variants by product IDs, merge in memory.
  */
+import "server-only";
+
 import { cache } from "react";
 import { createStaticClient } from "@/lib/supabase/server";
 import { serverError, serverWarn } from "@/lib/security/logger";
@@ -12,6 +14,10 @@ export const revalidate = 60;
 
 function logError(context: string, err: unknown) {
   serverError(`api/products ${context}`, err);
+}
+
+function logInfo(message: string) {
+  serverWarn("api/products", message);
 }
 
 /** Relational row from Supabase (products + nested images, variants) */
@@ -178,10 +184,11 @@ async function fetchProductRows(
  */
 export async function getAllProducts(): Promise<ProductDisplay[]> {
   try {
+    logInfo("getAllProducts start");
     const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, {});
     if (rows.length === 0) {
-      serverError("api/products", "getAllProducts returned zero active products");
+      logInfo("getAllProducts returned zero rows - check env, RLS, or DB");
       return [];
     }
 
@@ -198,7 +205,7 @@ export async function getAllProducts(): Promise<ProductDisplay[]> {
     const products = rows.map((p) =>
       toProductDisplay(p, p.category_id ? categoryMap.get(p.category_id) ?? null : null),
     );
-    serverWarn("api/products", `getAllProducts product_count=${products.length}`);
+    logInfo(`getAllProducts success product_count=${products.length}`);
     return products;
   } catch (e) {
     logError("getAllProducts exception", e);
@@ -211,6 +218,7 @@ export async function getAllProducts(): Promise<ProductDisplay[]> {
  */
 export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
   try {
+    logInfo("getFeaturedProducts start");
     const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, { featured: true });
     if (rows.length === 0) {
@@ -243,10 +251,14 @@ export async function getFeaturedProducts(): Promise<ProductDisplay[]> {
  */
 export const getProductBySlug = cache(async function getProductBySlug(slug: string): Promise<ProductDisplay | null> {
   try {
+    logInfo(`getProductBySlug start slug=${slug}`);
     const supabase = createStaticClient();
     const rows = await fetchProductRows(supabase, { slug });
     const row = rows[0] ?? null;
-    if (!row) return null;
+    if (!row) {
+      logInfo(`getProductBySlug returned null slug=${slug} - check env, RLS, slug, or DB`);
+      return null;
+    }
 
     let categorySlug: string | null = null;
     if (row.category_id) {
@@ -257,7 +269,9 @@ export const getProductBySlug = cache(async function getProductBySlug(slug: stri
         .maybeSingle();
       categorySlug = cat?.slug ?? null;
     }
-    return toProductDisplay(row, categorySlug);
+    const product = toProductDisplay(row, categorySlug);
+    logInfo(`getProductBySlug success slug=${slug} product_id=${product.id}`);
+    return product;
   } catch (e) {
     logError("getProductBySlug exception", e);
     return null;
@@ -269,6 +283,7 @@ export const getProductBySlug = cache(async function getProductBySlug(slug: stri
  */
 export async function getProductsByCategory(categorySlug: string): Promise<ProductDisplay[]> {
   try {
+    logInfo(`getProductsByCategory start category=${categorySlug}`);
     const supabase = createStaticClient();
     const { data: category, error: catErr } = await supabase
       .from("categories")
@@ -281,12 +296,20 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
       return [];
     }
     if (!category?.id) {
-      serverWarn("api/products", "category not found: " + categorySlug);
+      serverWarn(
+        "api/products",
+        `category not found: ${categorySlug} (verify categories table + slug in production database)`,
+      );
       return [];
     }
 
     const rows = await fetchProductRows(supabase, { categoryId: category.id });
-    return rows.map((p) => toProductDisplay(p, categorySlug));
+    if (rows.length === 0) {
+      logInfo(`getProductsByCategory returned zero rows category=${categorySlug} - check env, RLS, or DB`);
+    }
+    const products = rows.map((p) => toProductDisplay(p, categorySlug));
+    logInfo(`getProductsByCategory success category=${categorySlug} product_count=${products.length}`);
+    return products;
   } catch (e) {
     logError("getProductsByCategory exception", e);
     return [];
@@ -302,6 +325,7 @@ export async function getRecommendedProductsBySlug(
   limit = 6,
 ): Promise<ProductDisplay[]> {
   try {
+    logInfo(`getRecommendedProductsBySlug start slug=${slug} limit=${limit}`);
     const supabase = createStaticClient();
 
     // Base product (id + category)
@@ -374,22 +398,23 @@ export async function getRecommendedProductsBySlug(
 
     const candidateIds = [...scores.keys()];
     if (candidateIds.length === 0) {
+      logInfo(`getRecommendedProductsBySlug returned zero candidates slug=${slug}`);
       return [];
     }
 
     // Fetch candidate product rows (images + variants) similar to fetchProductRows, but scoped to candidate ids.
-    const { data: products, error: prodErr } = await supabase
+    const { data: candidateProducts, error: prodErr } = await supabase
       .from("products")
       .select(PRODUCT_COLUMNS)
       .in("id", candidateIds)
       .eq("is_active", true);
 
-    if (prodErr || !products?.length) {
+    if (prodErr || !candidateProducts?.length) {
       if (prodErr) logError("getRecommendedProductsBySlug products", prodErr);
       return [];
     }
 
-    const ids = (products as Product[]).map((p) => p.id);
+    const ids = (candidateProducts as Product[]).map((p) => p.id);
     const [imagesRes, variantsRes] = await Promise.all([
       supabase
         .from("product_images")
@@ -417,7 +442,7 @@ export async function getRecommendedProductsBySlug(
       variantsByProduct.set(v.product_id, list);
     });
 
-    let rows: ProductRow[] = (products as Product[]).map((p) => ({
+    let rows: ProductRow[] = (candidateProducts as Product[]).map((p) => ({
       ...p,
       product_images: imagesByProduct.get(p.id) ?? [],
       product_variants: variantsByProduct.get(p.id) ?? [],
@@ -447,9 +472,15 @@ export async function getRecommendedProductsBySlug(
       (categories ?? []).forEach((c: { id: string; slug: string }) => categoryMap.set(c.id, c.slug));
     }
 
-    return limitedRows.map((p) =>
+    const recommendedProducts = limitedRows.map((p) =>
       toProductDisplay(p, p.category_id ? categoryMap.get(p.category_id) ?? null : null),
     );
+    if (recommendedProducts.length === 0) {
+      logInfo(`getRecommendedProductsBySlug returned zero rows slug=${slug} - check env, RLS, or DB`);
+    } else {
+      logInfo(`getRecommendedProductsBySlug success slug=${slug} product_count=${recommendedProducts.length}`);
+    }
+    return recommendedProducts;
   } catch (err) {
     logError("getRecommendedProductsBySlug exception", err);
     return [];

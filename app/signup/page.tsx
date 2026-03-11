@@ -47,7 +47,11 @@ export default function SignupPage() {
       }
 
       setSuccess(true);
-    } catch {
+      // eslint-disable-next-line no-console
+      console.info("[auth] signup succeeded", { email });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[auth] signup failed", err);
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -69,6 +73,10 @@ export default function SignupPage() {
       });
 
       if (error) setError(error.message);
+      else {
+        // eslint-disable-next-line no-console
+        console.info("[auth] oauth started", { provider, redirectTo });
+      }
     } finally {
       setLoading(false);
     }

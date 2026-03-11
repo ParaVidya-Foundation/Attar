@@ -34,10 +34,27 @@ function loadScript(): Promise<boolean> {
       resolve(true);
       return;
     }
+    const src = "https://checkout.razorpay.com/v1/checkout.js";
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+
+    if (existing) {
+      existing.addEventListener("load", () => resolve(Boolean(window.Razorpay)), { once: true });
+      existing.addEventListener("error", () => {
+        // eslint-disable-next-line no-console
+        console.error("[razorpay] checkout.js failed from existing script tag");
+        resolve(false);
+      }, { once: true });
+      return;
+    }
+
     const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.src = src;
+    script.onload = () => resolve(Boolean(window.Razorpay));
+    script.onerror = () => {
+      // eslint-disable-next-line no-console
+      console.error("[razorpay] checkout.js failed to load");
+      resolve(false);
+    };
     document.body.appendChild(script);
   });
 }
@@ -91,6 +108,8 @@ export function useRazorpayCheckout(opts?: {
         const scriptLoaded = await loadScript();
         if (!scriptLoaded) {
           const msg = "Payment system could not load. Please try again.";
+          // eslint-disable-next-line no-console
+          console.error("[razorpay] window.Razorpay unavailable after script load");
           setError(msg);
           opts?.onFailure?.(msg);
           return false;
@@ -139,6 +158,16 @@ export function useRazorpayCheckout(opts?: {
             theme: { color: "#1e2023" },
             ...(logoUrl ? { image: logoUrl } : {}),
           };
+
+          if (typeof window.Razorpay !== "function") {
+            const msg = "Payment system is unavailable right now.";
+            // eslint-disable-next-line no-console
+            console.error("[razorpay] constructor missing when starting checkout");
+            setError(msg);
+            opts?.onFailure?.(msg);
+            resolve(false);
+            return;
+          }
 
           const rzp = new window.Razorpay(options);
           rzp.on("payment.failed", () => {
