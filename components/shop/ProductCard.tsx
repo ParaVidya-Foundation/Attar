@@ -44,6 +44,18 @@ export default function ProductCard({ product }: { product: Product }) {
   const secondarySrc =
     images.secondary && images.secondary.trim().length > 0 ? images.secondary.trim() : primarySrc;
 
+  const trackAddToCart = () => {
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productId: id,
+        eventType: "add_to_cart",
+      }),
+      keepalive: true,
+    });
+  };
+
   const handleAddToCart = () => {
     const rawVariantId = product.defaultVariantId;
     const variantId = typeof rawVariantId === "string" ? rawVariantId.trim() : "";
@@ -61,6 +73,7 @@ export default function ProductCard({ product }: { product: Product }) {
       image: primarySrc,
       quantity: 1,
     });
+    trackAddToCart();
     setOpen(true);
   };
 

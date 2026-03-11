@@ -294,6 +294,169 @@ export async function getProductsByCategory(categorySlug: string): Promise<Produ
 }
 
 /**
+ * Recommended products for a given product slug.
+ * Heuristic: products that share category and/or collections, excluding the current product.
+ */
+export async function getRecommendedProductsBySlug(
+  slug: string,
+  limit = 6,
+): Promise<ProductDisplay[]> {
+  try {
+    const supabase = createStaticClient();
+
+    // Base product (id + category)
+    const { data: base, error: baseErr } = await supabase
+      .from("products")
+      .select("id, category_id")
+      .eq("slug", slug)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (baseErr || !base) {
+      if (baseErr) logError("getRecommendedProductsBySlug base", baseErr);
+      return [];
+    }
+
+    const baseId: string = (base as { id: string }).id;
+    const baseCategoryId: string | null = (base as { category_id: string | null }).category_id ?? null;
+
+    const scores = new Map<string, number>();
+
+    // 1) Same category candidates
+    if (baseCategoryId) {
+      const { data: sameCategory, error: catErr } = await supabase
+        .from("products")
+        .select("id")
+        .eq("category_id", baseCategoryId)
+        .eq("is_active", true)
+        .neq("id", baseId)
+        .order("created_at", { ascending: false })
+        .limit(limit * 3);
+
+      if (catErr) {
+        logError("getRecommendedProductsBySlug sameCategory", catErr);
+      } else {
+        for (const row of sameCategory ?? []) {
+          const id = (row as { id: string }).id;
+          scores.set(id, (scores.get(id) ?? 0) + 1);
+        }
+      }
+    }
+
+    // 2) Shared collections candidates
+    const { data: baseCollections, error: baseCollErr } = await supabase
+      .from("product_collections")
+      .select("collection_id")
+      .eq("product_id", baseId);
+
+    if (baseCollErr) {
+      logError("getRecommendedProductsBySlug baseCollections", baseCollErr);
+    } else {
+      const collectionIds = [...new Set((baseCollections ?? []).map((row) => row.collection_id))] as string[];
+
+      if (collectionIds.length > 0) {
+        const { data: relatedByCollections, error: relErr } = await supabase
+          .from("product_collections")
+          .select("product_id, collection_id")
+          .in("collection_id", collectionIds)
+          .neq("product_id", baseId);
+
+        if (relErr) {
+          logError("getRecommendedProductsBySlug relatedByCollections", relErr);
+        } else {
+          for (const row of relatedByCollections ?? []) {
+            const id = (row as { product_id: string }).product_id;
+            scores.set(id, (scores.get(id) ?? 0) + 1);
+          }
+        }
+      }
+    }
+
+    const candidateIds = [...scores.keys()];
+    if (candidateIds.length === 0) {
+      return [];
+    }
+
+    // Fetch candidate product rows (images + variants) similar to fetchProductRows, but scoped to candidate ids.
+    const { data: products, error: prodErr } = await supabase
+      .from("products")
+      .select(PRODUCT_COLUMNS)
+      .in("id", candidateIds)
+      .eq("is_active", true);
+
+    if (prodErr || !products?.length) {
+      if (prodErr) logError("getRecommendedProductsBySlug products", prodErr);
+      return [];
+    }
+
+    const ids = (products as Product[]).map((p) => p.id);
+    const [imagesRes, variantsRes] = await Promise.all([
+      supabase
+        .from("product_images")
+        .select(PRODUCT_IMAGE_COLUMNS)
+        .in("product_id", ids)
+        .order("sort_order", { ascending: true }),
+      supabase.from("product_variants").select(PRODUCT_VARIANT_COLUMNS).in("product_id", ids),
+    ]);
+
+    if (imagesRes.error) logError("getRecommendedProductsBySlug product_images", imagesRes.error);
+    if (variantsRes.error) logError("getRecommendedProductsBySlug product_variants", variantsRes.error);
+
+    type ImageRow = NonNullable<ProductRow["product_images"]>[number];
+    const imagesByProduct = new Map<string, ImageRow[]>();
+    (imagesRes.data ?? []).forEach((img: { product_id: string; [k: string]: unknown }) => {
+      const list = imagesByProduct.get(img.product_id) ?? [];
+      list.push(img as ImageRow);
+      imagesByProduct.set(img.product_id, list);
+    });
+
+    const variantsByProduct = new Map<string, ProductVariant[]>();
+    (variantsRes.data ?? []).forEach((v: ProductVariant) => {
+      const list = variantsByProduct.get(v.product_id) ?? [];
+      list.push(v);
+      variantsByProduct.set(v.product_id, list);
+    });
+
+    let rows: ProductRow[] = (products as Product[]).map((p) => ({
+      ...p,
+      product_images: imagesByProduct.get(p.id) ?? [],
+      product_variants: variantsByProduct.get(p.id) ?? [],
+    })) as ProductRow[];
+
+    // Relevance sort: more matching signals first, then newest.
+    rows = rows.sort((a, b) => {
+      const sa = scores.get(a.id) ?? 0;
+      const sb = scores.get(b.id) ?? 0;
+      if (sb !== sa) return sb - sa;
+      const da = a.created_at ? new Date(a.created_at as string).getTime() : 0;
+      const db = b.created_at ? new Date(b.created_at as string).getTime() : 0;
+      return db - da;
+    });
+
+    // Limit after sort.
+    const limitedRows = rows.slice(0, limit);
+
+    // Optionally resolve category slugs for completeness.
+    const categoryIds = [...new Set(limitedRows.map((p) => p.category_id).filter(Boolean))] as string[];
+    const categoryMap = new Map<string, string>();
+    if (categoryIds.length > 0) {
+      const { data: categories } = await supabase
+        .from("categories")
+        .select("id,slug")
+        .in("id", categoryIds);
+      (categories ?? []).forEach((c: { id: string; slug: string }) => categoryMap.set(c.id, c.slug));
+    }
+
+    return limitedRows.map((p) =>
+      toProductDisplay(p, p.category_id ? categoryMap.get(p.category_id) ?? null : null),
+    );
+  } catch (err) {
+    logError("getRecommendedProductsBySlug exception", err);
+    return [];
+  }
+}
+
+/**
  * Fetch variants for a product (e.g. for cart/checkout).
  */
 export async function getProductVariants(productId: string): Promise<ProductVariant[]> {

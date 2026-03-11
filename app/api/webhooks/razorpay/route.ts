@@ -10,6 +10,7 @@ import { recordWebhookReceived } from "@/app/api/health/route";
 import { rateLimit, getClientIdentifier } from "@/lib/rate-limit";
 import { webhookSeen } from "@/lib/redis";
 import { serverError, serverWarn } from "@/lib/security/logger";
+import { recordPurchaseEventsForOrder } from "@/lib/recommendations";
 import crypto from "crypto";
 
 const ENDPOINT = "/api/webhooks/razorpay";
@@ -89,6 +90,11 @@ async function markOrderPaid(
   }
 
   // Inventory not enforced (unlimited mode) — stock decrement skipped
+  try {
+    await recordPurchaseEventsForOrder(order.id);
+  } catch (error) {
+    serverError("webhook purchase events", error);
+  }
   return { ok: true };
 }
 

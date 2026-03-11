@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+
 /* ================= DATA ================= */
 
 const specifications = [
@@ -28,28 +29,23 @@ const jsonLd = {
   "@type": "Product",
   name: "Premium Vedic Incense",
   brand: { "@type": "Brand", name: "Anand Rasa" },
-  additionalProperty: specifications.map((s) => ({
-    "@type": "PropertyValue",
-    name: s.label,
-    value: s.value,
-  })),
 };
 
 /* ================= ICONS ================= */
 
 function Check() {
-  return <Image src="/check.png" alt="Check" width={36} height={36} />;
+  return <Image src="/check.png" alt="Available" width={28} height={28} className="opacity-95" />;
 }
 
 function Cross() {
-  return <Image src="/cross.png" alt="Check" width={36} height={36} />;
+  return <Image src="/cross.png" alt="Not Available" width={28} height={28} className="opacity-70" />;
 }
 
 /* ================= COMPONENT ================= */
 
 export default function IncenseTable() {
   return (
-    <section className="bg-white py-14 sm:py-16">
+    <section className="bg-white py-20">
       {/* SEO */}
       <script
         type="application/ld+json"
@@ -58,55 +54,61 @@ export default function IncenseTable() {
       />
 
       <div className="mx-auto max-w-7xl px-6">
+        {/* Heading */}
+
+        <header className="text-center mb-14">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">Why Choose Our Incense</h2>
+          <p className="mt-3 text-sm text-neutral-600">
+            Crafted for purity, fragrance and spiritual practice
+          </p>
+        </header>
+
         <div className="grid gap-10 lg:grid-cols-2">
           {/* ================= SPECIFICATIONS ================= */}
-          <div className="border border-black animate-fade-in">
-            <div className="border-b border-black px-6 py-4">
-              <h3 className="text-lg font-medium tracking-wide text-black">Specification</h3>
+
+          <div className="border border-neutral-200">
+            <div className="px-6 py-5 border-b border-neutral-200">
+              <h3 className="font-medium text-lg">Product Specification</h3>
             </div>
 
-            <div>
+            <div className="divide-y divide-neutral-200">
               {specifications.map((spec) => (
-                <div
-                  key={spec.label}
-                  className="grid grid-cols-1 sm:grid-cols-2 border-b border-black last:border-b-0"
-                >
-                  <div className="px-6 py-5 text-sm font-medium text-black">{spec.label}</div>
-                  <div className="px-6 py-5 text-sm text-neutral-600">{spec.value}</div>
+                <div key={spec.label} className="grid grid-cols-1 sm:grid-cols-2 px-6 py-5 text-sm">
+                  <span className="font-medium text-neutral-800">{spec.label}</span>
+
+                  <span className="text-neutral-600 sm:text-right">{spec.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ================= FEATURES ================= */}
-          <div className="border border-black animate-fade-in">
+          {/* ================= COMPARISON ================= */}
+
+          <div className="border border-neutral-200">
             {/* Header */}
-            <div className="hidden sm:grid grid-cols-[1fr_120px_120px] border-b border-black text-sm font-medium text-black">
-              <div className="px-6 py-4">Features</div>
-              <div className="px-4 py-4 text-center">Anand Rasa</div>
-              <div className="px-4 py-4 text-center">Others</div>
+
+            <div className="grid grid-cols-[1fr_120px_120px] border-b border-neutral-200 text-sm font-medium">
+              <div className="px-6 py-5">Features</div>
+
+              <div className="px-4 py-5 text-center bg-neutral-50">Anand Rasa</div>
+
+              <div className="px-4 py-5 text-center text-neutral-500">Others</div>
             </div>
 
             {/* Rows */}
+
             {features.map((feature) => (
               <div
                 key={feature.name}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_120px_120px] items-center border-b border-black last:border-b-0"
+                className="grid grid-cols-[1fr_120px_120px] items-center border-b border-neutral-200 last:border-none"
               >
-                {/* Feature name */}
-                <div className="px-6 py-5 text-sm text-black">{feature.name}</div>
+                <div className="px-6 py-6 text-sm text-neutral-800">{feature.name}</div>
 
-                {/* Mobile labels */}
-                <div className="flex items-center justify-between px-6 pb-4 sm:hidden text-xs text-neutral-500">
-                  <span>Anand Rasa</span>
-                  <span>Others</span>
-                </div>
-
-                {/* Icons */}
-                <div className="flex justify-between sm:justify-center px-6 pb-5 sm:pb-5 sm:px-0 gap-10 sm:gap-0">
+                <div className="flex justify-center bg-neutral-50 py-6">
                   {feature.ours ? <Check /> : <Cross />}
-                  {feature.others ? <Check /> : <Cross />}
                 </div>
+
+                <div className="flex justify-center py-6">{feature.others ? <Check /> : <Cross />}</div>
               </div>
             ))}
           </div>

@@ -9,10 +9,16 @@ import { getProductBySlug } from "@/lib/api/products";
 import { absoluteUrl, BRAND } from "@/lib/seo";
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import { getProductFeatures } from "@/config/productFeatures";
+import ProductCard from "@/components/shop/ProductCard";
+import { mapToCardProduct } from "@/lib/productMapper";
+import { ProductEventTracker } from "@/components/recommendations/ProductEventTracker";
+import { getBehavioralRecommendations } from "@/lib/recommendations";
+import DiscountPosterIncense from "@/components/product/features/DiscountPosterincense";
 
 export const revalidate = 60;
 
 const IncenseTable = dynamic(() => import("@/components/product/features/incensetable"));
+const FAQincense = dynamic(() => import("@/components/product/features/FAQincense"));
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -30,7 +36,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = product.meta_title ?? product.name;
-  const description = product.meta_description ?? product.short_description ?? product.description ?? "Shop premium attars.";
+  const description =
+    product.meta_description ?? product.short_description ?? product.description ?? "Shop premium attars.";
 
   return {
     title,
@@ -100,6 +107,8 @@ export default async function ProductPage({ params }: PageProps) {
     notFound();
   }
 
+  const recommended = await getBehavioralRecommendations(product.id, 4);
+
   const mappedImages =
     product.images
       ?.map((img) => (typeof img.url === "string" ? img.url.trim() : ""))
@@ -137,10 +146,8 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <main className="w-full min-h-screen bg-white">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ProductEventTracker productId={product.id} />
 
       <div className="flex w-full flex-col lg:flex-row overflow-hidden">
         <ProductShowcase product={showcaseProduct} />
@@ -157,7 +164,55 @@ export default async function ProductPage({ params }: PageProps) {
 
       {features.showIncenseTable && <IncenseTable />}
 
+      {recommended.length > 0 && (
+        <section className="bg-white py-20">
+          <div className="mx-auto max-w-7xl px-6">
+            <header className="mb-10 text-center">
+              <h2 className="text-2xl sm:text-3xl font-semibold text-black">Recommended Fragrances</h2>
+            </header>
+
+            <div className="grid grid-cols-2 gap-x-8 gap-y-14 md:grid-cols-3 lg:grid-cols-4">
+              {recommended.map((rec) => (
+                <ProductCard key={rec.id} product={mapToCardProduct(rec)} />
+              ))}
+            </div>
+
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "ItemList",
+                  itemListElement: recommended.map((rec, index) => ({
+                    "@type": "ListItem",
+                    position: index + 1,
+                    item: {
+                      "@type": "Product",
+                      name: rec.name,
+                      image: rec.images[0]?.url
+                        ? rec.images[0].url.startsWith("http")
+                          ? rec.images[0].url
+                          : absoluteUrl(rec.images[0].url)
+                        : absoluteUrl(PLACEHOLDER_IMAGE_URL),
+                      url: absoluteUrl(`/product/${rec.slug}`),
+                      offers: {
+                        "@type": "Offer",
+                        priceCurrency: "INR",
+                        price: rec.price / 100,
+                        availability: "https://schema.org/InStock",
+                      },
+                    },
+                  })),
+                }),
+              }}
+            />
+          </div>
+        </section>
+      )}
+
       <TrustBar />
+      {features.showDiscountPoster && <DiscountPosterIncense />}
+      {features.showFAQincense && <FAQincense />}
     </main>
   );
 }

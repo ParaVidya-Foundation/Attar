@@ -272,7 +272,7 @@ export default function Header() {
                   </div>
 
                   {/* Right column: preview */}
-                  <div className="hidden md:block w-1/2 relative h-[260px] bg-neutral-50 flex items-center justify-center p-4">
+                  <div className="hidden md:block w-1/2 relative h-[260px] flex items-center justify-center p-4">
                     {preview && (
                       <div className="relative w-full h-full rounded-sm overflow-hidden">
                         <Image

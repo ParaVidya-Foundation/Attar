@@ -1,11 +1,17 @@
 export type ProductFeatureFlags = Readonly<
   Partial<{
     showIncenseTable: boolean;
+    showFAQincense: boolean;
+    showDiscountPoster: boolean;
   }>
 >;
 
 const EMPTY_FEATURES: ProductFeatureFlags = Object.freeze({});
-const INCENSE_FEATURES: ProductFeatureFlags = Object.freeze({ showIncenseTable: true });
+const INCENSE_FEATURES: ProductFeatureFlags = Object.freeze({
+  showIncenseTable: true,
+  showFAQincense: true,
+  showDiscountPoster: true,
+});
 
 export const productFeatureMap: Record<string, ProductFeatureFlags> = {
   // Optional explicit overrides by slug can be added here.
@@ -17,5 +23,8 @@ export function getProductFeatures(slug: string | null | undefined): ProductFeat
   const normalizedSlug = slug.trim().toLowerCase();
   if (!normalizedSlug) return EMPTY_FEATURES;
 
-  return productFeatureMap[normalizedSlug] ?? (normalizedSlug.includes("incense") ? INCENSE_FEATURES : EMPTY_FEATURES);
+  return (
+    productFeatureMap[normalizedSlug] ??
+    (normalizedSlug.includes("incense") ? INCENSE_FEATURES : EMPTY_FEATURES)
+  );
 }

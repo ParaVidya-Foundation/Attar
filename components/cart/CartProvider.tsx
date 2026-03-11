@@ -8,6 +8,7 @@ import type { CartItem } from "@/types/cart";
 type CartUiState = {
   open: boolean;
   setOpen: (v: boolean) => void;
+  lastAddedProductId: string | null;
 };
 
 type CartContextValue = ReturnType<typeof useLocalCart> &
@@ -42,6 +43,7 @@ function isValidVariantId(id: unknown): id is string {
 export function CartProvider({ children }: { children: ReactNode }) {
   const cart = useLocalCart();
   const [open, setOpen] = useState(false);
+  const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
 
   const addItem = useCallback(
     (item: CartItem) => {
@@ -60,6 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         imageUrl: item.image,
         qty: item.quantity,
       });
+      setLastAddedProductId(item.id);
     },
     [cart.add],
   );
@@ -94,13 +97,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ...cart,
       open,
       setOpen,
+      lastAddedProductId,
       addItem,
       removeItem,
       updateQuantity,
       clearCart,
       getCheckoutPayload,
     }),
-    [cart, open, addItem, removeItem, updateQuantity, clearCart, getCheckoutPayload],
+    [cart, open, lastAddedProductId, addItem, removeItem, updateQuantity, clearCart, getCheckoutPayload],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

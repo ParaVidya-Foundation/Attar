@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
+import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { Analytics } from "@vercel/analytics/react";
 import { poppins, caudex } from "@/app/fonts";
@@ -8,6 +9,7 @@ import { BRAND, LOGO_PATH, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/env";
 import { CartProvider } from "@/components/cart/CartProvider";
 import { SkipToContent } from "@/components/ui/SkipToContent";
+import { ScrollToTop } from "@/components/navigation/ScrollToTop";
 import Header from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
 
@@ -83,6 +85,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-body bg-cream text-ink antialiased">
         <CartProvider>
+          <Suspense fallback={null}>
+            <ScrollToTop />
+          </Suspense>
           <SkipToContent />
           <Header />
           <main id="content" className="min-h-[70vh]">
