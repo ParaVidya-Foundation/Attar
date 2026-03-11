@@ -12,10 +12,24 @@ import { webhookSeen } from "@/lib/redis";
 import { serverError, serverWarn } from "@/lib/security/logger";
 import crypto from "crypto";
 
+const ENDPOINT = "/api/webhooks/razorpay";
+const ALLOW_HEADER = "GET, POST, OPTIONS";
+
 const webhookPayloadSchema = z.object({
   event: z.string().min(1),
   payload: z.record(z.string(), z.unknown()).optional(),
 });
+
+export async function GET() {
+  return NextResponse.json(
+    { status: "ok", endpoint: ENDPOINT, method: "POST required" },
+    { status: 200, headers: { Allow: ALLOW_HEADER } },
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: { Allow: ALLOW_HEADER } });
+}
 
 function extractPaymentEntity(payload: Record<string, unknown>) {
   const paymentEntity = (payload.payload as Record<string, unknown>)?.payment as

@@ -26,6 +26,13 @@ export type ClientEnv = {
   NEXT_PUBLIC_SITE_URL?: string;
 };
 
+export class MissingEnvError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissingEnvError";
+  }
+}
+
 function warnOnce(message: string): void {
   if (warnedMessages.has(message)) return;
   warnedMessages.add(message);
@@ -84,7 +91,7 @@ export function getSiteUrl(): string {
     warnOnce(`[env] NEXT_PUBLIC_SITE_URL is not set in production. Using fallback ${PRODUCTION_DOMAIN}`);
     return PRODUCTION_DOMAIN;
   }
-  return "http://localhost:3000";
+  return "";
 }
 
 export function getServerEnv(): ServerEnv {
@@ -129,4 +136,31 @@ export function hasClientEnv(): boolean {
     env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
     env.NEXT_PUBLIC_RAZORPAY_KEY_ID
   );
+}
+
+export function requireClientSupabaseEnv(): { url: string; anonKey: string } {
+  const env = getClientEnv();
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    throw new MissingEnvError(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Configure them in Vercel project settings.",
+    );
+  }
+  return {
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+}
+
+export function requireServerSupabaseEnv(): { url: string; anonKey: string; serviceRoleKey: string } {
+  const env = getServerEnv();
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.NEXT_PUBLIC_SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new MissingEnvError(
+      "Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY.",
+    );
+  }
+  return {
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+  };
 }

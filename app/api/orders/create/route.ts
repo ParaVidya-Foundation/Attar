@@ -11,6 +11,8 @@ import { serverError, serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
+const ENDPOINT = "/api/orders/create";
+const ALLOW_HEADER = "GET, POST, OPTIONS";
 const INDIA_PHONE = /^[6-9]\d{9}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -35,6 +37,31 @@ const guestSchema = z.object({
   country: z.string().max(100).optional(),
 });
 
+export async function GET() {
+  return NextResponse.json(
+    {
+      status: "ok",
+      endpoint: ENDPOINT,
+      method: "POST required",
+    },
+    {
+      status: 200,
+      headers: {
+        Allow: ALLOW_HEADER,
+      },
+    },
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      Allow: ALLOW_HEADER,
+    },
+  });
+}
+
 export async function POST(req: Request) {
   try {
     let keyId: string;
@@ -43,6 +70,13 @@ export async function POST(req: Request) {
     } catch (envErr) {
       serverError("orders/create env", envErr);
       return NextResponse.json({ error: "Payment system not configured" }, { status: 500 });
+    }
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      serverError("orders/create env", "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+      return NextResponse.json(
+        { error: "Database service not configured" },
+        { status: 500, headers: { Allow: ALLOW_HEADER } },
+      );
     }
 
     const identifier = getClientIdentifier(req);
@@ -55,6 +89,7 @@ export async function POST(req: Request) {
         {
           status: 429,
           headers: {
+            Allow: ALLOW_HEADER,
             "Retry-After": String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
             "X-RateLimit-Limit": "5",
             "X-RateLimit-Remaining": "0",
@@ -69,26 +104,30 @@ export async function POST(req: Request) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
     const b = body as Record<string, unknown>;
     if (b && typeof b === "object" && (b.variant_id == null || b.variant_id === "")) {
-      return NextResponse.json({ error: "variant_id is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "variant_id is required" },
+        { status: 400, headers: { Allow: ALLOW_HEADER } },
+      );
     }
 
     const parsed = guestSchema.safeParse(body);
     if (!parsed.success) {
+      serverWarn("orders/create", "Request validation failed");
       return NextResponse.json(
         { error: "Validation failed", details: parsed.error.flatten().fieldErrors },
-        { status: 400 },
+        { status: 400, headers: { Allow: ALLOW_HEADER } },
       );
     }
 
     const rawVariantId = parsed.data.variant_id;
     const variant_id = sanitizeVariantId(rawVariantId);
     if (!variant_id || !UUID_REGEX.test(variant_id)) {
-      return NextResponse.json({ error: "Invalid variant" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid variant" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
     const {
@@ -123,6 +162,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient();
 
     // Step 4: Validate variant exists
+    serverWarn("orders/create", `Variant lookup started: variant_id=${variant_id}`);
     const { data: variant, error: variantErr } = await admin
       .from("product_variants")
       .select("id, product_id, price, stock")
@@ -161,6 +201,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
+    serverWarn("orders/create", `Product validation passed: product_id=${variant.product_id}`);
 
     // Step 6: Amount guard (>= ₹1, from DB only)
     const totalPaise = pricePaise * quantity;
@@ -187,6 +228,7 @@ export async function POST(req: Request) {
     );
 
     // Step 7: DB insert before Razorpay (order must exist before gateway call)
+    serverWarn("orders/create", "Order insert started");
     const { data: order, error: orderErr } = await admin
       .from("orders")
       .insert({
@@ -212,6 +254,7 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
+    serverWarn("orders/create", `Order insert success: order_id=${order.id}`);
 
     const { error: itemsErr } = await admin.from("order_items").insert({
       order_id: order.id,
@@ -238,11 +281,15 @@ export async function POST(req: Request) {
     let razorpayAmount: number;
     let razorpayCurrency = "INR";
     try {
+      serverWarn("orders/create", `Razorpay order creation started: order_id=${order.id} amount=${totalPaise}`);
       const razorpayOrder = await createRazorpayOrder({
         amount: totalPaise,
         currency: "INR",
         receipt,
       });
+      if (!razorpayOrder?.id) {
+        throw new Error("Invalid Razorpay response: missing id");
+      }
       razorpayOrderId = razorpayOrder.id;
       razorpayAmount = Number(razorpayOrder.amount);
       razorpayCurrency = razorpayOrder.currency;
@@ -292,6 +339,9 @@ export async function POST(req: Request) {
       amount: razorpayAmount,
       currency: razorpayCurrency,
       keyId,
+    }, {
+      status: 200,
+      headers: { Allow: ALLOW_HEADER },
     });
   } catch (error) {
     serverError("orders/create", error);
@@ -308,7 +358,7 @@ export async function POST(req: Request) {
             ? error.message
             : "Internal server error",
       },
-      { status: 500 },
+      { status: 500, headers: { Allow: ALLOW_HEADER } },
     );
   }
 }

@@ -17,7 +17,13 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${siteUrl}/login?error=auth`);
   }
 
-  const supabase = await createServerClient();
+  let supabase;
+  try {
+    supabase = await createServerClient();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Auth is not configured";
+    return NextResponse.redirect(`${siteUrl}/login?error=${encodeURIComponent(message)}`);
+  }
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {

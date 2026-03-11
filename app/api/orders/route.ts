@@ -10,6 +10,8 @@ import { serverError, serverWarn } from "@/lib/security/logger";
 import { z } from "zod";
 import { NextResponse } from "next/server";
 
+const ENDPOINT = "/api/orders";
+const ALLOW_HEADER = "GET, POST, OPTIONS";
 const INDIA_PHONE = /^[6-9]\d{9}$/;
 
 const cartItemSchema = z.object({
@@ -35,6 +37,17 @@ const guestCartSchema = cartSchema.and(
   }),
 );
 
+export async function GET() {
+  return NextResponse.json(
+    { status: "ok", endpoint: ENDPOINT, method: "POST required" },
+    { status: 200, headers: { Allow: ALLOW_HEADER } },
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: { Allow: ALLOW_HEADER } });
+}
+
 export async function POST(req: Request) {
   let body: unknown;
   try {
@@ -49,10 +62,15 @@ export async function POST(req: Request) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
-    const supabase = await createClient();
+    let supabase;
+    try {
+      supabase = await createClient();
+    } catch {
+      return NextResponse.json({ error: "Auth service not configured" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
+    }
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -67,12 +85,12 @@ export async function POST(req: Request) {
             error:
               "Guest checkout requires customer and shipping details. Log in or use the checkout page.",
           },
-          { status: 400 },
+          { status: 400, headers: { Allow: ALLOW_HEADER } },
         );
       }
       return NextResponse.json(
         { error: "Invalid cart payload", details: parsed.error.flatten() },
-        { status: 400 },
+        { status: 400, headers: { Allow: ALLOW_HEADER } },
       );
     }
 
@@ -95,10 +113,7 @@ export async function POST(req: Request) {
         .single();
 
       if (!variant) {
-        return NextResponse.json(
-          { error: `Variant not found: ${item.variant_id}` },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: `Variant not found: ${item.variant_id}` }, { status: 400, headers: { Allow: ALLOW_HEADER } });
       }
 
       const { data: product } = await admin
@@ -107,14 +122,11 @@ export async function POST(req: Request) {
         .eq("id", variant.product_id)
         .single();
       if (!product?.is_active) {
-        return NextResponse.json(
-          { error: `Product not available: ${item.variant_id}` },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: `Product not available: ${item.variant_id}` }, { status: 400, headers: { Allow: ALLOW_HEADER } });
       }
 
       if (typeof variant.price !== "number" || !Number.isInteger(variant.price) || variant.price <= 0) {
-        return NextResponse.json({ error: `Invalid variant price: ${item.variant_id}` }, { status: 400 });
+        return NextResponse.json({ error: `Invalid variant price: ${item.variant_id}` }, { status: 400, headers: { Allow: ALLOW_HEADER } });
       }
 
       // Inventory not enforced (unlimited mode)
@@ -129,14 +141,11 @@ export async function POST(req: Request) {
     }
 
     if (resolved.length === 0) {
-      return NextResponse.json({ error: "No valid cart items" }, { status: 400 });
+      return NextResponse.json({ error: "No valid cart items" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
     if (!Number.isInteger(totalPaise) || totalPaise <= 0) {
-      return NextResponse.json(
-        { error: "Invalid order amount" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid order amount" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
     const orderPayload = {
@@ -158,7 +167,7 @@ export async function POST(req: Request) {
 
     if (orderErr || !order) {
       serverError("orders cart insert order", orderErr ?? "order missing");
-      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
     }
 
     const orderItems = resolved.map((r) => ({
@@ -172,7 +181,7 @@ export async function POST(req: Request) {
     const { error: itemsErr } = await admin.from("order_items").insert(orderItems);
     if (itemsErr) {
       serverError("orders cart insert order_items", itemsErr);
-      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
     }
 
     const receipt = `ord_${Date.now()}`;
@@ -200,7 +209,7 @@ export async function POST(req: Request) {
         .from("orders")
         .update({ status: "failed", updated_at: new Date().toISOString() })
         .eq("id", order.id);
-      return NextResponse.json({ error: "Payment gateway error" }, { status: 500 });
+      return NextResponse.json({ error: "Payment gateway error" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
     }
 
     const { error: orderUpdateErr } = await admin
@@ -213,7 +222,7 @@ export async function POST(req: Request) {
       .eq("status", "pending");
     if (orderUpdateErr) {
       serverError("orders cart update razorpay_order_id", orderUpdateErr);
-      return NextResponse.json({ error: "Order creation failed" }, { status: 500 });
+      return NextResponse.json({ error: "Order creation failed" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
     }
 
     serverWarn(
@@ -221,18 +230,18 @@ export async function POST(req: Request) {
       `Checkout diagnostics: orderId=${order.id} razorpayOrderId=${razorpayOrderId} amount=${razorpayAmount} currency=${razorpayCurrency}`,
     );
 
-    return NextResponse.json({
-      orderId: order.id,
-      razorpayOrderId,
-      amount: razorpayAmount,
-      currency: razorpayCurrency,
-      keyId,
-    });
+    return NextResponse.json(
+      {
+        orderId: order.id,
+        razorpayOrderId,
+        amount: razorpayAmount,
+        currency: razorpayCurrency,
+        keyId,
+      },
+      { status: 200, headers: { Allow: ALLOW_HEADER } },
+    );
   } catch (error) {
     serverError("orders cart", error);
-    return NextResponse.json(
-      { error: "Order creation failed" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Order creation failed" }, { status: 500, headers: { Allow: ALLOW_HEADER } });
   }
 }

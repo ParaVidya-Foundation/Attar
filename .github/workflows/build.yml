@@ -24,7 +24,7 @@ jobs:
         run: corepack enable
 
       - name: Activate pnpm
-        run: corepack prepare pnpm@latest --activate
+        run: corepack prepare pnpm@10.17.1 --activate
 
       - name: Show tool versions
         run: |
@@ -43,10 +43,10 @@ jobs:
       - name: Build
         run: pnpm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
-          SUPABASE_SERVICE_ROLE_KEY: placeholder
-          NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_live_placeholder
-          RAZORPAY_KEY_SECRET: placeholder
-          RAZORPAY_WEBHOOK_SECRET: placeholder
-          NEXT_PUBLIC_SITE_URL: https://placeholder.vercel.app
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-example-project.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: rzp_live_ci_example
+          RAZORPAY_KEY_SECRET: ci-razorpay-secret
+          RAZORPAY_WEBHOOK_SECRET: ci-webhook-secret
+          NEXT_PUBLIC_SITE_URL: https://ci.example.com

@@ -332,8 +332,13 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
   useEffect(() => {
     if (autoFilledRef.current) return;
     autoFilledRef.current = true;
-    const supabase = createClient();
     (async () => {
+      let supabase;
+      try {
+        supabase = createClient();
+      } catch {
+        return;
+      }
       const {
         data: { user },
       } = await supabase.auth.getUser();

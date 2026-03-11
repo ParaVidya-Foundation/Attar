@@ -1,8 +1,15 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { serverWarn } from "@/lib/security/logger";
 
 export async function getUser() {
-  const supabase = await createServerClient();
+  let supabase;
+  try {
+    supabase = await createServerClient();
+  } catch (error) {
+    serverWarn("auth", error instanceof Error ? error.message : "Supabase auth unavailable");
+    return null;
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -10,7 +17,13 @@ export async function getUser() {
 }
 
 export async function requireUser() {
-  const supabase = await createServerClient();
+  let supabase;
+  try {
+    supabase = await createServerClient();
+  } catch (error) {
+    serverWarn("auth", error instanceof Error ? error.message : "Supabase auth unavailable");
+    redirect("/login?error=auth");
+  }
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -2,14 +2,14 @@ import { createServerClient as createSupabaseServerClient } from "@supabase/ssr"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { serverWarn, serverError } from "@/lib/security/logger";
+import { requireClientSupabaseEnv } from "@/lib/env";
 
 /**
  * Cookie-based Supabase client for server components, server actions, and route handlers.
  *
  * Calls cookies() FIRST so Next.js opts the page into dynamic rendering before
  * any env-var check runs. This prevents prerender crashes during `next build`.
- * If env vars are missing at runtime, logs warnings and uses placeholder
- * values so handlers can return controlled errors instead of crashing.
+ * If env vars are missing at runtime, logs warnings and throws a typed error.
  */
 export async function createServerClient() {
   // cookies() must be called before anything else.
@@ -17,17 +17,20 @@ export async function createServerClient() {
   // static generation for this page and renders it on-demand at request time.
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const hasSupabaseEnv = !!(supabaseUrl.trim() && supabaseAnonKey.trim());
-
-  if (!hasSupabaseEnv) {
+  let supabaseUrl: string;
+  let supabaseAnonKey: string;
+  try {
+    const env = requireClientSupabaseEnv();
+    supabaseUrl = env.url;
+    supabaseAnonKey = env.anonKey;
+  } catch (error) {
     serverWarn("supabase/server", "Supabase env not set");
+    throw error;
   }
 
   return createSupabaseServerClient(
-    hasSupabaseEnv ? supabaseUrl : "https://placeholder.supabase.co",
-    hasSupabaseEnv ? supabaseAnonKey : "placeholder-anon-key",
+    supabaseUrl,
+    supabaseAnonKey,
     {
     cookies: {
       getAll() {
@@ -55,29 +58,23 @@ const SUPABASE_ENV_MSG =
  * Call before using createStaticClient() for catalog/product data to avoid silent empty results.
  */
 export function assertSupabaseEnv(): void {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const missing = !url.trim() || !anonKey.trim();
-  if (!missing) return;
-  serverWarn("supabase/server", SUPABASE_ENV_MSG);
+  try {
+    requireClientSupabaseEnv();
+  } catch {
+    serverWarn("supabase/server", SUPABASE_ENV_MSG);
+  }
 }
 
 /**
  * Lightweight Supabase client for data fetching in server components / ISR.
- * Logs and uses placeholder values if env vars are missing.
+ * Throws if env vars are missing so callers can decide how to degrade.
  */
 export function createStaticClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const hasSupabaseEnv = !!(url.trim() && anonKey.trim());
-
-  if (!hasSupabaseEnv) {
-    serverError("supabase/server", SUPABASE_ENV_MSG);
-  }
+  const { url, anonKey } = requireClientSupabaseEnv();
 
   return createSupabaseClient(
-    hasSupabaseEnv ? url : "https://placeholder.supabase.co",
-    hasSupabaseEnv ? anonKey : "placeholder-anon-key",
+    url,
+    anonKey,
     {
     auth: {
       autoRefreshToken: false,
