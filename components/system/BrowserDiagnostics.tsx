@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import { getClientEnv, getSupabaseAuthStorageKey } from "@/lib/env";
+import { getClientEnv, getSupabaseAuthStorageKey, hasClientEnv, MissingEnvError } from "@/lib/env";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 declare global {
@@ -12,6 +12,12 @@ declare global {
 }
 
 async function runBrowserDiagnostics() {
+  if (!hasClientEnv()) {
+    // eslint-disable-next-line no-console
+    console.warn("[browser diagnostics] skipped — client env not configured");
+    return;
+  }
+
   const clientEnv = getClientEnv();
   const supabaseUrl = clientEnv.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -74,6 +80,11 @@ async function runBrowserDiagnostics() {
       result.supabase.error = `REST ${restResponse.status}`;
     }
   } catch (error) {
+    if (error instanceof MissingEnvError) {
+      // eslint-disable-next-line no-console
+      console.warn("[browser diagnostics] env missing, skipping supabase checks", error.message);
+      return;
+    }
     result.supabase.error = error instanceof Error ? error.message : "Unknown diagnostics error";
   }
 
@@ -93,6 +104,12 @@ async function runBrowserDiagnostics() {
 
 export function BrowserDiagnostics() {
   useEffect(() => {
+    if (!hasClientEnv()) {
+      // eslint-disable-next-line no-console
+      console.warn("[browser diagnostics] disabled — NEXT_PUBLIC_SUPABASE_* not set");
+      return;
+    }
+
     window.debugStore = runBrowserDiagnostics;
 
     let unsubscribed = false;

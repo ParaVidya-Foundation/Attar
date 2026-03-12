@@ -7,10 +7,10 @@
     "node": ">=18.18.0"
   },
   "scripts": {
-  "clean": "node -e \"const fs=require('fs'); for (const p of ['.next','node_modules/.cache']) fs.rmSync(p,{ recursive:true, force:true });\"",
-  "dev": "next dev",
-  "dev:clean": "pnpm clean && next dev",
-  "build": "next build",
+    "clean": "node -e \"const fs=require('fs'); for (const p of ['.next','node_modules/.cache']) fs.rmSync(p,{ recursive:true, force:true });\"",
+    "dev": "next dev",
+    "dev:clean": "pnpm clean && next dev",
+    "build": "next build",
     "postbuild": "echo \"Using app/sitemap.ts for sitemap generation\"",
     "start": "next start",
     "preview": "next start",
@@ -44,6 +44,7 @@
     "date-fns": "^4.1.0",
     "envalid": "^8.1.1",
     "framer-motion": "^12.33.0",
+    "gsap": "^3.14.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "next-safe": "^3.5.0",

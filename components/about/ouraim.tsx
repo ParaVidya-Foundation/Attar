@@ -42,7 +42,7 @@ export default function OurMission() {
           <div className="relative w-full animate-fade-in">
             <div className="relative w-full h-[320px] sm:h-[420px] md:h-[520px] lg:h-[620px]">
               <Image
-                src="/about/our-mission.webp"
+                src="/about/lab.png"
                 alt="Our Mission – Attar Craftsmanship"
                 fill
                 priority

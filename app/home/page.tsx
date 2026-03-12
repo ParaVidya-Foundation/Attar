@@ -17,6 +17,8 @@ import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import type { ProductDisplay } from "@/types/product";
 import type { ShowcaseProduct } from "@/components/Home/showcase";
 import type { ZodiacShowcaseProduct } from "@/components/Home/ZodiacShowcase";
+import ScrollVideo from "@/components/Home/ScrollVideo";
+import CategoryGrid from "@/components/Home/CategoryGrid";
 
 export const revalidate = 60;
 
@@ -32,9 +34,11 @@ export default async function HomePage() {
   return (
     <div className="">
       <Hero />
+      <CategoryGrid />
       <Showcase />
       <ShopTrio />
       <PerfumePlanets />
+      {/* <ScrollVideo /> */}
       <ZodiacHero />
       <ZodiacShowcase />
       <Link
@@ -51,7 +55,7 @@ export default async function HomePage() {
             alt="Luxury Incense Collection"
             fill
             priority
-            sizes="100vw"
+            sizes="(max-width:640px) 100vw, (max-width:1024px) 100vw, 100vw"
             className="
             object-contain
             transition-transform duration-700 ease-out

@@ -10,6 +10,8 @@ import { LOGO_PATH } from "@/lib/seo";
 const collections = [
   { name: "Planets Attar", href: "/collections/planets" },
   { name: "Zodiac Attar", href: "/collections/zodiac" },
+  { name: "Nakshatra Attar", href: "/collections/nakshatra" },
+  { name: "Chakra Attar", href: "/collections/Chakra-attar" },
   { name: "Stress Relief Attar", href: "/collections/stress" },
   { name: "Love Attar", href: "/collections/Love-attar" },
   { name: "Incense Sticks", href: "/collections/Incense" },

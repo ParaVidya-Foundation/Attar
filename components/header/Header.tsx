@@ -20,7 +20,7 @@ const COLLECTIONS = [
     id: "nakshatra",
     href: "/collections/nakshatra",
     label: "Nakshatra Attars",
-    img: "/collections/nakshatra-thumb.jpg",
+    img: "/NakshatraGif.gif",
   },
   {
     id: "stress",
@@ -32,7 +32,7 @@ const COLLECTIONS = [
     id: "Chakra-attar",
     href: "/collections/Chakra-attar",
     label: "Chakra Attars",
-    img: "/love.webp",
+    img: "/chakra.webp",
   },
   {
     id: "Love-attar",
@@ -42,10 +42,10 @@ const COLLECTIONS = [
   },
 
   {
-    id: "divine",
+    id: "Incense",
     href: "/collections/Incense",
     label: "Incense Sticks",
-    img: "/collections/divine-thumb.jpg",
+    img: "/incense.jpg",
   },
 ] as const;
 
@@ -115,7 +115,6 @@ export default function Header() {
     function updatePadding() {
       const h = headerRef.current?.offsetHeight ?? 72;
       document.documentElement.style.setProperty("--site-header-height", `${h}px`);
-      (document.body.style as any).paddingTop = `${h}px`;
     }
     updatePadding();
     const onResize = () => requestAnimationFrame(updatePadding);
@@ -123,7 +122,6 @@ export default function Header() {
     return () => {
       window.removeEventListener("resize", onResize);
       document.documentElement.style.removeProperty("--site-header-height");
-      (document.body.style as any).paddingTop = "";
     };
   }, []);
 
@@ -180,7 +178,7 @@ export default function Header() {
     <header
       ref={headerRef}
       role="banner"
-      className={`fixed inset-x-0 top-0 z-50 border-b border-neutral-200/60 bg-white/95 backdrop-blur-sm will-change-transform transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
+      className={`sticky top-0 z-50 border-b border-neutral-200/60 bg-white/95 backdrop-blur-sm will-change-transform transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="relative flex h-20 items-center">
@@ -245,7 +243,7 @@ export default function Header() {
                 id="collections-mega"
                 onMouseEnter={openMega}
                 onMouseLeave={closeMegaDelayed}
-                className={`pointer-events-auto absolute right-0 top-full mt-3 w-[720px] max-w-[calc(100vw-2rem)] rounded-md border border-neutral-100 bg-white shadow-lg overflow-hidden transition-all duration-250 transform origin-top-right
+                className={`pointer-events-auto absolute right-0 top-full mt-3 w-[720px] max-w-[calc(100vw-2rem)] rounded-xl border border-neutral-100 bg-white shadow-lg overflow-hidden transition-all duration-250 transform origin-top-right
                   ${megaOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-[0.996] pointer-events-none"}`}
                 role="menu"
                 aria-label="Collections menu"
@@ -274,7 +272,7 @@ export default function Header() {
                   {/* Right column: preview */}
                   <div className="hidden md:block w-1/2 relative h-[260px] flex items-center justify-center p-4">
                     {preview && (
-                      <div className="relative w-full h-full rounded-sm overflow-hidden">
+                      <div className="relative w-full h-full rounded-xl overflow-hidden">
                         <Image
                           src={preview}
                           alt="Collection preview"

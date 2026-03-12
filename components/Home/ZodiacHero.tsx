@@ -5,57 +5,44 @@ import Link from "next/link";
 
 export default function ZodiacHero() {
   return (
-    <div className="relative w-full h-[70vh] overflow-hidden bg-white">
-      {/* Background Image */}
-      <Image
-        src="/images/zodiac-hero.jpg" // replace with your image
-        alt="Essential cruelty-free skincare products arranged on stone background"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-right"
-      />
-
-      {/* Soft overlay for text contrast */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/60 to-transparent" />
-
+    <section className="relative w-full h-[70vh] bg-[#F5A5C2] overflow-hidden">
       {/* Content */}
       <div className="relative z-10 flex h-full items-center">
-        <div className="max-w-xl px-6 sm:px-10 lg:px-16 animate-fadeUp">
+        <div className="max-w-xl px-6 sm:px-10 lg:px-16">
           <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl leading-tight text-[#1e2023]">
-            Essential cruelty-free skincare
+            Nakshatra Attar
             <br className="hidden sm:block" />
-            for a glowy, healthy skin.
+            for your soul.
           </h1>
 
           <p className="mt-5 max-w-md text-sm sm:text-base leading-7 text-[#5f6368]">
-            Thoughtfully crafted formulas using clean, ethical ingredients — designed to restore balance,
-            softness, and everyday radiance.
+            Twenty-seven Nakshatra attars crafted to mirror the mood and energy of each Vedic lunar mansion.
+            Each attar is composed as a quiet, skin-close aura that echoes the symbolism, deity, and elemental
+            nature of your birth star.
           </p>
 
           <Link
-            href="/shop"
+            href="/collections/nakshatra"
             className="inline-block mt-8 border border-[#1e2023] px-6 py-2 text-xs tracking-[0.18em] text-[#1e2023] transition-all duration-300 hover:bg-black hover:text-white"
           >
-            SHOP OUR PRODUCTS
+            Explore Nakshatra Attars
           </Link>
         </div>
       </div>
 
-      {/* Animation */}
-      <style jsx>{`
-        .animate-fadeUp {
-          opacity: 0;
-          transform: translateY(14px);
-          animation: fadeUp 0.6s ease-out forwards;
-        }
-        @keyframes fadeUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
-    </div>
+      {/* RIGHT IMAGE */}
+      <div className="absolute right-0 top-0 h-full w-[45%]">
+        <div className="relative w-full h-full">
+          <Image
+            src="/NakshatraGif.gif"
+            alt="Nakshatra cosmic animation"
+            fill
+            priority
+            sizes="(max-width:1024px) 100vw, 45vw"
+            className="object-contain object-right"
+          />
+        </div>
+      </div>
+    </section>
   );
 }
