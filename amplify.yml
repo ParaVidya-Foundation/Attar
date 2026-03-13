@@ -3,6 +3,27 @@ frontend:
   phases:
     preBuild:
       commands:
+        # Install dependencies
+        - npm ci || npm install
+    build:
+      commands:
+        # Production build for Next.js App Router
+        - npm run build
+  artifacts:
+    # Build output directory for Next.js
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
         # Use Node 18+ (Amplify default is usually 18+)
         - node --version
         # Enable corepack for pnpm

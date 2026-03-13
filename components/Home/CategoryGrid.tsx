@@ -10,7 +10,7 @@ const categories = [
   { title: "Chakra Attar", image: "/chakra.webp", link: "/collections/Chakra-attar" },
   { title: "Stress Relief Attar", image: "/stress/stress_calm.webp", link: "/collections/stress" },
   { title: "Love Attar", image: "/love.webp", link: "/collections/Love-attar" },
-  { title: "Incense Sticks", image: "/incense.jpg", link: "/collections/Incense" },
+  { title: "Incense Sticks", image: "/incense.jpeg", link: "/collections/Incense" },
   { title: "Discovery Kit", image: "/images/discovery-kit.png", link: "/discovery" },
 ];
 

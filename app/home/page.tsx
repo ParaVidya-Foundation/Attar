@@ -42,7 +42,7 @@ export default async function HomePage() {
       <ZodiacHero />
       <ZodiacShowcase />
       <Link
-        href="/shop/incense"
+        href="/collections/Incense"
         className="
         group block w-full overflow-hidden bg-white border-b-[2px] border-[#1e2023]
       "
@@ -51,7 +51,7 @@ export default async function HomePage() {
         {/* 16:9 Container — prevents layout shift */}
         <div className="relative w-full aspect-[16/9]">
           <Image
-            src="/incense.jpg"
+            src="/incense.jpeg"
             alt="Luxury Incense Collection"
             fill
             priority

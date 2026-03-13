@@ -45,7 +45,7 @@ const COLLECTIONS = [
     id: "Incense",
     href: "/collections/Incense",
     label: "Incense Sticks",
-    img: "/incense.jpg",
+    img: "/incense.jpeg",
   },
 ] as const;
 

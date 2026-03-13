@@ -62,7 +62,7 @@ export default async function IncensePage() {
       <section aria-label="Incense collection showcase" className="relative w-full">
         <div className="relative w-full aspect-[16/9] sm:aspect-[21/9]">
           <Image
-            src="/incense.jpg"
+            src="/incense.jpeg"
             alt="Premium luxury incense collection in minimal studio lighting"
             fill
             priority
