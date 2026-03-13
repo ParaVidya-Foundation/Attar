@@ -13,7 +13,10 @@ const nextConfig = {
     root: __dirname,
   },
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production" ? true : false,
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   experimental: {
     optimizeCss: true,

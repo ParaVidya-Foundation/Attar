@@ -4,11 +4,25 @@ import { getServerEnv } from "@/lib/env";
 import { createRazorpayOrder } from "@/lib/payments/razorpay";
 import { serverError, serverWarn } from "@/lib/security/logger";
 
+const ENDPOINT = "/api/razorpay/order";
+const ALLOW_HEADER = "GET, POST, OPTIONS";
+
 const orderSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.string().optional(),
   receipt: z.string().max(100).optional(),
 });
+
+export async function GET() {
+  return NextResponse.json(
+    { status: "ok", endpoint: ENDPOINT, method: "POST required" },
+    { status: 200, headers: { Allow: ALLOW_HEADER } },
+  );
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: { Allow: ALLOW_HEADER } });
+}
 
 export async function POST(req: Request) {
   try {

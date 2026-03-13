@@ -13,11 +13,17 @@ const SERVER_ONLY_ENV_KEYS = [
   "RAZORPAY_WEBHOOK_SECRET",
 ] as const;
 
+const OPTIONAL_SERVER_ENV_KEYS = [
+  "RAZORPAY_WEBHOOK_URL",
+] as const;
+
 type ClientEnvKey = (typeof CLIENT_ENV_KEYS)[number];
 type ServerOnlyEnvKey = (typeof SERVER_ONLY_ENV_KEYS)[number];
 
+type OptionalServerEnvKey = (typeof OPTIONAL_SERVER_ENV_KEYS)[number];
+
 export type ClientEnv = Record<ClientEnvKey, string>;
-export type ServerEnv = ClientEnv & Record<ServerOnlyEnvKey, string>;
+export type ServerEnv = ClientEnv & Record<ServerOnlyEnvKey, string> & Partial<Record<OptionalServerEnvKey, string>>;
 
 export class MissingEnvError extends Error {
   constructor(key: string) {
@@ -78,12 +84,41 @@ function buildClientEnv(): ClientEnv {
 function buildServerEnv(): ServerEnv {
   const clientEnv = getClientEnv();
 
-  return {
+  const env: ServerEnv = {
     ...clientEnv,
     SUPABASE_SERVICE_ROLE_KEY: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     RAZORPAY_KEY_SECRET: requireEnv("RAZORPAY_KEY_SECRET"),
     RAZORPAY_WEBHOOK_SECRET: requireEnv("RAZORPAY_WEBHOOK_SECRET"),
   };
+
+  const webhookUrl = readRawEnv("RAZORPAY_WEBHOOK_URL");
+  if (webhookUrl) {
+    env.RAZORPAY_WEBHOOK_URL = webhookUrl;
+    if (process.env.NODE_ENV === "production") {
+      const webhookUrlCheck = validateEnvUrl(webhookUrl);
+      if (!webhookUrlCheck.ok) {
+        serverWarn("env", `[prod] RAZORPAY_WEBHOOK_URL is not a valid public HTTPS URL: ${webhookUrlCheck.reason}`);
+      }
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    serverWarn("env", "[prod] RAZORPAY_WEBHOOK_URL not set — webhook delivery URL not tracked");
+  }
+
+  return env;
+}
+
+function validateEnvUrl(url: string): { ok: boolean; reason?: string } {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return { ok: false, reason: "must use https" };
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
+      return { ok: false, reason: "points to localhost" };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "invalid URL" };
+  }
 }
 
 export function getClientEnv(): ClientEnv {
@@ -102,9 +137,9 @@ export function getServerEnv(): ServerEnv {
 }
 
 export function getEnvPresence() {
-  const allKeys = [...CLIENT_ENV_KEYS, ...SERVER_ONLY_ENV_KEYS];
+  const allKeys = [...CLIENT_ENV_KEYS, ...SERVER_ONLY_ENV_KEYS, ...OPTIONAL_SERVER_ENV_KEYS];
   return Object.fromEntries(allKeys.map((key) => [key, Boolean(readRawEnv(key))])) as Record<
-    ClientEnvKey | ServerOnlyEnvKey,
+    ClientEnvKey | ServerOnlyEnvKey | OptionalServerEnvKey,
     boolean
   >;
 }

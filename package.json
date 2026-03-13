@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.17.1",
   "engines": {
-    "node": ">=18.18.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "clean": "node -e \"const fs=require('fs'); for (const p of ['.next','node_modules/.cache']) fs.rmSync(p,{ recursive:true, force:true });\"",

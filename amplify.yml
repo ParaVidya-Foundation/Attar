@@ -3,40 +3,13 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Install dependencies
-        - npm ci || npm install
-    build:
-      commands:
-        # Production build for Next.js App Router
-        - npm run build
-  artifacts:
-    # Build output directory for Next.js
-    baseDirectory: .next
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-      - .next/cache/**/*
-
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        # Use Node 18+ (Amplify default is usually 18+)
-        - node --version
-        # Enable corepack for pnpm
+        - nvm use 20
         - corepack enable
-        - pnpm --version || npm --version
-        # Clean install with frozen lockfile
-        - pnpm install --frozen-lockfile || npm ci
+        - corepack prepare pnpm@latest --activate
+        - pnpm install --frozen-lockfile
     build:
       commands:
-        # Type check (fail build on errors)
-        - pnpm run type-check || npm run type-check
-        # Production build
-        - pnpm run build || npm run build
+        - pnpm run build
   artifacts:
     baseDirectory: .next
     files:

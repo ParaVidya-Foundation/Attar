@@ -9,6 +9,7 @@ const REQUIRED = [
   "RAZORPAY_KEY_SECRET",
   "NEXT_PUBLIC_RAZORPAY_KEY_ID",
   "RAZORPAY_WEBHOOK_SECRET",
+  "NEXT_PUBLIC_SITE_URL",
 ] as const;
 
 export function assertEnv(): void {
@@ -18,7 +19,9 @@ export function assertEnv(): void {
   }
 }
 
-/** For webhook route only: also requires RAZORPAY_WEBHOOK_SECRET */
 export function assertWebhookEnv(): void {
   assertEnv();
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET?.trim()) {
+    throw new Error("Missing RAZORPAY_WEBHOOK_SECRET for webhook verification");
+  }
 }
