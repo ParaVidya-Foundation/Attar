@@ -4,7 +4,7 @@ import { getOrders } from "@/lib/admin/queries";
 import { OrderTable } from "@/components/admin/OrderTable";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const STATUS_FILTERS = ["all", "pending", "paid", "shipped", "delivered", "failed", "cancelled"] as const;
+const STATUS_FILTERS = ["all", "pending", "paid", "shipped", "delivered", "failed", "cancelled", "expired"] as const;
 
 type Props = {
   searchParams: Promise<{ page?: string; status?: string }>;

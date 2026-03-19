@@ -32,7 +32,9 @@ export function InventoryTable({ rows }: Props) {
       delete next[variantId];
       return next;
     });
-    if (result.ok) window.location.reload();
+    if (result && !result.ok && "error" in result) {
+      alert(result.error);
+    }
   }
 
   if (rows.length === 0) {

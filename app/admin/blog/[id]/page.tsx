@@ -4,29 +4,47 @@ import { getAdminPostById } from "@/lib/admin/blogQueries";
 import { getBlogCategoriesForAdmin, getBlogTagsForAdmin } from "@/lib/admin/blogQueries";
 import { BlogPostForm } from "@/components/admin/BlogPostForm";
 import { DeleteBlogPostButton } from "./DeleteBlogPostButton";
+import { serverError } from "@/lib/security/logger";
 
 type Props = { params: Promise<{ id: string }> };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export default async function EditBlogPostPage({ params }: Props) {
   const { id } = await params;
-  const [post, categories, tags] = await Promise.all([
-    getAdminPostById(id),
-    getBlogCategoriesForAdmin(),
-    getBlogTagsForAdmin(),
-  ]);
+
+  if (!id || !UUID_RE.test(id)) {
+    notFound();
+  }
+
+  let post;
+  let categories;
+  let tags;
+
+  try {
+    [post, categories, tags] = await Promise.all([
+      getAdminPostById(id),
+      getBlogCategoriesForAdmin(),
+      getBlogTagsForAdmin(),
+    ]);
+  } catch (err) {
+    serverError("admin blog [id] page", err);
+    notFound();
+  }
 
   if (!post) notFound();
 
   const initialData = {
-    title: post.title,
-    slug: post.slug,
+    title: post.title ?? "",
+    slug: post.slug ?? "",
     excerpt: post.excerpt ?? "",
     content: post.content ?? "",
     cover_image: post.cover_image ?? "",
     category_id: post.category_id ?? null,
     author_name: post.author_name ?? "",
     reading_time: post.reading_time ?? null,
-    status: post.status as "draft" | "published",
+    status: (post.status as "draft" | "published" | "scheduled") ?? "draft",
+    published_at: post.published_at ?? null,
     tag_ids: post.tag_ids ?? [],
   };
 
@@ -37,12 +55,12 @@ export default async function EditBlogPostPage({ params }: Props) {
       </Link>
       <div className="mt-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-neutral-900">Edit: {post.title || "(Untitled)"}</h2>
-        <DeleteBlogPostButton postId={id} postTitle={post.title} />
+        <DeleteBlogPostButton postId={id} postTitle={post.title ?? ""} />
       </div>
       <div className="mt-6">
         <BlogPostForm
-          categories={categories}
-          tags={tags}
+          categories={categories ?? []}
+          tags={tags ?? []}
           initialData={initialData}
           postId={id}
         />

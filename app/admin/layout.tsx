@@ -4,6 +4,7 @@ import { assertAdmin, NotAuthenticatedError, ForbiddenError, ProfileMissingError
 import { serverError } from "@/lib/security/logger";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Header } from "@/components/admin/Header";
+import { AdminRealtimeProvider } from "@/components/admin/AdminRealtimeProvider";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,7 +42,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="sticky top-0 z-20 shrink-0 bg-white/95 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80">
           <Header name={profile?.full_name} email={user.email} />
         </div>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+          <AdminRealtimeProvider>{children}</AdminRealtimeProvider>
+        </main>
       </div>
     </div>
   );

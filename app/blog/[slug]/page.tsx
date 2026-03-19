@@ -14,8 +14,9 @@ import { absoluteUrl, pageMetadata, articleJsonLdFromRow, breadcrumbJsonLd } fro
 import { PLACEHOLDER_IMAGE_URL } from "@/lib/images";
 import BlogSidebarSection from "@/components/blog/BlogSidebarSection";
 import BlogCategorySidebar from "@/components/blog/BlogCategorySidebar";
+import { PostViewTracker } from "@/components/blog/PostViewTracker";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -103,6 +104,7 @@ export default async function BlogPostPage({ params }: Props) {
 
   return (
     <main className="min-h-screen bg-white">
+      <PostViewTracker postId={post.id} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-6 py-16 lg:grid-cols-[1fr_320px] sm:py-20">

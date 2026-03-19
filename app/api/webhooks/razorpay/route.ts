@@ -90,7 +90,27 @@ async function markOrderPaid(
     return { ok: false, status: 500 };
   }
 
-  // Inventory not enforced (unlimited mode) — stock decrement skipped
+  try {
+    const { data: orderItems } = await admin
+      .from("order_items")
+      .select("variant_id,quantity")
+      .eq("order_id", order.id);
+
+    for (const item of orderItems ?? []) {
+      if (!item.variant_id) continue;
+      try {
+        await admin.rpc("decrement_variant_stock", {
+          p_variant_id: item.variant_id,
+          p_qty: item.quantity,
+        });
+      } catch (stockErr) {
+        serverError("webhook stock decrement", stockErr);
+      }
+    }
+  } catch (invErr) {
+    serverError("webhook inventory decrement", invErr);
+  }
+
   try {
     await recordPurchaseEventsForOrder(order.id);
   } catch (error) {

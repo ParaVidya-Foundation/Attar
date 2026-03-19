@@ -141,7 +141,7 @@ export async function createProduct(data: ProductFormData) {
     return { ok: true };
   } catch (err) {
     serverError("admin actions createProduct", err);
-    throw err;
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to create product" };
   }
 }
 
@@ -209,7 +209,7 @@ export async function updateProduct(id: string, data: ProductFormData) {
     return { ok: true };
   } catch (err) {
     serverError("admin actions updateProduct", err);
-    throw err;
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to update product" };
   }
 }
 
@@ -240,7 +240,7 @@ export async function toggleProductActive(id: string, isActive: boolean) {
     return { ok: true };
   } catch (err) {
     serverError("admin actions toggleProductActive", err);
-    throw err;
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to toggle product" };
   }
 }
 
@@ -298,103 +298,83 @@ export async function deleteProduct(id: string) {
     return { ok: true };
   } catch (err) {
     serverError("admin actions deleteProduct", err);
-    throw err;
+    return { ok: false, error: err instanceof Error ? err.message : "Failed to delete product" };
   }
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
   const guard = await guardAdmin();
   if (guard) return guard;
-  const valid = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled"];
-  if (!valid.includes(status)) {
-    return { ok: false, error: "Invalid status" };
-  }
 
-  const supabase = createAdminClient();
-  try {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", orderId);
+  const { ordersService } = await import("@/lib/admin/services");
+  const result = await ordersService.updateOrderStatus(orderId, status);
 
-    if (error) {
-      serverError("admin actions updateOrderStatus", error);
-      return { ok: false, error: error.message };
-    }
-    revalidatePath("/admin/orders");
-    revalidatePath(`/admin/orders/${orderId}`);
-    return { ok: true };
-  } catch (err) {
-    serverError("admin actions updateOrderStatus", err);
-    throw err;
+  if (!result.ok) {
+    return { ok: false, error: result.error };
   }
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/inventory");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 export async function updateVariantStock(variantId: string, stock: number) {
   const guard = await guardAdmin();
   if (guard) return guard;
-  if (stock < 0) {
-    return { ok: false, error: "Stock cannot go below 0" };
-  }
 
-  const supabase = createAdminClient();
-  try {
-    const { error } = await supabase
-      .from("product_variants")
-      .update({ stock })
-      .eq("id", variantId);
+  const { inventoryService } = await import("@/lib/admin/services");
+  const result = await inventoryService.updateVariantStock(variantId, stock);
 
-    if (error) {
-      serverError("admin actions updateVariantStock", error);
-      return { ok: false, error: error.message };
-    }
-    revalidatePath("/admin/products");
-    revalidatePath("/admin/inventory");
-    revalidatePath("/admin");
-    return { ok: true };
-  } catch (err) {
-    serverError("admin actions updateVariantStock", err);
-    throw err;
+  if (!result.ok) {
+    return { ok: false, error: result.error };
   }
+  revalidatePath("/admin/products");
+  revalidatePath("/admin/inventory");
+  revalidatePath("/admin");
+  return { ok: true };
 }
 
 // ——— Blog (admin only) ———
 
-export type BlogPostFormData = {
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  cover_image: string;
-  category_id: string | null;
-  author_name: string;
-  reading_time: number | null;
-  status: "draft" | "published";
-  tag_ids: string[];
-};
+import { z } from "zod";
+import { postsService } from "@/lib/blog/services";
 
-function slugifyBlog(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-}
+const blogPostSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters"),
+  slug: z.string().optional(),
+  excerpt: z.string().optional(),
+  content: z.string().optional(),
+  cover_image: z.string().optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  author_name: z.string().optional(),
+  reading_time: z.number().int().min(0).nullable().optional(),
+  status: z.enum(["draft", "published", "scheduled"]).default("draft"),
+  published_at: z.string().nullable().optional(),
+  tag_ids: z.array(z.string().uuid()).optional(),
+});
+
+export type BlogPostFormData = z.infer<typeof blogPostSchema>;
 
 export async function blogPostFormAction(
   _prev: { ok: boolean; error?: string } | null,
   formData: FormData,
 ): Promise<{ ok: boolean; error?: string }> {
+  const guard = await guardAdmin();
+  if (guard) return guard;
+
   const postId = (formData.get("postId") as string)?.trim() || null;
-  const tagIdsRaw = (formData.get("tag_ids") as string) ?? "[]";
   let tagIds: string[] = [];
   try {
-    tagIds = JSON.parse(tagIdsRaw) as string[];
+    tagIds = JSON.parse((formData.get("tag_ids") as string) ?? "[]") as string[];
   } catch {
     tagIds = [];
   }
-  const data: BlogPostFormData = {
+
+  const rawStatus = (formData.get("status") as string) ?? "draft";
+  const publishedAtRaw = (formData.get("published_at") as string)?.trim() || null;
+
+  const parsed = blogPostSchema.safeParse({
     title: (formData.get("title") as string) ?? "",
     slug: (formData.get("slug") as string) ?? "",
     excerpt: (formData.get("excerpt") as string) ?? "",
@@ -403,127 +383,59 @@ export async function blogPostFormAction(
     category_id: (formData.get("category_id") as string) || null,
     author_name: (formData.get("author_name") as string) ?? "",
     reading_time: formData.get("reading_time") ? Number(formData.get("reading_time")) : null,
-    status: (formData.get("status") as string) === "published" ? "published" : "draft",
+    status: rawStatus === "published" ? "published" : rawStatus === "scheduled" ? "scheduled" : "draft",
+    published_at: publishedAtRaw,
     tag_ids: Array.isArray(tagIds) ? tagIds : [],
+  });
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Validation failed" };
+  }
+
+  const data = parsed.data;
+
+  if (data.status === "published" && !data.content?.trim()) {
+    return { ok: false, error: "Content is required to publish" };
+  }
+
+  const input = {
+    title: data.title,
+    slug: data.slug,
+    excerpt: data.excerpt,
+    content: data.content,
+    cover_image: data.cover_image,
+    category_id: data.category_id ?? null,
+    author_name: data.author_name,
+    reading_time: data.reading_time ?? null,
+    status: data.status as "draft" | "published" | "scheduled",
+    published_at: data.published_at ?? null,
+    tag_ids: data.tag_ids ?? [],
   };
-  if (postId) return updateBlogPost(postId, data);
-  return createBlogPost(data);
-}
 
-export async function createBlogPost(data: BlogPostFormData) {
-  const guard = await guardAdmin();
-  if (guard) return guard;
-  const supabase = createAdminClient();
-  const slug = data.slug?.trim() || slugifyBlog(data.title);
-  const now = new Date().toISOString();
-  const publishedAt = data.status === "published" ? now : null;
-
-  try {
-    const { data: inserted, error } = await supabase
-      .from("blog_posts")
-      .insert({
-        slug,
-        title: data.title.trim(),
-        excerpt: data.excerpt.trim() || null,
-        content: data.content.trim() || null,
-        cover_image: data.cover_image.trim() || null,
-        category_id: data.category_id || null,
-        author_name: data.author_name.trim() || null,
-        reading_time: data.reading_time ?? null,
-        status: data.status,
-        published_at: publishedAt,
-        updated_at: now,
-      })
-      .select("id")
-      .single();
-
-    if (error || !inserted) {
-      serverError("admin actions createBlogPost", error);
-      return { ok: false, error: error?.message ?? "Insert failed" };
-    }
-
-    if (data.tag_ids.length > 0) {
-      await supabase.from("blog_post_tags").insert(
-        data.tag_ids.map((tag_id) => ({ post_id: inserted.id, tag_id })),
-      );
-    }
-
-    revalidatePath("/admin/blog");
-    revalidatePath("/blog");
-    revalidatePath("/blog/[slug]", "page");
-    return { ok: true, postId: inserted.id };
-  } catch (err) {
-    serverError("admin actions createBlogPost", err);
-    throw err;
+  let result;
+  if (postId) {
+    result = await postsService.updatePost(postId, input);
+  } else {
+    result = await postsService.createPost(input);
   }
-}
 
-export async function updateBlogPost(id: string, data: BlogPostFormData) {
-  const guard = await guardAdmin();
-  if (guard) return guard;
-  const supabase = createAdminClient();
-  const slug = data.slug?.trim() || slugifyBlog(data.title);
-  const now = new Date().toISOString();
-  const { data: existing } = await supabase.from("blog_posts").select("published_at").eq("id", id).single();
-  const publishedAt =
-    data.status === "published"
-      ? existing?.published_at ?? now
-      : null;
+  if (!result.ok) return { ok: false, error: result.error };
 
-  try {
-    const { error } = await supabase
-      .from("blog_posts")
-      .update({
-        slug,
-        title: data.title.trim(),
-        excerpt: data.excerpt.trim() || null,
-        content: data.content.trim() || null,
-        cover_image: data.cover_image.trim() || null,
-        category_id: data.category_id || null,
-        author_name: data.author_name.trim() || null,
-        reading_time: data.reading_time ?? null,
-        status: data.status,
-        published_at: publishedAt,
-        updated_at: now,
-      })
-      .eq("id", id);
-
-    if (error) {
-      serverError("admin actions updateBlogPost", error);
-      return { ok: false, error: error.message };
-    }
-
-    await supabase.from("blog_post_tags").delete().eq("post_id", id);
-    if (data.tag_ids.length > 0) {
-      await supabase.from("blog_post_tags").insert(data.tag_ids.map((tag_id) => ({ post_id: id, tag_id })));
-    }
-
-    revalidatePath("/admin/blog");
-    revalidatePath("/blog");
-    revalidatePath("/blog/[slug]", "page");
-    return { ok: true };
-  } catch (err) {
-    serverError("admin actions updateBlogPost", err);
-    throw err;
-  }
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+  revalidatePath("/blog/[slug]", "page");
+  return { ok: true };
 }
 
 export async function deleteBlogPost(id: string) {
   const guard = await guardAdmin();
   if (guard) return guard;
-  const supabase = createAdminClient();
-  try {
-    const { error } = await supabase.from("blog_posts").delete().eq("id", id);
-    if (error) {
-      serverError("admin actions deleteBlogPost", error);
-      return { ok: false, error: error.message };
-    }
-    revalidatePath("/admin/blog");
-    revalidatePath("/blog");
-    revalidatePath("/blog/[slug]", "page");
-    return { ok: true };
-  } catch (err) {
-    serverError("admin actions deleteBlogPost", err);
-    throw err;
-  }
+
+  const result = await postsService.deletePost(id);
+  if (!result.ok) return { ok: false, error: result.error };
+
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+  revalidatePath("/blog/[slug]", "page");
+  return { ok: true };
 }

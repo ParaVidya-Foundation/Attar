@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useFormState } from "react-dom";
+import { useState, useEffect, useRef, useActionState } from "react";
 import type { ProductFormData, ProductVariantInput } from "@/lib/admin/actions";
 import { productFormAction } from "@/lib/admin/actions";
 import type { CategoryRow } from "@/lib/admin/queries";
@@ -17,7 +16,7 @@ type Props = {
 };
 
 export function ProductForm({ categories, initialData, productId }: Props) {
-  const [state, formAction] = useFormState(productFormAction, null);
+  const [state, formAction] = useActionState(productFormAction, null);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [variants, setVariants] = useState<ProductVariantInput[]>(
@@ -25,7 +24,10 @@ export function ProductForm({ categories, initialData, productId }: Props) {
   );
 
   useEffect(() => {
-    if (state?.ok) window.location.href = "/admin/products";
+    if (state?.ok) {
+      window.location.href = "/admin/products";
+      return;
+    }
     if (state && !state.ok && state.error) setError(state.error);
   }, [state]);
 

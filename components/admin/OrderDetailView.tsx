@@ -4,7 +4,7 @@ import { useState } from "react";
 import { updateOrderStatus } from "@/lib/admin/actions";
 import type { OrderRow } from "@/lib/admin/queries";
 
-const STATUS_OPTIONS = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled"] as const;
+const STATUS_OPTIONS = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled", "expired"] as const;
 
 type Props = {
   order: OrderRow & { customerEmail?: string | null };
@@ -16,9 +16,11 @@ export function OrderDetailView({ order, items }: Props) {
 
   async function handleStatusChange(status: string) {
     setUpdating(true);
-    await updateOrderStatus(order.id, status);
+    const result = await updateOrderStatus(order.id, status);
     setUpdating(false);
-    window.location.reload();
+    if (result && !result.ok && "error" in result) {
+      alert(result.error);
+    }
   }
 
   return (

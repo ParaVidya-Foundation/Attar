@@ -25,7 +25,7 @@ export function AnalyticsCharts({ data }: Props) {
 
   const revenueData = data.revenueLast7Days.map((d) => ({
     name: d.date.slice(5),
-    revenue: d.amount,
+    revenue: d.amount / 100,
   }));
 
   return (
@@ -58,7 +58,7 @@ export function AnalyticsCharts({ data }: Props) {
               <YAxis
                 tick={{ fontSize: 12 }}
                 stroke="#737373"
-                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                tickFormatter={(v) => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
               />
               <Tooltip
                 contentStyle={{ fontSize: 12, borderRadius: 8 }}

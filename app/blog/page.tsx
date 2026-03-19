@@ -5,7 +5,7 @@ import { pageMetadata, breadcrumbJsonLd, itemListJsonLd } from "@/lib/seo";
 import BlogList from "@/components/blog/BlogList";
 import BlogCategorySidebar from "@/components/blog/BlogCategorySidebar";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   ...pageMetadata({

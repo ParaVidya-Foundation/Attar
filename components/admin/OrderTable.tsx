@@ -7,7 +7,7 @@ import type { OrderRow } from "@/lib/admin/queries";
 import { EmptyState } from "./EmptyState";
 import { ShoppingCart } from "lucide-react";
 
-const STATUS_OPTIONS = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled"] as const;
+const STATUS_OPTIONS = ["created", "pending", "paid", "shipped", "delivered", "failed", "cancelled", "expired"] as const;
 
 type Props = {
   orders: OrderRow[];
@@ -18,9 +18,11 @@ export function OrderTable({ orders }: Props) {
 
   async function handleStatusChange(orderId: string, status: string) {
     setUpdatingId(orderId);
-    await updateOrderStatus(orderId, status);
+    const result = await updateOrderStatus(orderId, status);
     setUpdatingId(null);
-    window.location.reload();
+    if (result && !result.ok && "error" in result) {
+      alert(result.error);
+    }
   }
 
   if (orders.length === 0) {

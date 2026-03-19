@@ -1,3 +1,7 @@
+/**
+ * Admin blog queries — delegates to service layer for reads,
+ * uses createAdminClient for admin-specific views (drafts + all statuses).
+ */
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertAdminEnv } from "@/lib/admin/envCheck";
 import { serverError } from "@/lib/security/logger";
@@ -20,23 +24,13 @@ export type AdminBlogPostRow = {
   tag_ids: string[];
 };
 
-export type BlogCategoryOption = {
-  id: string;
-  slug: string;
-  name: string;
-};
+export type BlogCategoryOption = { id: string; slug: string; name: string };
+export type BlogTagOption = { id: string; slug: string; name: string };
 
-export type BlogTagOption = {
-  id: string;
-  slug: string;
-  name: string;
-};
-
-export async function getAdminBlogPosts(page = 1): Promise<{
-  posts: AdminBlogPostRow[];
-  total: number;
-  totalPages: number;
-}> {
+export async function getAdminBlogPosts(
+  page = 1,
+  opts?: { status?: string; search?: string },
+): Promise<{ posts: AdminBlogPostRow[]; total: number; totalPages: number }> {
   try {
     assertAdminEnv();
     const supabase = createAdminClient();
@@ -44,30 +38,37 @@ export async function getAdminBlogPosts(page = 1): Promise<{
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    const { data: posts, error, count } = await supabase
+    let query = supabase
       .from("blog_posts")
-      .select("id, slug, title, excerpt, content, cover_image, category_id, author_name, reading_time, status, published_at, created_at, updated_at")
+      .select("id, slug, title, excerpt, content, cover_image, category_id, author_name, reading_time, status, published_at, created_at, updated_at", { count: "exact" })
       .order("updated_at", { ascending: false })
       .range(from, to);
 
+    if (opts?.status && opts.status !== "all") {
+      query = query.eq("status", opts.status);
+    }
+    if (opts?.search?.trim()) {
+      query = query.ilike("title", `%${opts.search.trim()}%`);
+    }
+
+    const { data: posts, error, count } = await query;
+
     if (error) {
       serverError("admin blogQueries getAdminBlogPosts", error);
-      throw error;
+      return { posts: [], total: 0, totalPages: 0 };
     }
 
     const list = posts ?? [];
     const categoryIds = [...new Set(list.map((p) => p.category_id).filter(Boolean))] as string[];
-    const { data: categories } =
-      categoryIds.length > 0
-        ? await supabase.from("blog_categories").select("id, slug, name").in("id", categoryIds)
-        : { data: [] };
+    const { data: categories } = categoryIds.length > 0
+      ? await supabase.from("blog_categories").select("id, slug, name").in("id", categoryIds)
+      : { data: [] };
     const categoryMap = new Map((categories ?? []).map((c) => [c.id, c]));
 
     const postIds = list.map((p) => p.id);
-    const { data: postTags } =
-      postIds.length > 0
-        ? await supabase.from("blog_post_tags").select("post_id, tag_id").in("post_id", postIds)
-        : { data: [] };
+    const { data: postTags } = postIds.length > 0
+      ? await supabase.from("blog_post_tags").select("post_id, tag_id").in("post_id", postIds)
+      : { data: [] };
     const tagsByPostId = new Map<string, string[]>();
     for (const pt of postTags ?? []) {
       const arr = tagsByPostId.get(pt.post_id) ?? [];
@@ -86,7 +87,7 @@ export async function getAdminBlogPosts(page = 1): Promise<{
     return { posts: rows, total, totalPages };
   } catch (err) {
     serverError("admin blogQueries getAdminBlogPosts", err);
-    throw err;
+    return { posts: [], total: 0, totalPages: 0 };
   }
 }
 
@@ -106,12 +107,11 @@ export async function getAdminPostById(id: string): Promise<AdminBlogPostRow | n
       ? await supabase.from("blog_categories").select("id, slug, name").eq("id", post.category_id).single()
       : { data: null };
     const { data: pt } = await supabase.from("blog_post_tags").select("tag_id").eq("post_id", post.id);
-    const tagIds = (pt ?? []).map((x) => x.tag_id);
 
     return {
       ...post,
       blog_categories: category.data,
-      tag_ids: tagIds,
+      tag_ids: (pt ?? []).map((x) => x.tag_id),
     };
   } catch (err) {
     serverError("admin blogQueries getAdminPostById", err);
@@ -123,8 +123,7 @@ export async function getBlogCategoriesForAdmin(): Promise<BlogCategoryOption[]>
   try {
     assertAdminEnv();
     const supabase = createAdminClient();
-    const { data, error } = await supabase.from("blog_categories").select("id, slug, name").order("name");
-    if (error) throw error;
+    const { data } = await supabase.from("blog_categories").select("id, slug, name").order("name");
     return data ?? [];
   } catch (err) {
     serverError("admin blogQueries getBlogCategoriesForAdmin", err);
@@ -136,8 +135,7 @@ export async function getBlogTagsForAdmin(): Promise<BlogTagOption[]> {
   try {
     assertAdminEnv();
     const supabase = createAdminClient();
-    const { data, error } = await supabase.from("blog_tags").select("id, slug, name").order("name");
-    if (error) throw error;
+    const { data } = await supabase.from("blog_tags").select("id, slug, name").order("name");
     return data ?? [];
   } catch (err) {
     serverError("admin blogQueries getBlogTagsForAdmin", err);

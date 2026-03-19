@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { useFormState } from "react-dom";
 import Link from "next/link";
 import { toggleProductActiveForm, deleteProductForm } from "@/lib/admin/actions";
 import { Badge } from "@/components/ui/badge";
@@ -20,8 +19,8 @@ export function ProductTable({ products: productsProp, categories: categoriesPro
   const products = productsProp ?? [];
   const categories = categoriesProp ?? [];
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
-  const [deleteState, deleteFormAction] = useFormState(deleteProductForm, null);
-  const [toggleState, toggleFormAction] = useFormState(toggleProductActiveForm, null);
+  const [deleteState, deleteFormAction] = useActionState(deleteProductForm, null);
+  const [toggleState, toggleFormAction] = useActionState(toggleProductActiveForm, null);
   const router = useRouter();
 
   useEffect(() => {

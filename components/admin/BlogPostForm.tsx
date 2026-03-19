@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useFormState } from "react-dom";
+import { useState, useEffect, useRef, useActionState } from "react";
 import type { BlogPostFormData } from "@/lib/admin/actions";
 import { blogPostFormAction } from "@/lib/admin/actions";
 import type { BlogCategoryOption, BlogTagOption } from "@/lib/admin/blogQueries";
-import { BlogEditor } from "@/components/admin/BlogEditor";
+import dynamic from "next/dynamic";
+
+const BlogEditor = dynamic(() => import("@/components/admin/BlogEditor"), { ssr: false });
 
 type Props = {
   categories: BlogCategoryOption[];
@@ -15,9 +16,10 @@ type Props = {
 };
 
 export function BlogPostForm({ categories, tags, initialData, postId }: Props) {
-  const [state, formAction] = useFormState(blogPostFormAction, null);
+  const [state, formAction] = useActionState(blogPostFormAction, null);
   const [error, setError] = useState<string | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialData?.tag_ids ?? []);
+  const [showSchedule, setShowSchedule] = useState(initialData?.status === "scheduled");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -181,14 +183,15 @@ export function BlogPostForm({ categories, tags, initialData, postId }: Props) {
 
       <div>
         <label className="mb-2 block text-sm font-medium text-neutral-700">Status</label>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <label className="inline-flex items-center gap-2">
             <input
               type="radio"
               name="status"
               value="draft"
-              defaultChecked={initialData?.status !== "published"}
+              defaultChecked={!initialData?.status || initialData.status === "draft"}
               className="border-neutral-300"
+              onChange={() => setShowSchedule(false)}
             />
             Draft
           </label>
@@ -199,10 +202,36 @@ export function BlogPostForm({ categories, tags, initialData, postId }: Props) {
               value="published"
               defaultChecked={initialData?.status === "published"}
               className="border-neutral-300"
+              onChange={() => setShowSchedule(false)}
             />
             Published
           </label>
+          <label className="inline-flex items-center gap-2">
+            <input
+              type="radio"
+              name="status"
+              value="scheduled"
+              defaultChecked={initialData?.status === "scheduled"}
+              className="border-neutral-300"
+              onChange={() => setShowSchedule(true)}
+            />
+            Scheduled
+          </label>
         </div>
+        {showSchedule && (
+          <div className="mt-3">
+            <label htmlFor="published_at" className="mb-1 block text-xs text-neutral-500">
+              Publish date/time
+            </label>
+            <input
+              id="published_at"
+              name="published_at"
+              type="datetime-local"
+              defaultValue={initialData?.published_at ? initialData.published_at.slice(0, 16) : ""}
+              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3">
