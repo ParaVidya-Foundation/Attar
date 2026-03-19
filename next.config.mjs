@@ -13,10 +13,7 @@ const nextConfig = {
     root: __dirname,
   },
   compiler: {
-    removeConsole:
-      process.env.NODE_ENV === "production"
-        ? { exclude: ["error", "warn"] }
-        : false,
+    removeConsole: process.env.NODE_ENV === "production" ? { exclude: ["error", "warn"] } : false,
   },
   experimental: {
     optimizeCss: true,
@@ -37,6 +34,7 @@ const nextConfig = {
   images: {
     unoptimized: false,
     remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "plus.unsplash.com" },
@@ -56,13 +54,17 @@ script-src 'self' 'unsafe-inline' 'unsafe-eval'
 style-src 'self' 'unsafe-inline';
 img-src 'self' data: https: blob:;
 font-src 'self' data: https:;
+worker-src 'self' blob:;
 connect-src 'self'
   https://checkout.razorpay.com
   https://api.razorpay.com
   https://lumberjack.razorpay.com
   https://*.supabase.co
   wss://*.supabase.co
-  https://va.vercel-scripts.com;
+  https://va.vercel-scripts.com
+  https://*.algolia.net
+  https://*.algolianet.com
+  https://*.ingest.sentry.io;
 frame-src
   https://api.razorpay.com
   https://checkout.razorpay.com;
@@ -107,9 +109,12 @@ const sentryOptions = {
   silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
   widenClientFileUpload: true,
   hideSourceMaps: true,
   disableLogger: true,
+  tunnelRoute: "/monitoring",
+  release: { name: process.env.VERCEL_GIT_COMMIT_SHA },
 };
 
 export default process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN

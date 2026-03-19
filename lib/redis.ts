@@ -98,3 +98,50 @@ export async function cacheSet(key: string, value: string, exSeconds: number): P
     // ignore
   }
 }
+
+/**
+ * Cache-through helper for product queries. Runs `fetcher` on miss,
+ * stores the result in Redis with the given TTL (default 5 min).
+ */
+export async function cacheProducts<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlSeconds = 300,
+): Promise<T> {
+  const cacheKey = `products:${key}`;
+  const cached = await cacheGet<T>(cacheKey);
+  if (cached !== null) return cached;
+  const fresh = await fetcher();
+  await cacheSet(cacheKey, JSON.stringify(fresh), ttlSeconds);
+  return fresh;
+}
+
+/**
+ * Cache-through helper for search results. Shorter default TTL (2 min)
+ * since search results change more frequently.
+ */
+export async function cacheSearch<T>(
+  query: string,
+  fetcher: () => Promise<T>,
+  ttlSeconds = 120,
+): Promise<T> {
+  const cacheKey = `search:${query.toLowerCase().trim()}`;
+  const cached = await cacheGet<T>(cacheKey);
+  if (cached !== null) return cached;
+  const fresh = await fetcher();
+  await cacheSet(cacheKey, JSON.stringify(fresh), ttlSeconds);
+  return fresh;
+}
+
+/**
+ * Delete a specific cache entry. Useful after product updates or re-indexing.
+ */
+export async function cacheInvalidate(key: string): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    await redis.del(`${CACHE_PREFIX}${key}`);
+  } catch {
+    // ignore
+  }
+}

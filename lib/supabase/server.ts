@@ -48,12 +48,6 @@ export async function createServerClient() {
           }
         },
       },
-      global: {
-        headers: {
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-      },
       auth: {
         persistSession: false,
         autoRefreshToken: false,
@@ -88,12 +82,6 @@ export function createStaticClient() {
     url,
     anonKey,
     {
-      global: {
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-      },
       auth: {
         autoRefreshToken: false,
         persistSession: false,

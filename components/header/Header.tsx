@@ -20,7 +20,7 @@ const COLLECTIONS = [
     id: "nakshatra",
     href: "/collections/nakshatra",
     label: "Nakshatra Attars",
-    img: "/NakshatraGif.gif",
+    img: "/NakshatraGif1.webm",
   },
   {
     id: "stress",
@@ -48,6 +48,47 @@ const COLLECTIONS = [
     img: "/incense.jpeg",
   },
 ] as const;
+
+function CollectionMedia({
+  src,
+  alt,
+  sizes,
+  className,
+}: {
+  src: string;
+  alt: string;
+  sizes?: string;
+  className?: string;
+}) {
+  if (src.endsWith(".webm")) {
+    return (
+      <video
+        key={src}
+        src={src}
+        className={className}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        aria-label={alt}
+      >
+        <source src={src} type="video/webm" />
+      </video>
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      sizes={sizes}
+      className={className}
+      priority={false}
+    />
+  );
+}
 
 /**
  * Industry-level Header
@@ -273,13 +314,11 @@ export default function Header() {
                   <div className="hidden md:block w-1/2 relative h-[260px] flex items-center justify-center p-4">
                     {preview && (
                       <div className="relative w-full h-full rounded-xl overflow-hidden">
-                        <Image
+                        <CollectionMedia
                           src={preview}
                           alt="Collection preview"
-                          fill
                           sizes="(max-width:720px) 50vw, 360px"
-                          className="object-cover"
-                          priority={false}
+                          className="h-full w-full object-cover"
                         />
                       </div>
                     )}

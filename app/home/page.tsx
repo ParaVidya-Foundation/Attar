@@ -19,6 +19,7 @@ import type { ShowcaseProduct } from "@/components/Home/showcase";
 import type { ZodiacShowcaseProduct } from "@/components/Home/ZodiacShowcase";
 import ScrollVideo from "@/components/Home/ScrollVideo";
 import CategoryGrid from "@/components/Home/CategoryGrid";
+import FindYourFragrance from "@/components/Home/findyourfragrance";
 
 export const revalidate = 60;
 
@@ -37,6 +38,7 @@ export default async function HomePage() {
       <CategoryGrid />
       <Showcase />
       <ShopTrio />
+      <FindYourFragrance />
       <PerfumePlanets />
       {/* <ScrollVideo /> */}
       <ZodiacHero />

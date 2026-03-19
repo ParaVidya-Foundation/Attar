@@ -29,12 +29,6 @@ export function createBrowserClient() {
   }
 
   _client = createSupabaseBrowserClient(env.url, env.anonKey, {
-    global: {
-      headers: {
-        apikey: env.anonKey,
-        Authorization: `Bearer ${env.anonKey}`,
-      },
-    },
     auth: {
       persistSession: true,
       autoRefreshToken: true,

@@ -1,6 +1,8 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Container } from "@/components/ui/Container";
 import { isDevelopment } from "@/lib/env";
 
@@ -24,7 +26,10 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  // Check if error is environment-related
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   const isEnvError =
     error.message.includes("environment") ||
     error.message.includes("NEXT_PUBLIC") ||

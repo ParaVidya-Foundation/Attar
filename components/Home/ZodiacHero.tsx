@@ -1,12 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 export default function ZodiacHero() {
   return (
     <section className="relative w-full h-[70vh] bg-[#100F0E] overflow-hidden">
-      {/* Content */}
       <div className="relative z-10 flex h-full items-center">
         <div className="max-w-xl px-6 sm:px-10 lg:px-16">
           <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl leading-tight text-white">
@@ -30,16 +28,15 @@ export default function ZodiacHero() {
         </div>
       </div>
 
-      {/* RIGHT IMAGE */}
       <div className="absolute right-0 top-0 h-full w-[45%]">
         <div className="relative w-full h-full">
-          <Image
-            src="/NakshatraGif1.gif"
-            alt="Nakshatra cosmic animation"
-            fill
-            priority
-            sizes="(max-width:1024px) 100vw, 45vw"
-            className="object-contain object-right"
+          <video
+            src="/NakshatraGif1.webm"
+            className="h-full w-full object-contain object-right"
+            autoPlay
+            loop
+            muted
+            playsInline
           />
         </div>
       </div>

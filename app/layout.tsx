@@ -14,6 +14,7 @@ import { ScrollToTop } from "@/components/navigation/ScrollToTop";
 import { BrowserDiagnostics } from "@/components/system/BrowserDiagnostics";
 import Header from "@/components/header/Header";
 import { Footer } from "@/components/footer/Footer";
+import FloatingContact from "@/components/contact/FloatingContact";
 
 const CartDrawer = dynamic(() => import("@/components/cart/CartDrawer").then((m) => m.CartDrawer), {
   loading: () => null,
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <BrowserDiagnostics />
           <Suspense fallback={null}>
+            <FloatingContact />
             <ScrollToTop />
           </Suspense>
           <SkipToContent />

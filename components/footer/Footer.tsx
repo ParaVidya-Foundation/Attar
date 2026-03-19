@@ -36,10 +36,15 @@ const companyLinks = [
 ];
 
 const socialLinks = [
-  { name: "Instagram", href: "https://www.instagram.com/anandrasafragnance", Icon: Instagram },
-  { name: "Facebook", href: "https://www.facebook.com/anandrasafragnance", Icon: Facebook },
+  { name: "Instagram", href: "https://www.instagram.com/anand__rasa/", Icon: Instagram },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61584373649018",
+    Icon: Facebook,
+  },
   { name: "YouTube", href: "https://www.youtube.com/@anandrasafragnance", Icon: Youtube },
-  { name: "LinkedIn", href: "https://www.linkedin.com/company/anandrasafragnance", Icon: Linkedin },
+  // LinkedIn handle to be updated later when available
+  { name: "LinkedIn", href: "https://www.linkedin.com", Icon: Linkedin },
 ];
 
 const payments = [
@@ -96,15 +101,25 @@ export function Footer() {
               <p>Gurugram, Haryana, India</p>
               <p>
                 <a
-                  href="mailto:hello@anandrasafragnance.com"
+                  href="mailto:anandrasafragnance@gmail.com"
                   className="hover:text-neutral-900 transition-colors"
                 >
-                  hello@anandrasafragnance.com
+                  anandrasafragnance@gmail.com
                 </a>
               </p>
               <p>
-                <a href="tel:+919000000000" className="hover:text-neutral-900 transition-colors">
-                  +91-90000-00000
+                <a href="tel:+919311336643" className="hover:text-neutral-900 transition-colors">
+                  +91-93113-36643
+                </a>
+              </p>
+              <p>
+                <a
+                  href="https://wa.me/919311336643"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-neutral-900 transition-colors"
+                >
+                  WhatsApp: +91-93113-36643
                 </a>
               </p>
             </div>

@@ -36,7 +36,22 @@ let cachedClientEnv: ClientEnv | null = null;
 let cachedServerEnv: ServerEnv | null = null;
 
 function readRawEnv(key: string): string {
-  return process.env[key]?.trim() ?? "";
+  // IMPORTANT:
+  // In Next.js client bundles, only direct `process.env.NEXT_PUBLIC_*` accesses are inlined.
+  // Dynamic indexing like `process.env[key]` will be empty in the browser.
+  // So we special-case the public env keys we use client-side.
+  switch (key) {
+    case "NEXT_PUBLIC_SUPABASE_URL":
+      return process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
+    case "NEXT_PUBLIC_SUPABASE_ANON_KEY":
+      return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
+    case "NEXT_PUBLIC_RAZORPAY_KEY_ID":
+      return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.trim() ?? "";
+    case "NEXT_PUBLIC_SITE_URL":
+      return process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "";
+    default:
+      return process.env[key]?.trim() ?? "";
+  }
 }
 
 export function requireEnv(key: ClientEnvKey | ServerOnlyEnvKey): string {
@@ -162,10 +177,29 @@ export function isDevelopment(): boolean {
 }
 
 export function requireClientSupabaseEnv(): { url: string; anonKey: string } {
-  const env = getClientEnv();
+  // Supabase env must be usable even if other NEXT_PUBLIC_* vars are missing.
+  // (OAuth/login and public reads depend on Supabase; tying it to unrelated vars
+  // like Razorpay keys makes auth brittle.)
+  const urlRaw = readRawEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = readRawEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+  if (!urlRaw) throw new MissingEnvError("NEXT_PUBLIC_SUPABASE_URL");
+  if (!anonKey) throw new MissingEnvError("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+
+  let parsed: URL;
+  try {
+    parsed = new URL(urlRaw);
+  } catch {
+    throw new Error("Invalid environment variable: NEXT_PUBLIC_SUPABASE_URL");
+  }
+
+  if (process.env.NODE_ENV === "production" && parsed.protocol !== "https:") {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL must use https in production");
+  }
+
   return {
-    url: env.NEXT_PUBLIC_SUPABASE_URL,
-    anonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url: urlRaw.replace(/\/+$/, ""),
+    anonKey,
   };
 }
 

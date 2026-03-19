@@ -3,14 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createBrowserClient } from "@/lib/supabase/browser";
-import { getSiteUrl } from "@/lib/env";
 
 function getAuthOrigin() {
-  try {
-    return getSiteUrl();
-  } catch {
-    return typeof window !== "undefined" ? window.location.origin : "";
-  }
+  return typeof window !== "undefined" ? window.location.origin : "";
 }
 
 export default function SignupPage() {
