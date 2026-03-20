@@ -7,15 +7,16 @@ type Message = { role: "user" | "bot"; text: string };
 
 export default function ChatModal({ close }: { close: () => void }) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "bot", text: "Hello 👋 I’m your fragrance assistant. How can I help you today?" },
+    { role: "bot", text: "Hello. I’m your fragrance assistant. How can I guide you today?" },
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!listRef.current) return;
-    listRef.current.scrollTop = listRef.current.scrollHeight;
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
   }, [messages.length]);
 
   const sendMessage = async () => {
@@ -26,105 +27,85 @@ export default function ChatModal({ close }: { close: () => void }) {
     setMessages((prev) => [...prev, { role: "user", text }]);
     setSending(true);
 
-    // Placeholder assistant response – replace with real backend later
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           role: "bot",
-          text: "Thank you for reaching out. Our attars are long-lasting, skin-safe, and crafted in small batches. A human expert will also see this message on WhatsApp/email.",
-          // non-obvious intent comment omitted
+          text: "Based on your preference, I can recommend attars aligned with your energy. Would you like suggestions by mood or astrology?",
         },
       ]);
       setSending(false);
-    }, 700);
+    }, 600);
   };
 
   const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
       e.preventDefault();
       sendMessage();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-1000 flex items-end justify-center sm:items-center" aria-modal="true" role="dialog">
+    <div className="fixed inset-0 z-[999] flex items-end sm:items-center justify-start">
       {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close chat"
-        onClick={close}
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
-      />
+      <div onClick={close} className="absolute inset-0 bg-black/10 backdrop-blur-[2px]" />
 
       {/* Panel */}
-      <div className="relative m-4 w-full max-w-sm sm:max-w-md rounded-3xl border border-white/20 bg-white/10 px-3 pb-3 pt-2 shadow-[0_18px_60px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:px-4 sm:pb-4 sm:pt-3">
+      <div className="relative ml-4 mb-4 sm:mb-0 w-[92%] max-w-[380px] h-[480px] border border-black/10 bg-white/70 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col">
         {/* Header */}
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-black/10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-200/80">
-              Chat Support
-            </p>
-            <p className="mt-1 text-sm font-medium text-white">Ask about attars, orders, or gifting</p>
+            <p className="text-[11px] tracking-[0.18em] uppercase text-neutral-500">AI Assistant</p>
+            <p className="text-sm font-medium text-black">Fragrance Guidance</p>
           </div>
-          <button
-            type="button"
-            onClick={close}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-neutral-200 hover:bg-white/20 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/80"
-          >
-            <X className="h-3.5 w-3.5" aria-hidden="true" />
+
+          <button onClick={close} className="text-black/60 hover:text-black">
+            <X size={16} />
           </button>
         </div>
 
         {/* Messages */}
-        <div
-          ref={listRef}
-          className="mb-2 max-h-[50vh] min-h-[220px] space-y-2 overflow-y-auto rounded-2xl bg-black/10 p-2 sm:p-3"
-        >
+        <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
           {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+            <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[80%] rounded-2xl px-3 py-2 text-xs sm:text-sm ${
-                  msg.role === "user"
-                    ? "bg-amber-400/90 text-black shadow-sm"
-                    : "bg-white/12 text-neutral-100 backdrop-blur-sm"
+                className={`max-w-[80%] px-3 py-2 text-xs sm:text-sm ${
+                  msg.role === "user" ? "bg-black text-white" : "bg-black/5 text-black"
                 }`}
               >
                 {msg.text}
               </div>
             </div>
           ))}
+
           {sending && (
             <div className="flex justify-start">
-              <div className="flex items-center gap-1 rounded-2xl bg-white/8 px-3 py-2 text-[10px] text-neutral-200/90">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-300/90" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-300/70 [animation-delay:120ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-neutral-300/50 [animation-delay:240ms]" />
+              <div className="flex gap-1 px-2 py-1">
+                <span className="w-1 h-1 bg-black animate-bounce" />
+                <span className="w-1 h-1 bg-black/60 animate-bounce [animation-delay:120ms]" />
+                <span className="w-1 h-1 bg-black/40 animate-bounce [animation-delay:240ms]" />
               </div>
             </div>
           )}
         </div>
 
         {/* Input */}
-        <div className="flex items-center gap-2 rounded-2xl border border-white/20 bg-black/20 px-2 py-1.5 sm:px-3 sm:py-2">
+        <div className="flex items-center border-t border-black/10 px-2 py-2">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Ask about notes, longevity, gifting..."
-            className="flex-1 bg-transparent text-xs text-neutral-50 placeholder:text-neutral-400 outline-none sm:text-sm"
+            placeholder="Ask about perfumes..."
+            className="flex-1 bg-transparent text-sm outline-none text-black placeholder:text-neutral-400"
           />
+
           <button
-            type="button"
             onClick={sendMessage}
-            disabled={sending || !input.trim()}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-400/90 text-black shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-neutral-500/40"
-            aria-label="Send message"
+            disabled={!input.trim() || sending}
+            className="ml-2 flex items-center justify-center w-9 h-9 bg-black text-white hover:bg-neutral-800 disabled:bg-black/20"
           >
-            <SendHorizonal className="h-3.5 w-3.5" aria-hidden="true" />
+            <SendHorizonal size={14} />
           </button>
         </div>
       </div>

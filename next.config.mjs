@@ -50,13 +50,17 @@ const nextConfig = {
 default-src 'self';
 script-src 'self' 'unsafe-inline' 'unsafe-eval'
   https://checkout.razorpay.com
+  https://cdn.razorpay.com
   https://va.vercel-scripts.com;
 style-src 'self' 'unsafe-inline';
-img-src 'self' data: https: blob:;
+img-src 'self' data: blob: https:
+  https://*.supabase.co
+  https://*.razorpay.com;
 font-src 'self' data: https:;
 worker-src 'self' blob:;
 connect-src 'self'
   https://checkout.razorpay.com
+  https://cdn.razorpay.com
   https://api.razorpay.com
   https://lumberjack.razorpay.com
   https://*.supabase.co

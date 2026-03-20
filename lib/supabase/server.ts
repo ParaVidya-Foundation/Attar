@@ -30,6 +30,8 @@ export async function createServerClient() {
     throw error;
   }
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   return createSupabaseServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -41,10 +43,16 @@ export async function createServerClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options);
+              cookieStore.set(name, value, {
+                ...options,
+                secure: isProduction,
+                sameSite: "lax",
+                httpOnly: true,
+                path: "/",
+              });
             });
           } catch {
-            // Route Handlers may throw when setting cookies during redirect
+            // Server Components cannot set cookies — only Route Handlers and Server Actions can
           }
         },
       },

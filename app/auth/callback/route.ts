@@ -1,6 +1,7 @@
-import { createServerClient } from "@/lib/supabase/server";
+import { createServerClient as createSupabaseServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getSiteUrl } from "@/lib/env";
+import { getSiteUrl, requireClientSupabaseEnv } from "@/lib/env";
 import { serverError, serverWarn } from "@/lib/security/logger";
 
 export async function GET(request: Request) {
@@ -19,20 +20,46 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${siteUrl}/login?error=auth`);
   }
 
-  let supabase;
+  const cookieStore = await cookies();
+  const isProduction = process.env.NODE_ENV === "production";
+
+  let env: { url: string; anonKey: string };
   try {
-    supabase = await createServerClient();
+    env = requireClientSupabaseEnv();
   } catch (error) {
-    serverError("auth/callback createServerClient", error);
-    const message = error instanceof Error ? error.message : "Auth is not configured";
-    return NextResponse.redirect(`${siteUrl}/login?error=${encodeURIComponent(message)}`);
+    serverError("auth/callback env", error);
+    return NextResponse.redirect(`${siteUrl}/login?error=auth`);
   }
+
+  const supabase = createSupabaseServerClient(env.url, env.anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, {
+              ...options,
+              secure: isProduction,
+              sameSite: "lax",
+              httpOnly: true,
+              path: "/",
+            });
+          });
+        } catch {
+          // Ignored — will be set on redirect response below
+        }
+      },
+    },
+  });
+
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     serverError("auth/callback exchangeCodeForSession", error);
     return NextResponse.redirect(
-      `${siteUrl}/login?error=${encodeURIComponent(error.message)}`
+      `${siteUrl}/login?error=${encodeURIComponent(error.message)}`,
     );
   }
 

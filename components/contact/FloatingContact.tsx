@@ -8,42 +8,59 @@ export default function FloatingContact() {
   const [open, setOpen] = useState(false);
 
   const whatsappNumber = "919311336643";
-  const whatsappMessage = encodeURIComponent(
-    "Hello, I’d love to know more about Anand Rasa attars and recommendations for me.",
-  );
+  const whatsappMessage = encodeURIComponent("Hello, I’d love to know more about Anand Rasa attars.");
 
   return (
     <>
-      {/* Floating Buttons */}
-      <div className="fixed bottom-5 right-4 z-999 flex flex-col items-end gap-3 sm:bottom-8 sm:right-6">
+      <div className="fixed bottom-6 left-6 z-[999] flex flex-col gap-3">
         {/* WhatsApp */}
         <a
           href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
           target="_blank"
           rel="noreferrer"
-          className="group flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-2 text-xs text-white shadow-[0_12px_40px_rgba(15,23,42,0.55)] backdrop-blur-xl transition hover:bg-emerald-400/90 hover:text-black sm:px-4 sm:text-sm"
+          className="group relative flex items-center"
         >
-          <span className="hidden font-medium sm:inline">Chat on WhatsApp</span>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/90 text-black shadow-sm group-hover:bg-black group-hover:text-emerald-300">
+          {/* Icon */}
+          <div className="w-11 h-11 flex items-center justify-center border border-black/10 bg-white text-black transition-all duration-300 hover:bg-black hover:text-white">
             <MessageCircle size={18} />
-          </span>
+          </div>
+
+          {/* Tooltip */}
+          <div className="pointer-events-none absolute left-14 top-1/2 -translate-y-1/2 opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out">
+            <div className="relative flex items-center">
+              {/* Arrow */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-l border-b border-black/10 rotate-45"></div>
+
+              {/* Label */}
+              <div className="ml-2 px-3 py-1.5 text-xs bg-white border border-black/10 text-black shadow-sm whitespace-nowrap">
+                WhatsApp
+              </div>
+            </div>
+          </div>
         </a>
 
-        {/* AI Chat */}
-        <button
-          onClick={() => setOpen(true)}
-          type="button"
-          className="group flex items-center gap-2 rounded-full border border-white/25 bg-white/12 px-3 py-2 text-xs text-white shadow-[0_12px_40px_rgba(15,23,42,0.55)] backdrop-blur-xl transition hover:bg-white/20 sm:px-4 sm:text-sm"
-          aria-label="Open AI fragrance assistant"
-        >
-          <span className="hidden font-medium sm:inline">Ask AI about attars</span>
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/90 text-amber-300 shadow-sm group-hover:bg-amber-400 group-hover:text-black">
+        {/* AI Button */}
+        <button onClick={() => setOpen(true)} className="group relative flex items-center">
+          {/* Icon */}
+          <div className="w-11 h-11 flex items-center justify-center border border-black/10 bg-white text-black transition-all duration-300 hover:bg-black hover:text-white">
             <Bot size={18} />
-          </span>
+          </div>
+
+          {/* Tooltip */}
+          <div className="pointer-events-none absolute left-14 top-1/2 -translate-y-1/2 opacity-0 translate-x-[-10px] group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out">
+            <div className="relative flex items-center">
+              {/* Arrow */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-white border-l border-b border-black/10 rotate-45"></div>
+
+              {/* Label */}
+              <div className="ml-2 px-3 py-1.5 text-xs bg-white border border-black/10 text-black shadow-sm whitespace-nowrap">
+                AI Assistant
+              </div>
+            </div>
+          </div>
         </button>
       </div>
 
-      {/* Chatbot Modal */}
       {open && <ChatModal close={() => setOpen(false)} />}
     </>
   );
