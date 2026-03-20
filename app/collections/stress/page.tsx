@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import ProductCard from "@/components/shop/ProductCard";
 import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
@@ -7,10 +8,20 @@ import HowToUse from "@/components/stress/howtouse";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Stress Relief Attars",
-  description: "Therapeutic attars designed for relaxation, calm mind, and emotional balance.",
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Stress Relief Attars — Calming Fragrance Oils for Anxiety & Peace",
+  description:
+    "Natural stress relief attars crafted for calm, anxiety relief & mental peace. Alcohol-free calming perfume oils with lavender, sandalwood & vetiver — Anand Rasa.",
+  path: "/collections/stress",
+  type: "website",
+  keywords: [
+    "stress relief attar",
+    "calming fragrance",
+    "anxiety relief perfume",
+    "peace fragrance",
+    "calming oil",
+  ],
+});
 
 export default async function StressPerfumePage() {
   let products: Awaited<ReturnType<typeof getProductsByCategory>> = [];

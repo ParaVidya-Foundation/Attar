@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import ProductShowcase from "@/components/product/ProductShowcase";
 import ProductInfo from "@/components/product/Productinfo";
 import TrustBar from "@/components/Home/TrustBar";
@@ -14,6 +15,8 @@ import { mapToCardProduct } from "@/lib/productMapper";
 import { ProductEventTracker } from "@/components/recommendations/ProductEventTracker";
 import { getBehavioralRecommendations } from "@/lib/recommendations";
 import DiscountPosterIncense from "@/components/product/features/DiscountPosterincense";
+import { breadcrumbJsonLd, pageMetadata } from "@/lib/seo";
+import { PRODUCT_FAQS } from "@/lib/seo/productFaq";
 
 export const revalidate = 60;
 
@@ -39,26 +42,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     product.meta_description ?? product.short_description ?? product.description ?? "Shop premium attars.";
 
+  const path = `/product/${product.slug}`;
   return {
-    title,
-    description,
-    alternates: {
-      canonical: `/product/${product.slug}`,
-    },
-    openGraph: {
+    ...pageMetadata({
       title,
       description,
-      type: "website",
-      images: [
-        {
-          url: product.images[0]?.url
-            ? product.images[0].url.startsWith("http")
-              ? product.images[0].url
-              : absoluteUrl(product.images[0].url)
-            : absoluteUrl(PLACEHOLDER_IMAGE_URL),
-        },
-      ],
-    },
+      path,
+      type: "product",
+    }),
+    alternates: { canonical: absoluteUrl(path) },
   };
 }
 
@@ -70,6 +62,7 @@ function buildProductJsonLd(product: {
   description: string | null;
   short_description: string | null;
   images: { url: string }[];
+  variants?: { id: string; price: number; size_ml: number }[];
 }) {
   const url = absoluteUrl(`/product/${product.slug}`);
   const image = product.images[0]?.url
@@ -78,6 +71,13 @@ function buildProductJsonLd(product: {
       : absoluteUrl(product.images[0].url)
     : absoluteUrl(PLACEHOLDER_IMAGE_URL);
   const desc = product.short_description ?? product.description ?? "Premium handcrafted attar.";
+  const variants = product.variants ?? [];
+  const prices = variants.length > 0
+    ? variants.map((v) => v.price / 100)
+    : [product.price / 100];
+  const lowPrice = Math.min(...prices);
+  const highPrice = Math.max(...prices);
+  const useAggregate = variants.length > 1;
 
   return {
     "@context": "https://schema.org",
@@ -88,14 +88,24 @@ function buildProductJsonLd(product: {
     url,
     brand: { "@type": "Brand", name: BRAND.name },
     category: "Attar / Natural Perfume Oil",
-    offers: {
-      "@type": "Offer",
-      priceCurrency: "INR",
-      price: product.price,
-      availability: "https://schema.org/InStock",
-      url,
-      seller: { "@type": "Organization", name: BRAND.name },
-    },
+    offers: useAggregate
+      ? {
+          "@type": "AggregateOffer",
+          priceCurrency: "INR",
+          lowPrice,
+          highPrice,
+          offerCount: variants.length,
+          availability: "https://schema.org/InStock",
+          url,
+        }
+      : {
+          "@type": "Offer",
+          priceCurrency: "INR",
+          price: lowPrice,
+          availability: "https://schema.org/InStock",
+          url,
+          seller: { "@type": "Organization", name: BRAND.name },
+        },
   };
 }
 
@@ -143,10 +153,33 @@ export default async function ProductPage({ params }: PageProps) {
 
   const jsonLd = buildProductJsonLd(product);
   const features = getProductFeatures(product.slug);
+  const breadcrumbLd = breadcrumbJsonLd([
+    { name: "Home", path: "/" },
+    { name: product.name, path: `/product/${product.slug}` },
+  ]);
 
   return (
     <main className="w-full min-h-screen bg-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: PRODUCT_FAQS.map((f) => ({
+              "@type": "Question",
+              name: f.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: f.answer,
+              },
+            })),
+          }),
+        }}
+      />
       <ProductEventTracker productId={product.id} />
 
       <div className="flex w-full flex-col lg:flex-row overflow-hidden">
@@ -209,6 +242,52 @@ export default async function ProductPage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      {/* Visible FAQ section for SEO + AI discoverability */}
+      <section className="bg-white py-16">
+        <div className="mx-auto max-w-3xl px-6">
+          <header className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-[#1e2023] tracking-tight">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-sm text-neutral-500 mt-2">About attars, zodiac perfumes &amp; spiritual fragrances</p>
+          </header>
+          <div className="space-y-3">
+            {PRODUCT_FAQS.map((faq, idx) => (
+              <details key={idx} className="group border border-neutral-200 bg-white p-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-sm font-medium text-neutral-800">
+                  <span>{faq.question}</span>
+                  <svg className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </summary>
+                <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Internal linking for SEO crawl depth */}
+      <nav className="bg-white pb-16" aria-label="Explore more">
+        <div className="mx-auto max-w-3xl px-6 flex flex-wrap justify-center gap-3">
+          <Link href="/shop" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+            Shop All Fragrances
+          </Link>
+          <Link href="/collections/zodiac" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+            Zodiac Attars
+          </Link>
+          <Link href="/collections/planets" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+            Planet Attars
+          </Link>
+          <Link href="/find-fragrance" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+            Astro Fragrance Finder
+          </Link>
+          <Link href="/blog" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+            Fragrance Journal
+          </Link>
+        </div>
+      </nav>
 
       <TrustBar />
       {features.showDiscountPoster && <DiscountPosterIncense />}

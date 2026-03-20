@@ -64,7 +64,10 @@ connect-src 'self'
   https://va.vercel-scripts.com
   https://*.algolia.net
   https://*.algolianet.com
-  https://*.ingest.sentry.io;
+  https://*.sentry.io
+  https://*.ingest.sentry.io
+  https://*.ingest.de.sentry.io
+  https://*.ingest.us.sentry.io;
 frame-src
   https://api.razorpay.com
   https://checkout.razorpay.com;

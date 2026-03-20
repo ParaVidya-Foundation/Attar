@@ -6,6 +6,7 @@
 import { MetadataRoute } from "next";
 import { createStaticClient } from "@/lib/supabase/server";
 import { absoluteUrl } from "@/lib/seo";
+import { getCategories } from "@/lib/fetchers";
 import { getBlogSlugsWithUpdated, getAllBlogCategorySlugs, getAllBlogTagSlugs } from "@/lib/blog";
 
 export const revalidate = 3600;
@@ -30,56 +31,29 @@ async function getProducts() {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // absoluteUrl() uses getSiteUrl() internally
 
-  // Static pages
+  const now = new Date();
+
   const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: absoluteUrl("/"),
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1.0,
-    },
-    {
-      url: absoluteUrl("/shop"),
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: absoluteUrl("/blog"),
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: absoluteUrl("/collections/planets"),
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl("/collections/zodiac"),
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl("/collections/Incense"),
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    {
-      url: absoluteUrl("/about"),
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.5,
-    },
-    {
-      url: absoluteUrl("/policies"),
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
+    { url: absoluteUrl("/home"), lastModified: now, changeFrequency: "weekly", priority: 1.0 },
+    { url: absoluteUrl("/shop"), lastModified: now, changeFrequency: "weekly", priority: 0.9 },
+    { url: absoluteUrl("/blog"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: absoluteUrl("/collections/planets"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/zodiac"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/Incense"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/nakshatra"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/Chakra-attar"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/stress"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/collections/Love-attar"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/gift-sets"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/find-fragrance"), lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: absoluteUrl("/faq"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/bulk-enquiry"), lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/contact"), lastModified: now, changeFrequency: "yearly", priority: 0.5 },
+    { url: absoluteUrl("/about"), lastModified: now, changeFrequency: "yearly", priority: 0.5 },
+    { url: absoluteUrl("/policies"), lastModified: now, changeFrequency: "yearly", priority: 0.4 },
+    { url: absoluteUrl("/privacy"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: absoluteUrl("/terms"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: absoluteUrl("/refund"), lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   // Dynamic product pages
@@ -118,5 +92,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...productPages, ...blogPostPages, ...blogCategoryPages, ...blogTagPages];
+  // Category pages (/category/[slug])
+  const categories = await getCategories();
+  const categoryPages: MetadataRoute.Sitemap = categories.map((c) => ({
+    url: absoluteUrl(`/category/${c.slug}`),
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }));
+
+  return [
+    ...staticPages,
+    ...productPages,
+    ...categoryPages,
+    ...blogPostPages,
+    ...blogCategoryPages,
+    ...blogTagPages,
+  ];
 }

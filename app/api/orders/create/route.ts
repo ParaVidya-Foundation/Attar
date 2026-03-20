@@ -135,6 +135,12 @@ export async function POST(req: Request) {
       email,
       phone,
       quantity,
+      address_line1,
+      address_line2,
+      city,
+      state,
+      pincode,
+      country,
     } = parsed.data;
 
     // Optional authenticated user
@@ -240,6 +246,12 @@ export async function POST(req: Request) {
         amount: totalPaise,
         currency: "INR",
         razorpay_order_id: null,
+        ...(address_line1 ? { address_line1 } : {}),
+        ...(address_line2 ? { address_line2 } : {}),
+        ...(city ? { city } : {}),
+        ...(state ? { state } : {}),
+        ...(pincode ? { pincode } : {}),
+        ...(country ? { country } : {}),
       })
       .select("id")
       .single();

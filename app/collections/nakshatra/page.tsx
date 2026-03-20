@@ -8,11 +8,18 @@ import { mapToCardProduct } from "@/lib/productMapper";
 export const revalidate = 60;
 
 export const metadata: Metadata = pageMetadata({
-  title: "Nakshatra Attar Collection",
+  title: "Nakshatra Attars — 27 Lunar Mansion Perfume Oils",
   description:
-    "Twenty-seven Nakshatra attars crafted to mirror the mood and energy of each Vedic lunar mansion. A calm, luxurious spiritual perfume experience.",
+    "27 Nakshatra attar perfume oils aligned with Vedic lunar mansions. Discover your birth star fragrance — handcrafted astrology perfumes by Anand Rasa.",
   path: "/collections/nakshatra",
   type: "website",
+  keywords: [
+    "nakshatra attar",
+    "nakshatra perfume",
+    "birth star fragrance",
+    "Vedic lunar perfume",
+    "astrology attar",
+  ],
 });
 
 export default async function NakshatraAttarCollectionPage() {

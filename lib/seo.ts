@@ -10,8 +10,8 @@ export const BRAND = {
   name: "Anand Ras",
   nameSeo: SEO_CONFIG.siteName,
   description:
-    "Anand Ras is a heritage Indian luxury attar house—minimal, airy, cream-toned design with royal depth. Explore alcohol-free perfume oils crafted for calm, skin-close elegance.",
-  homeTitle: "Spiritual Attars & Luxury Natural Perfumes | Anand Rasa Fragrance",
+    "India's astrology-inspired fragrance house. Handcrafted luxury attars, zodiac perfume oils, planet fragrances, agarbatti & spiritual incense — alcohol-free, made in India.",
+  homeTitle: "Spiritual Attars, Zodiac Perfumes & Agarbatti | Anand Rasa Fragrance",
   homeDescription: SEO_CONFIG.defaultDescription,
   url: SEO_CONFIG.domain,
   locale: SEO_CONFIG.locale,
@@ -28,7 +28,20 @@ export function organizationJsonLd() {
     name: BRAND.nameSeo,
     url: url.replace(/\/+$/, ""),
     logo,
-    sameAs: [] as string[],
+    description: "India's astrology-inspired fragrance house — handcrafted attars, zodiac perfumes, planet perfume oils, agarbatti, and spiritual incense.",
+    email: "anandrasafragnance@gmail.com",
+    telephone: "+919311336643",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Gurugram",
+      addressRegion: "Haryana",
+      addressCountry: "IN",
+    },
+    sameAs: [
+      "https://www.instagram.com/anand__rasa/",
+      "https://www.facebook.com/profile.php?id=61584373649018",
+      "https://www.youtube.com/@anandrasafragnance",
+    ],
   };
 }
 
@@ -66,21 +79,23 @@ export function pageMetadata(args: {
   path: string;
   ogImage?: string;
   type?: "website" | "article" | "product";
+  keywords?: string[];
 }): Metadata {
   const url = absoluteUrl(args.path);
   const image = args.ogImage ?? BRAND.ogImage;
-  const title = `${args.title} — ${BRAND.name}`;
+  const title = args.title;
 
   return {
     title,
     description: args.description,
-    alternates: { canonical: args.path },
+    alternates: { canonical: url },
+    ...(args.keywords?.length ? { keywords: args.keywords } : {}),
     openGraph: {
       type: args.type === "article" ? "article" : "website",
       title,
       description: args.description,
       url,
-      siteName: BRAND.name,
+      siteName: BRAND.nameSeo,
       locale: BRAND.locale,
       images: [{ url: image, width: 1200, height: 630, alt: args.title }],
     },
@@ -124,7 +139,7 @@ export function articleJsonLd(post: BlogPost) {
   const url = absoluteUrl(`/blog/${post.slug}`);
   return {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt,
     author: { "@type": "Organization", name: BRAND.name },
@@ -152,7 +167,7 @@ export function articleJsonLdFromRow(post: {
     : BRAND.ogImage;
   return {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
     description: post.excerpt ?? undefined,
     author: { "@type": "Person", name: post.author_name ?? BRAND.name },
@@ -162,6 +177,7 @@ export function articleJsonLdFromRow(post: {
     mainEntityOfPage: url,
     url,
     image,
+    inLanguage: "en-IN",
   };
 }
 

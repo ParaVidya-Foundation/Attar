@@ -8,11 +8,18 @@ import { mapToCardProduct } from "@/lib/productMapper";
 export const revalidate = 60;
 
 export const metadata: Metadata = pageMetadata({
-  title: "Chakra Attar Collection",
+  title: "Chakra Attars — Perfume Oils for 7 Chakra Healing",
   description:
-    "A curated line of Chakra attars crafted to harmonize each energy center with subtle, luxurious natural perfume oils.",
+    "Chakra-aligned attar perfume oils for spiritual healing. Handcrafted fragrances for root, sacral, solar plexus, heart, throat, third eye & crown chakra — Anand Rasa.",
   path: "/collections/Chakra-attar",
   type: "website",
+  keywords: [
+    "chakra attar",
+    "chakra perfume",
+    "7 chakra fragrance",
+    "spiritual healing oil",
+    "chakra healing perfume",
+  ],
 });
 
 export default async function ChakraAttarCollectionPage() {

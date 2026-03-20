@@ -13,7 +13,7 @@ export const SEO_CONFIG = {
 
   /** Default meta description when page-specific one is not set */
   defaultDescription:
-    "Premium alcohol-free attars inspired by Vedic tradition — meditation & puja fragrances, handcrafted in India.",
+    "India's astrology-inspired fragrance house. Premium alcohol-free attars, zodiac perfumes, planet fragrance oils, agarbatti & spiritual incense — handcrafted for meditation, pooja & daily ritual.",
 
   /** OpenGraph default locale */
   locale: "en_IN" as const,

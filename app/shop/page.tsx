@@ -4,14 +4,18 @@ import { getCategories } from "@/lib/fetchers";
 import { getAllProducts, getProductsByCategory } from "@/lib/api/products";
 import { mapToCardProduct } from "@/lib/productMapper";
 import type { ProductDisplay } from "@/types/product";
+import { pageMetadata } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Shop | Anand Rasa",
+export const metadata: Metadata = pageMetadata({
+  title: "Shop Premium Attars, Zodiac Perfumes & Agarbatti",
   description:
-    "Explore our luxury attars, incense and spiritual fragrances crafted with heritage discipline and modern elegance.",
-};
+    "Buy luxury alcohol-free attars, zodiac perfume oils, planet fragrances, agarbatti & spiritual incense online. Handcrafted in India — free shipping.",
+  path: "/shop",
+  type: "website",
+  keywords: ["buy attar online", "zodiac perfume", "agarbatti", "spiritual fragrance", "perfume India"],
+});
 
 const PRODUCTS_PER_PAGE = 20;
 

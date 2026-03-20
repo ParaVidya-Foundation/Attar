@@ -148,16 +148,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid order amount" }, { status: 400, headers: { Allow: ALLOW_HEADER } });
     }
 
-    const orderPayload = {
+    const guestData = isGuest ? (parsed.data as z.infer<typeof guestCartSchema>) : null;
+
+    const orderPayload: Record<string, unknown> = {
       user_id: user?.id ?? null,
-      email: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).email : (user?.email ?? ""),
-      name: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).name : null,
-      phone: isGuest ? (parsed.data as z.infer<typeof guestCartSchema>).phone : null,
+      email: guestData?.email ?? user?.email ?? "",
+      name: guestData?.name ?? null,
+      phone: guestData?.phone ?? null,
       status: "pending",
       amount: totalPaise,
       currency: "INR",
       razorpay_order_id: null,
     };
+
+    if (guestData?.address_line1) orderPayload.address_line1 = guestData.address_line1;
+    if (guestData?.address_line2) orderPayload.address_line2 = guestData.address_line2;
+    if (guestData?.city) orderPayload.city = guestData.city;
+    if (guestData?.state) orderPayload.state = guestData.state;
+    if (guestData?.pincode) orderPayload.pincode = guestData.pincode;
+    if (guestData?.country) orderPayload.country = guestData.country;
 
     const { data: order, error: orderErr } = await admin
       .from("orders")

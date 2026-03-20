@@ -76,9 +76,9 @@ export default function PerfumePlanetGrid() {
             planetary energy—subtle, balanced, and deeply grounding.
           </p>
 
-          <button className="mt-6 border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-[0.18em] text-[#1e2023] transition-all duration-300 hover:bg-black hover:text-white">
+          <a href="/collections/planets" className="mt-6 inline-block border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-[0.18em] text-[#1e2023] transition-all duration-300 hover:bg-black hover:text-white">
             EXPLORE COLLECTION
-          </button>
+          </a>
         </div>
       </div>
 
@@ -104,12 +104,13 @@ export default function PerfumePlanetGrid() {
             {selected.desc}
           </p>
 
-          <button
-            className="mt-6 border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-wider transition-colors duration-300 hover:bg-black hover:text-white"
+          <a
+            href="/collections/planets"
+            className="mt-6 inline-block border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-wider transition-colors duration-300 hover:bg-black hover:text-white"
             aria-label={`View ${selected.id} product`}
           >
             VIEW PRODUCT
-          </button>
+          </a>
         </div>
 
         {/* LEFT GRID */}

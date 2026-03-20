@@ -24,11 +24,12 @@ import FindYourFragrance from "@/components/Home/findyourfragrance";
 export const revalidate = 60;
 
 export const metadata: Metadata = pageMetadata({
-  title: "Home",
+  title: "Spiritual Attars, Zodiac Perfumes & Agarbatti — Anand Rasa Fragrance",
   description:
-    "Luxury attars crafted for calm presence. Explore heritage perfume oils with minimal, airy design and royal accents.",
+    "India's astrology-inspired fragrance house. Shop luxury alcohol-free attars, zodiac perfume oils, planet fragrances, agarbatti & spiritual incense — handcrafted for meditation, pooja & daily ritual.",
   path: "/home",
   type: "website",
+  keywords: ["attar", "zodiac perfume", "agarbatti", "spiritual fragrance", "perfume India", "astrology fragrance"],
 });
 
 export default async function HomePage() {

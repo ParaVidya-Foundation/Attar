@@ -62,11 +62,15 @@ export default function BrandStory({
       <div className="bg-[#F6F1E7] pt-20 sm:pt-56 md:pt-72 lg:pt-96 pb-16">
         <div className="mx-auto max-w-3xl px-6 text-center animate-fade-in">
           <p className="text-sm sm:text-base text-black/70 leading-relaxed">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Cupiditate nostrum a aspernatur culpa
-            quibusdam ratione nulla mollitia est quam, voluptas quas illum laboriosam esse! Possimus maxime
-            similique accusamus ducimus officiis voluptas, neque quas accusantium fugiat doloremque esse
-            eligendi consequuntur odit explicabo itaque? Voluptas, ipsam itaque voluptatibus id facere numquam
-            eos.
+            Anand Rasa was born from a simple belief: fragrance is not just scent — it is identity,
+            devotion, and cosmic connection. We are India&apos;s astrology-inspired fragrance house,
+            handcrafting luxury alcohol-free attars, zodiac perfume oils, planet fragrances,
+            agarbatti, and spiritual incense rooted in Vedic tradition. Every bottle carries the
+            intention of its celestial alignment — from the fiery confidence of a Mars attar to the
+            serene calm of a Moon fragrance. Our perfumers blend rare natural ingredients using
+            time-honoured distillation methods, creating skin-close aromas designed for meditation,
+            pooja, and daily ritual. Based in Gurugram, Haryana, we honour the ancient Indian art
+            of attar-making while bringing it to a modern, design-conscious audience.
           </p>
         </div>
       </div>

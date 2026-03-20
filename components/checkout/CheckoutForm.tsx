@@ -561,7 +561,7 @@ export function CheckoutForm({ initialMode = "unknown" }: { initialMode?: Checko
                 if (!isBuyNow) {
                   clearCart();
                 }
-                router.push(`/order-success?orderId=${data.orderId}`);
+                router.push(`/order/success?order_id=${data.orderId}`);
               } else {
                 const verifyBody = await verifyRes.text();
                 console.error("[checkout] Verification failed", {

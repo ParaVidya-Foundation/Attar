@@ -21,6 +21,7 @@ export default function robots(): MetadataRoute.Robots {
           "/login",
           "/signup",
           "/order-success",
+          "/order/success",
           "/scripts/",
         ],
       },

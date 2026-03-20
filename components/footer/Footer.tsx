@@ -20,19 +20,18 @@ const collections = [
 
 const supportLinks = [
   { name: "Contact Us", href: "/contact" },
-
   { name: "Shipping Policy", href: "/policies#shipping" },
-
   { name: "Bulk Enquiry", href: "/bulk-enquiry" },
   { name: "FAQ", href: "/faq" },
+  { name: "Astro Fragrance Finder", href: "/find-fragrance" },
 ];
 
 const companyLinks = [
   { name: "About Anand Rasa", href: "/about" },
-
   { name: "Blog", href: "/blog" },
   { name: "Privacy Policy", href: "/privacy" },
   { name: "Terms & Conditions", href: "/terms" },
+  { name: "Refund Policy", href: "/policies#returns" },
 ];
 
 const socialLinks = [
@@ -54,14 +53,6 @@ const payments = [
   { name: "Razorpay", src: "/Footer/razorpay-icon.svg", width: 64, height: 28 },
 ];
 
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Anand Rasa",
-  url: "https://anandrasafragnance.com",
-  sameAs: socialLinks.map((s) => s.href),
-};
-
 /* =========================
    COMPONENT
 ========================= */
@@ -69,12 +60,6 @@ const organizationJsonLd = {
 export function Footer() {
   return (
     <footer className="border-t border-neutral-200 bg-white text-neutral-700">
-      {/* SEO Structured Data */}
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-      />
 
       <div className="mx-auto max-w-7xl px-6 py-14 md:py-20">
         {/* ================= MAIN GRID ================= */}

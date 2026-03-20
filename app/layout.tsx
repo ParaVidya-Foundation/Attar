@@ -51,7 +51,6 @@ function getMetadata(): Metadata {
       description: BRAND.homeDescription,
       images: [BRAND.ogImage],
     },
-    alternates: { canonical: "/" },
     robots: "index, follow",
   };
 }

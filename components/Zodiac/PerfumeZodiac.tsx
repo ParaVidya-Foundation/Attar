@@ -226,9 +226,9 @@ export default function PerfumeZodiac() {
             {selected.desc}
           </p>
 
-          <button className="mt-6 border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-wider transition-all duration-300 hover:bg-black hover:text-white">
-            VIEW PRODUCT
-          </button>
+          <a href="/collections/zodiac" className="mt-6 inline-block border-[2px] border-[#1e2023] px-6 py-2 text-xs tracking-wider transition-all duration-300 hover:bg-black hover:text-white">
+            VIEW COLLECTION
+          </a>
         </div>
       </div>
 
