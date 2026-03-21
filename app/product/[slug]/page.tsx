@@ -22,6 +22,9 @@ export const revalidate = 60;
 
 const IncenseTable = dynamic(() => import("@/components/product/features/incensetable"));
 const FAQincense = dynamic(() => import("@/components/product/features/FAQincense"));
+const StressUse = dynamic(() => import("@/components/product/features/stressuse"));
+const CustomerSupport = dynamic(() => import("@/components/product/features/CustomerSupport"));
+const FindProduct = dynamic(() => import("@/components/product/features/findproduct"));
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -72,9 +75,7 @@ function buildProductJsonLd(product: {
     : absoluteUrl(PLACEHOLDER_IMAGE_URL);
   const desc = product.short_description ?? product.description ?? "Premium handcrafted attar.";
   const variants = product.variants ?? [];
-  const prices = variants.length > 0
-    ? variants.map((v) => v.price / 100)
-    : [product.price / 100];
+  const prices = variants.length > 0 ? variants.map((v) => v.price / 100) : [product.price / 100];
   const lowPrice = Math.min(...prices);
   const highPrice = Math.max(...prices);
   const useAggregate = variants.length > 1;
@@ -152,7 +153,7 @@ export default async function ProductPage({ params }: PageProps) {
   };
 
   const jsonLd = buildProductJsonLd(product);
-  const features = getProductFeatures(product.slug);
+  const features = getProductFeatures(product.slug, product.category_slug);
   const breadcrumbLd = breadcrumbJsonLd([
     { name: "Home", path: "/" },
     { name: product.name, path: `/product/${product.slug}` },
@@ -195,7 +196,9 @@ export default async function ProductPage({ params }: PageProps) {
         ]}
       />
 
+      {features.showStressUse && <StressUse />}
       {features.showIncenseTable && <IncenseTable />}
+      {features.showFindProduct && <FindProduct />}
 
       {recommended.length > 0 && (
         <section className="bg-white py-20">
@@ -250,15 +253,28 @@ export default async function ProductPage({ params }: PageProps) {
             <h2 className="text-2xl sm:text-3xl font-semibold text-[#1e2023] tracking-tight">
               Frequently Asked Questions
             </h2>
-            <p className="text-sm text-neutral-500 mt-2">About attars, zodiac perfumes &amp; spiritual fragrances</p>
+            <p className="text-sm text-neutral-500 mt-2">
+              About attars, zodiac perfumes &amp; spiritual fragrances
+            </p>
           </header>
           <div className="space-y-3">
             {PRODUCT_FAQS.map((faq, idx) => (
               <details key={idx} className="group border border-neutral-200 bg-white p-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-sm font-medium text-neutral-800">
                   <span>{faq.question}</span>
-                  <svg className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <svg
+                    className="h-4 w-4 shrink-0 transition-transform duration-200 group-open:rotate-180"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M5 8l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </summary>
                 <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{faq.answer}</p>
@@ -271,19 +287,34 @@ export default async function ProductPage({ params }: PageProps) {
       {/* Internal linking for SEO crawl depth */}
       <nav className="bg-white pb-16" aria-label="Explore more">
         <div className="mx-auto max-w-3xl px-6 flex flex-wrap justify-center gap-3">
-          <Link href="/shop" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+          <Link
+            href="/shop"
+            className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black"
+          >
             Shop All Fragrances
           </Link>
-          <Link href="/collections/zodiac" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+          <Link
+            href="/collections/zodiac"
+            className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black"
+          >
             Zodiac Attars
           </Link>
-          <Link href="/collections/planets" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+          <Link
+            href="/collections/planets"
+            className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black"
+          >
             Planet Attars
           </Link>
-          <Link href="/find-fragrance" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+          <Link
+            href="/find-fragrance"
+            className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black"
+          >
             Astro Fragrance Finder
           </Link>
-          <Link href="/blog" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">
+          <Link
+            href="/blog"
+            className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black"
+          >
             Fragrance Journal
           </Link>
         </div>
@@ -292,6 +323,7 @@ export default async function ProductPage({ params }: PageProps) {
       <TrustBar />
       {features.showDiscountPoster && <DiscountPosterIncense />}
       {features.showFAQincense && <FAQincense />}
+      <CustomerSupport />
     </main>
   );
 }

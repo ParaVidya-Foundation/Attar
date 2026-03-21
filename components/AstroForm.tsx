@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import SignCard from "@/components/SignCard";
 import ProductCard from "@/components/shop/ProductCard";
@@ -208,7 +209,20 @@ function buildRevealCards(result: AstroApiResponse | null): FragranceRevealCard[
   ];
 }
 
+function fallbackEmailFromName(name: string): string {
+  const safe = normalize(name).replace(/\s+/g, ".").replace(/[^a-z0-9.]/g, "").slice(0, 24) || "guest";
+  return `${safe}.astro@anandrasa.local`;
+}
+
+function toGender(value: string | null): Gender {
+  if (value === "male" || value === "female" || value === "other") return value;
+  return "male";
+}
+
 export default function AstroForm() {
+  const searchParams = useSearchParams();
+  const hasAutoSubmittedRef = useRef(false);
+  const resultSectionRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
@@ -267,20 +281,20 @@ export default function AstroForm() {
     ? `/product/${result.recommendedProducts[0].slug}`
     : "/shop";
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const submitAstroForm = useCallback(async (payload: FormState) => {
+    setForm(payload);
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
       const requestPayload = {
-        name: form.name,
-        email: form.email,
-        dob: form.dob,
-        time: form.time,
-        city: form.city,
-        gender: form.gender,
+        name: payload.name,
+        email: payload.email,
+        dob: payload.dob,
+        time: payload.time,
+        city: payload.city,
+        gender: payload.gender,
       };
 
       const [response] = await Promise.all([
@@ -303,6 +317,9 @@ export default function AstroForm() {
       }
 
       setResult(responsePayload as AstroApiResponse);
+      requestAnimationFrame(() => {
+        resultSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : "";
       if (
@@ -317,6 +334,33 @@ export default function AstroForm() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (hasAutoSubmittedRef.current) return;
+    const dynamicSearch =
+      searchParams.toString() || (typeof window !== "undefined" ? window.location.search.slice(1) : "");
+    const params = new URLSearchParams(dynamicSearch);
+    if (params.get("source") !== "product-page") return;
+
+    const name = params.get("name")?.trim() ?? "";
+    const dob = params.get("dob")?.trim() ?? "";
+    const time = params.get("time")?.trim() ?? "";
+    const city = params.get("city")?.trim() ?? "";
+    const gender = toGender(params.get("gender"));
+    const email = params.get("email")?.trim() || fallbackEmailFromName(name);
+
+    if (!name || !dob || !time || !city) return;
+
+    const prefilledForm: FormState = { name, email, dob, time, city, gender };
+    setForm(prefilledForm);
+    hasAutoSubmittedRef.current = true;
+    void submitAstroForm(prefilledForm);
+  }, [searchParams, submitAstroForm]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitAstroForm(form);
   }
 
   return (
@@ -551,6 +595,7 @@ export default function AstroForm() {
       <AnimatePresence mode="wait">
         {result ? (
           <motion.div
+            ref={resultSectionRef}
             key="result"
             variants={containerVariants}
             initial="hidden"

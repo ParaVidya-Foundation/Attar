@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import FindFragranceExperience from "@/components/find-fragrance/FindFragranceExperience";
 import { pageMetadata } from "@/lib/seo";
 
@@ -20,6 +21,23 @@ export const metadata: Metadata = {
   }),
 };
 
+/** Required: AstroForm uses useSearchParams — must be under Suspense for static generation / build. */
+function FindFragranceFallback() {
+  return (
+    <main className="min-h-screen bg-white">
+      <div className="border-b border-neutral-200 py-20">
+        <div className="mx-auto max-w-6xl px-6 text-center">
+          <p className="text-sm font-medium uppercase tracking-[0.14em] text-neutral-400">Loading…</p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export default function FindFragrancePage() {
-  return <FindFragranceExperience />;
+  return (
+    <Suspense fallback={<FindFragranceFallback />}>
+      <FindFragranceExperience />
+    </Suspense>
+  );
 }

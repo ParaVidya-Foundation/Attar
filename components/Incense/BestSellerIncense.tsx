@@ -1,256 +1,600 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import Link from "next/link";
 import Image from "next/image";
+import { useRef, useState, useCallback, useId } from "react";
 
-/* ================= TYPES ================= */
+/* ─── Types ─────────────────────────────────────────────── */
+interface Variant {
+  label: string;
+  discount: number;
+  originalPrice: number;
+  salePrice: number;
+}
 
-type Product = {
-  id: string;
-  name: string;
-  href: string;
+interface Product {
+  id: number;
+  badge?: "New" | "Bestseller" | "Sale" | "Limited";
   image: string;
-  price: number;
-  originalPrice?: number;
-  badge?: "hot";
-};
+  formula: string;
+  name: string;
+  tagline: string;
+}
 
-/* ================= DATA ================= */
-
+/* ─── Data — swap with your API ─────────────────────────── */
 const PRODUCTS: Product[] = [
   {
-    id: "sambrani",
-    name: "Sacred Sambrani Havan Cups",
-    href: "/products/sacred-sambrani-havan-cups",
-    image: "/products/sambrani-box.jpg",
-    price: 240,
-    originalPrice: 300,
-    badge: "hot",
+    id: 1,
+    badge: "Bestseller",
+    image: "/incense_holder.webp",
+    formula: "Pure Sandalwood + Havan Samagri",
+    name: "Chandan Agarbatti",
+    tagline: "Sacred Calm, Every Breath",
   },
   {
-    id: "dhoop",
-    name: "Mysore Sandalwood Dhoop Sticks",
-    href: "/products/mysore-sandalwood-dhoop",
-    image: "/products/dhoop-sticks.jpg",
-    price: 149,
-    originalPrice: 165,
-    badge: "hot",
+    id: 2,
+    badge: "New",
+    image: "/incense_holder.webp",
+    formula: "Rose + Mogra + Pure Attar",
+    name: "Gulab Agarbatti",
+    tagline: "Blooms That Never Fade",
   },
   {
-    id: "incense",
-    name: "Incense Sticks Sleeve",
-    href: "/products/incense-sleeve",
-    image: "/products/incense-sleeve.jpg",
-    price: 765,
-    originalPrice: 900,
+    id: 3,
+    badge: "Limited",
+    image: "/incense_holder.webp",
+    formula: "Loban + Gugal + Cow Ghee",
+    name: "Loban Agarbatti",
+    tagline: "Ancient Purification Ritual",
   },
   {
-    id: "devotional",
-    name: "Sambrani Devotional Pack",
-    href: "/products/sambrani-devotional-pack",
-    image: "/products/devotional-pack.jpg",
-    price: 450,
-    originalPrice: 600,
+    id: 4,
+    badge: "Sale",
+    image: "/incense_holder.webp",
+    formula: "Lavender + Chamomile + Tulsi",
+    name: "Lavender Agarbatti",
+    tagline: "Sleep Like You Deserve",
+  },
+  {
+    id: 5,
+    badge: "Bestseller",
+    image: "/incense_holder.webp",
+    formula: "Kesar + Chandan + Amber",
+    name: "Kesar Agarbatti",
+    tagline: "Royalty in Every Wisp",
+  },
+  {
+    id: 6,
+    badge: "Limited",
+    image: "/incense_holder.webp",
+    formula: "Oud Wood + Musk + Vetiver",
+    name: "Oud Agarbatti",
+    tagline: "The Scent of the Ancients",
   },
 ];
 
-/* ================= HELPERS ================= */
+/* ─── Helpers ───────────────────────────────────────────── */
+const VISIBLE_DESKTOP = 4;
 
-const formatPrice = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
+function formatINR(n: number) {
+  return n.toLocaleString("en-IN");
+}
 
-/* ================= PRODUCT CARD ================= */
-
+/* ─── Product Card ──────────────────────────────────────── */
 function ProductCard({ product }: { product: Product }) {
-  const discount = product.originalPrice
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : null;
+  const [selectedVariant, setSelectedVariant] = useState(0);
+  const selectId = useId();
 
   return (
-    <article className="snap-start flex-shrink-0 w-[260px] sm:w-[280px] lg:w-[300px]">
-      <Link href={product.href} className="group block">
-        <div
-          className="h-[460px] flex flex-col bg-white border border-neutral-200
-          transition duration-300 hover:shadow-lg hover:-translate-y-1"
-        >
-          {/* IMAGE */}
-
-          <div className="relative h-[260px] overflow-hidden bg-neutral-100">
-            <Image
-              src={product.image}
-              alt={product.name}
-              fill
-              sizes="(max-width:640px) 260px, (max-width:1024px) 280px, 300px"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-
-            {product.badge && (
-              <span className="absolute top-3 right-3 bg-[#7a1d1d] text-white text-[10px] px-2 py-1 tracking-wide">
-                HOT SELLING
-              </span>
-            )}
-
-            {discount && (
-              <span className="absolute top-3 left-3 bg-white border text-[10px] px-2 py-1">
-                {discount}% OFF
-              </span>
-            )}
-          </div>
-
-          {/* CONTENT */}
-
-          <div className="flex flex-col flex-1 px-4 py-5">
-            <h3 className="text-[14px] font-medium text-neutral-900 line-clamp-2 min-h-[40px]">
-              {product.name}
-            </h3>
-
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-[17px] font-semibold">{formatPrice(product.price)}</span>
-
-              {product.originalPrice && (
-                <span className="text-[13px] text-neutral-400 line-through">
-                  {formatPrice(product.originalPrice)}
-                </span>
-              )}
-            </div>
-
-            <div className="flex-1" />
-
-            <div className="pt-4">
-              <div
-                className="border border-black bg-black text-white text-[12px]
-                tracking-widest py-2 text-center
-                transition group-hover:bg-white group-hover:text-black"
-              >
-                BUY NOW
-              </div>
-            </div>
-          </div>
+    <article className="pc-card" aria-label={product.name}>
+      {/* Image */}
+      <div className="pc-img-wrap">
+        {product.badge && (
+          <span className="pc-badge" aria-label={`Badge: ${product.badge}`}>
+            {product.badge}
+          </span>
+        )}
+        <div className="pc-img-inner">
+          <Image
+            src={product.image}
+            alt={`${product.name} — ${product.formula}`}
+            fill
+            sizes="(max-width: 580px) 85vw, (max-width: 1024px) 45vw, 25vw"
+            style={{ objectFit: "contain", objectPosition: "center 85%" }}
+            loading="lazy"
+            decoding="async"
+          />
         </div>
-      </Link>
+      </div>
+
+      {/* Info */}
+      <div className="pc-info">
+        <p className="pc-formula">{product.formula}</p>
+        <h3 className="pc-name">{product.name}</h3>
+        <p className="pc-tagline">{product.tagline}</p>
+
+        <div className="pc-price-row">
+          <span className="pc-orig" aria-label={`Original price Rs. ${formatINR(199)}`}>
+            Rs. {formatINR(199)}
+          </span>
+          <span className="pc-sale" aria-label={`Sale price Rs. ${formatINR(159)}`}>
+            Rs. {formatINR(159)}
+          </span>
+        </div>
+
+        <button
+          className="pc-atc"
+          type="button"
+          onClick={() => {
+            /* wire your cart handler here */
+          }}
+          aria-label={`Add ${product.name} Pack of 20 (20% OFF) to cart`}
+        >
+          Buy Now
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg>
+        </button>
+      </div>
     </article>
   );
 }
 
-/* ================= MAIN COMPONENT ================= */
+/* ─── Arrow Button ──────────────────────────────────────── */
+function ArrowBtn({
+  dir,
+  disabled,
+  onClick,
+}: {
+  dir: "left" | "right";
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`pc-arrow pc-arrow-${dir}`}
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={dir === "left" ? "Previous products" : "Next products"}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {dir === "left" ? <polyline points="15 18 9 12 15 6" /> : <polyline points="9 18 15 12 9 6" />}
+      </svg>
+    </button>
+  );
+}
 
+/* ─── Carousel ──────────────────────────────────────────── */
 export default function BestSellerIncense() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0);
+  const [index, setIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const total = PRODUCTS.length;
+  const maxIndex = Math.max(0, total - VISIBLE_DESKTOP);
 
-  const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const distance = el.clientWidth * 0.8;
-
-    el.scrollBy({
-      left: dir === "left" ? -distance : distance,
-      behavior: "smooth",
-    });
-  };
-
-  /* progress bar */
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    const handleScroll = () => {
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      const value = (el.scrollLeft / maxScroll) * 100;
-      setProgress(value);
-    };
-
-    el.addEventListener("scroll", handleScroll);
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  /* SEO */
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    itemListElement: PRODUCTS.map((p, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: p.name,
-      url: `https://anandrasafragnance.com${p.href}`,
-    })),
-  };
+  const prev = useCallback(() => setIndex((i) => Math.max(i - 1, 0)), []);
+  const next = useCallback(() => setIndex((i) => Math.min(i + 1, maxIndex)), [maxIndex]);
+  const goTo = useCallback((i: number) => setIndex(i), []);
 
   return (
-    <section className="bg-[#F6F1E7] py-20">
-      <script
-        type="application/ld+json"
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-      <div className="mx-auto max-w-7xl px-6">
-        {/* HEADER */}
+        /* ── Scope ── */
+        .pc-root,
+        .pc-root * {
+          font-family: 'Poppins', sans-serif;
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
 
-        <header className="text-center mb-14">
-          <h2 className="text-3xl font-serif text-[#7a1d1d]">Our Top Sellers</h2>
-          <p className="mt-2 text-sm text-neutral-600">Must-See Selections</p>
-        </header>
+        .sr-only {
+          position: absolute;
+          width: 1px; height: 1px;
+          padding: 0; margin: -1px;
+          overflow: hidden;
+          clip: rect(0,0,0,0);
+          white-space: nowrap;
+          border: 0;
+        }
 
-        {/* SLIDER */}
+        /* ── Root ── */
+        .pc-root {
+          width: 100%;
+          padding: 0 48px;
+          position: relative;
+          margin-top: 20px;
+        }
 
-        <div className="relative">
-          {/* ARROWS */}
+        @media (max-width: 768px) { .pc-root { padding: 0 20px; } }
+        @media (max-width: 480px) { .pc-root { padding: 0 12px; } }
 
-          <button
-            type="button"
-            onClick={() => scroll("left")}
-            className="hidden lg:flex items-center justify-center
-            absolute left-[-10px] top-1/2 -translate-y-1/2 z-10
-            w-10 h-10 bg-white border hover:bg-black hover:text-white transition"
-            aria-label="Scroll left"
-          >
-            ‹
-          </button>
+        /* ── Carousel ── */
+        .pc-carousel {
+          overflow: hidden;
+       margin-top: 20px;
+          border-radius: 16px;
+   
+        }
 
-          <button
-            type="button"
-            onClick={() => scroll("right")}
-            className="hidden lg:flex items-center justify-center
-            absolute right-[-10px] top-1/2 -translate-y-1/2 z-10
-            w-10 h-10 bg-white border hover:bg-black hover:text-white transition"
-            aria-label="Scroll right"
-          >
-            ›
-          </button>
+        /* ── Track ── */
+        .pc-track {
+        gap: 16px;
+          display: flex;
+          will-change: transform;
+          transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+        }
 
-          {/* CARDS */}
+        /* ── Card ── */
+        .pc-card {
+        border-radius: 16px;
+          flex: 0 0 calc(100% / 4);
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          border-right: 1px solid #ebebeb;
+          background: #fff;
+          transition: background 0.2s ease;
+        }
+        .pc-card:last-child { border-right: none; }
+        .pc-card:hover { background: #fdfcfb; }
 
+        @media (max-width: 1024px) { .pc-card { flex: 0 0 calc(100% / 2); } }
+        @media (max-width: 580px)  { .pc-card { flex: 0 0 88%; } }
+
+        /* ── Image ── */
+        .pc-img-wrap {
+          position: relative;
+          width: 100%;
+          padding-top: 100%;
+          overflow: hidden;
+          background: #f9f3ee;
+        }
+
+        .pc-img-inner {
+          position: absolute;
+          inset: 0;
+        }
+
+        /* Badge */
+        .pc-badge {
+          position: absolute;
+          top: 14px;
+          left: 14px;
+          z-index: 2;
+          background: #111;
+          color: #fff;
+          font-size: 10.5px;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          padding: 4px 10px;
+          border-radius: 6px;
+        }
+
+        /* Stars */
+        .pc-stars-overlay {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 2;
+        }
+
+        .pc-stars {
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          background: rgba(255, 255, 255, 0.88);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border-radius: 999px;
+          padding: 4px 9px 4px 7px;
+          border: 1px solid rgba(0,0,0,0.06);
+        }
+
+        .pc-review-count {
+          font-size: 10.5px;
+          font-weight: 500;
+          color: #222;
+          margin-left: 4px;
+        }
+
+        /* ── Info ── */
+        .pc-info {
+          display: flex;
+          flex-direction: column;
+          padding: 18px 18px 20px;
+          flex: 1;
+          gap: 0;
+        }
+
+        .pc-formula {
+          font-size: 11px;
+          font-weight: 400;
+          color: #999;
+          margin-bottom: 5px;
+          line-height: 1.45;
+          letter-spacing: 0.01em;
+        }
+
+        .pc-name {
+          font-size: 17px;
+          font-weight: 600;
+          color: #111;
+          margin-bottom: 4px;
+          line-height: 1.25;
+          letter-spacing: -0.012em;
+        }
+
+        .pc-tagline {
+          font-size: 12.5px;
+          font-weight: 400;
+          color: #666;
+          margin-bottom: 14px;
+          line-height: 1.45;
+        }
+
+        /* Price */
+        .pc-price-row {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+
+        .pc-orig {
+          font-size: 12px;
+          font-weight: 400;
+          color: #bbb;
+          text-decoration: line-through;
+        }
+
+        .pc-sale {
+          font-size: 18px;
+          font-weight: 700;
+          color: #111;
+          letter-spacing: -0.02em;
+        }
+
+        /* Select */
+        .pc-select-wrap {
+          position: relative;
+          margin-bottom: 14px;
+        }
+
+        .pc-select {
+          width: 100%;
+          appearance: none;
+          -webkit-appearance: none;
+          background: #fafafa;
+          border: 1px solid #e0e0e0;
+          border-radius: 10px;
+          padding: 10px 36px 10px 14px;
+          font-size: 12.5px;
+          font-weight: 500;
+          color: #222;
+          cursor: pointer;
+          outline: none;
+          font-family: 'Poppins', sans-serif;
+          transition: border-color 0.18s, background 0.18s;
+        }
+
+        .pc-select:hover  { border-color: #bbb; background: #f5f5f5; }
+        .pc-select:focus  { border-color: #111; background: #fff; }
+
+        .pc-chevron {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #777;
+          pointer-events: none;
+        }
+
+        /* ATC button — pink */
+        .pc-atc {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          background: #f4a7c3;
+          color: #5a1030;
+          border: none;
+          border-radius: 999px;
+          padding: 13px 20px;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          letter-spacing: 0.005em;
+          font-family: 'Poppins', sans-serif;
+          margin-top: auto;
+          transition:
+            background   0.2s ease,
+            color        0.2s ease,
+            transform    0.25s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow   0.25s ease;
+        }
+
+        .pc-atc:hover {
+          background: #f08fb0;
+          color: #3d0020;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(240, 100, 150, 0.28);
+        }
+
+        .pc-atc:active {
+          transform: translateY(0);
+          box-shadow: none;
+        }
+
+        /* ── Arrows ── */
+ 
+.pc-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+
+  background: #fff;
+  color: #111;
+  border: 1px solid #e5e5e5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
+}
+
+/* HOVER */
+.pc-arrow:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  transform: translateY(-50%) scale(1.05);
+}
+
+/* ACTIVE */
+.pc-arrow:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+/* DISABLED */
+.pc-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* POSITIONING — ALWAYS INSIDE FRAME */
+.pc-arrow-left  { left: 8px; }
+.pc-arrow-right { right: 8px; }
+
+/* TABLET */
+@media (max-width: 768px) {
+  .pc-arrow {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pc-arrow-left  { left: 6px; }
+  .pc-arrow-right { right: 6px; }
+}
+
+/* MOBILE */
+@media (max-width: 480px) {
+  .pc-arrow {
+    width: 34px;
+    height: 34px;
+  }
+
+  .pc-arrow-left  { left: 4px; }
+  .pc-arrow-right { right: 4px; }
+}
+
+        /* ── Dots ── */
+        .pc-dots {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 7px;
+          margin-top: 20px;
+        }
+
+        .pc-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #d8d8d8;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          transition: background 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), width 0.22s ease;
+        }
+
+        .pc-dot.active {
+          background: #111;
+          width: 20px;
+          border-radius: 999px;
+          transform: none;
+        }
+      `}</style>
+
+      <section className="pc-root" aria-label="Incense product carousel" aria-roledescription="carousel">
+        <h1 className="text-4xl font-bold text-center">Best Seller Agarbatti</h1>
+        {/* Carousel */}
+        <div className="pc-carousel mt-5">
+          {/* Arrows */}
+          <ArrowBtn dir="left" disabled={index === 0} onClick={prev} />
+          <ArrowBtn dir="right" disabled={index >= maxIndex} onClick={next} />
+
+          {/* Track */}
           <div
-            ref={scrollRef}
-            className="flex gap-6 overflow-x-auto snap-x snap-mandatory
-            scroll-smooth pb-4 px-1
-            [scrollbar-width:none] [-ms-overflow-style:none]
-            [&::-webkit-scrollbar]:hidden"
+            ref={trackRef}
+            className="pc-track"
+            aria-live="polite"
+            style={{
+              transform: `translateX(calc(-${index} * 100% / ${VISIBLE_DESKTOP}))`,
+            }}
           >
             {PRODUCTS.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-
-          {/* PROGRESS */}
-
-          <div className="mt-8 h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
-            <div
-              style={{ width: `${progress}%` }}
-              className="h-full bg-amber-400 transition-all duration-200"
-            />
-          </div>
         </div>
-      </div>
-    </section>
+
+        {/* Dots */}
+        <div className="pc-dots" role="tablist" aria-label="Carousel page">
+          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`pc-dot${i === index ? " active" : ""}`}
+              onClick={() => goTo(i)}
+              role="tab"
+              aria-selected={i === index}
+              aria-label={`Go to page ${i + 1}`}
+            />
+          ))}
+        </div>
+      </section>
+    </>
   );
 }

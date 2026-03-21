@@ -20,6 +20,8 @@ import type { ZodiacShowcaseProduct } from "@/components/Home/ZodiacShowcase";
 import ScrollVideo from "@/components/Home/ScrollVideo";
 import CategoryGrid from "@/components/Home/CategoryGrid";
 import FindYourFragrance from "@/components/Home/findyourfragrance";
+import BrandPhilosophy from "@/components/Home/BrandPhilosophy";
+import BestSellerIncense from "@/components/Incense/BestSellerIncense";
 
 export const revalidate = 60;
 
@@ -29,7 +31,14 @@ export const metadata: Metadata = pageMetadata({
     "India's astrology-inspired fragrance house. Shop luxury alcohol-free attars, zodiac perfume oils, planet fragrances, agarbatti & spiritual incense — handcrafted for meditation, pooja & daily ritual.",
   path: "/home",
   type: "website",
-  keywords: ["attar", "zodiac perfume", "agarbatti", "spiritual fragrance", "perfume India", "astrology fragrance"],
+  keywords: [
+    "attar",
+    "zodiac perfume",
+    "agarbatti",
+    "spiritual fragrance",
+    "perfume India",
+    "astrology fragrance",
+  ],
 });
 
 export default async function HomePage() {
@@ -69,6 +78,10 @@ export default async function HomePage() {
           />
         </div>
       </Link>
+      <BestSellerIncense />
+
+      <BrandPhilosophy />
+      <div className="border-t-[2px] border-[#1e2023]"></div>
       <ComboSet />
       <PureAttar />
       <TrustBar />

@@ -6,6 +6,7 @@ import ProductCard from "@/components/shop/ProductCard";
 import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
+import ComingSoon from "@/components/comingsoon";
 
 export const revalidate = 60;
 
@@ -27,10 +28,9 @@ export default async function ZodiacPage() {
 
   return (
     <main className="w-full bg-white">
-      {/* Zodiac Selector / Interactive Section */}
+      <ComingSoon />
+      {/*      
       <PerfumeZodiac />
-
-      {/* Editorial Section */}
       <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <header className="text-center">
           <h2 className="font-heading text-2xl sm:text-3xl md:text-4xl text-[#1e2023]">
@@ -45,7 +45,7 @@ export default async function ZodiacPage() {
         </header>
       </section>
 
-      {/* Product Grid */}
+
       <section className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14">
         <div className="grid gap-y-14 gap-x-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           {mappedProducts.length === 0 ? (
@@ -58,7 +58,7 @@ export default async function ZodiacPage() {
         </div>
       </section>
 
-      {/* SEO Editorial Content */}
+     
       <section className="mx-auto max-w-3xl px-6 py-16">
         <h2 className="font-heading text-2xl text-center text-[#1e2023]">About Zodiac Attars</h2>
         <div className="mx-auto mt-4 h-[2px] w-12 bg-[#d4b07a]" />
@@ -67,7 +67,7 @@ export default async function ZodiacPage() {
         </p>
       </section>
 
-      {/* FAQ Section */}
+    
       <section className="mx-auto max-w-3xl px-6 pb-16">
         <h2 className="font-heading text-2xl text-center text-[#1e2023]">Frequently Asked Questions</h2>
         <div className="mx-auto mt-4 h-[2px] w-12 bg-[#d4b07a]" />
@@ -96,13 +96,13 @@ export default async function ZodiacPage() {
         </div>
       </section>
 
-      {/* Internal Links */}
+    
       <nav className="mx-auto max-w-3xl px-6 pb-16 flex flex-wrap justify-center gap-3" aria-label="Related pages">
         <Link href="/find-fragrance" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">Find Your Zodiac Fragrance</Link>
         <Link href="/collections/planets" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">Planet Attars</Link>
         <Link href="/collections/nakshatra" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">Nakshatra Attars</Link>
         <Link href="/shop" className="border border-neutral-300 px-5 py-2.5 text-sm text-neutral-700 transition-colors hover:border-black hover:text-black">Shop All</Link>
-      </nav>
+      </nav> */}
     </main>
   );
 }

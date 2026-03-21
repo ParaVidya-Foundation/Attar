@@ -5,6 +5,7 @@ import { getProductsByCategory } from "@/lib/api/products";
 import { COLLECTION_SLUGS } from "@/lib/constants/collections";
 import { mapToCardProduct } from "@/lib/productMapper";
 import HowToUse from "@/components/stress/howtouse";
+import ComingSoon from "@/components/comingsoon";
 
 export const revalidate = 60;
 
@@ -34,7 +35,8 @@ export default async function StressPerfumePage() {
 
   return (
     <main className="w-full bg-white">
-      <section className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14">
+      <ComingSoon />
+      {/* <section className="mx-auto max-w-[1400px] px-6 sm:px-8 md:px-12 lg:px-16 py-14">
         <header className="mb-10 text-center">
           <h1 className="font-heading text-3xl sm:text-4xl text-[#1e2023]">Stress Relief Attars</h1>
           <div className="mx-auto mt-4 h-[2px] w-16 bg-[#d4b07a]" />
@@ -51,7 +53,7 @@ export default async function StressPerfumePage() {
           )}
         </div>
       </section>
-      <HowToUse />
+      <HowToUse /> */}
     </main>
   );
 }

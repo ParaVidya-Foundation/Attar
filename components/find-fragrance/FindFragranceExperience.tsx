@@ -58,20 +58,6 @@ export default function FindFragranceExperience() {
           >
             Your birth chart reveals the scents that naturally resonate with your energy.
           </motion.p>
-          <motion.div
-            variants={reveal}
-            initial="hidden"
-            animate="show"
-            transition={{ delay: 0.24, duration: 0.5, ease: EASE_OUT }}
-            className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"
-          >
-            <Link
-              href="/collections/nakshatra"
-              className="inline-flex items-center justify-center rounded-md border border-black bg-white px-6 py-3 font-medium text-black transition hover:bg-neutral-900 hover:text-white focus:ring-2 focus:ring-black focus:ring-offset-2"
-            >
-              Explore Nakshatra Attars
-            </Link>
-          </motion.div>
         </div>
       </section>
 

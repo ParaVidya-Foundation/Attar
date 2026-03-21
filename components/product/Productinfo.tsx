@@ -114,7 +114,7 @@ export default function ProductInfo({ product }: { product: FullProduct }) {
 
   return (
     <aside
-      className="w-full lg:w-1/2 border-[1px] border-[#1e2023] bg-white p-5 sm:p-7 md:p-10"
+      className="w-full lg:w-1/2 border-[2px] border-[#1e2023] bg-white p-5 sm:p-7 md:p-10"
       aria-labelledby="product-title"
     >
       <div className="max-w-xl">
